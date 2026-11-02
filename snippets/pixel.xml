@@ -1,28 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <manifest>
-
   <!-- Stage 1: mirrored PixelExperience-Reborn sources, not yet Android 17 code. -->
-  <remote name="reborn"
-          fetch="https://github.com/PixelExperience-Reborn"
-          revision="refs/heads/seventeen" />
-
-  <remote name="pixel"
-          fetch="https://github.com/PixelExperience"
-          revision="fourteen"
-          review="gerrit.pixelexperience.org" />
-
-  <remote name="pixel-gitlab"
-          fetch="https://gitlab.pixelexperience.org/android"
-          revision="fourteen" />
-
-  <remote name="pixel-devices"
-          fetch="https://github.com/PixelExperience-Devices"
-          revision="fourteen" />
-
-  <remote name="pixel-devices-blobs"
-          fetch="https://gitlab.pixelexperience.org/android/vendor-blobs"
-          revision="fourteen" />
-
+  <remote name="reborn" fetch="https://github.com/PixelExperience-Reborn" revision="refs/heads/seventeen" />
+  <remote name="pixel" fetch="https://github.com/PixelExperience" revision="fourteen" review="gerrit.pixelexperience.org" />
+  <remote name="pixel-gitlab" fetch="https://gitlab.pixelexperience.org/android" revision="fourteen" />
+  <remote name="pixel-devices" fetch="https://github.com/PixelExperience-Devices" revision="fourteen" />
+  <remote name="pixel-devices-blobs" fetch="https://gitlab.pixelexperience.org/android/vendor-blobs" revision="fourteen" />
   <!-- External repos -->
   <project path="external/avb" name="external_avb" remote="reborn" />
   <project path="external/cronet" name="external_cronet" remote="reborn" />
@@ -35,14 +18,12 @@
   <project path="external/mksh" name="external_mksh" remote="reborn" />
   <project path="external/tinycompress" name="external_tinycompress" remote="reborn" />
   <project path="external/wpa_supplicant_8" name="external_wpa_supplicant_8" remote="reborn" />
-
   <!-- Framework repos -->
   <project path="frameworks/av" name="frameworks_av" remote="reborn" />
   <project path="frameworks/base" name="frameworks_base" remote="reborn" />
   <project path="frameworks/native" name="frameworks_native" remote="reborn" />
   <project path="frameworks/opt/telephony" name="frameworks_opt_telephony" remote="reborn" />
   <project path="frameworks/opt/timezonepicker" name="frameworks_opt_timezonepicker" remote="reborn" />
-
   <!-- General repos -->
   <project path="art" name="art" remote="reborn" />
   <project path="bionic" name="bionic" remote="reborn" />
@@ -55,18 +36,15 @@
     <linkfile src="target" dest="build/target" />
     <linkfile src="tools" dest="build/tools" />
   </project>
-  <project path="build/soong" name="build_soong" remote="reborn" >
+  <project path="build/soong" name="build_soong" remote="reborn">
     <linkfile src="root.bp" dest="Android.bp" />
     <linkfile src="bootstrap.bash" dest="bootstrap.bash" />
   </project>
   <project path="bootable/recovery" name="bootable_recovery" remote="reborn" />
   <project path="development" name="development" remote="reborn" />
-  <project path="device/google/cuttlefish" name="device_google_cuttlefish" remote="pixel" />
-  <project path="device/google/contexthub" name="device_google_contexthub" remote="pixel" />
   <project path="kernel/configs" name="kernel_configs" remote="reborn" />
   <project path="manifest" name="manifest" remote="reborn" />
   <project path="platform_testing" name="platform_testing" remote="reborn" />
-
   <!-- Hardware repos -->
   <project path="hardware/broadcom/libbt" name="hardware_broadcom_libbt" remote="reborn" />
   <project path="hardware/google/pixel" name="hardware_google_pixel" remote="reborn" />
@@ -78,17 +56,8 @@
   <project path="hardware/qcom/display" name="hardware_qcom_display" remote="reborn" />
   <project path="hardware/qcom/gps" name="hardware_qcom_gps" remote="reborn" />
   <project path="hardware/qcom/media" name="hardware_qcom_media" remote="reborn" />
-  <project path="hardware/qcom/sm7250/display" name="hardware_qcom_sm7250_display" remote="pixel" />
-  <project path="hardware/qcom/sm7250/media" name="hardware_qcom_sm7250_media" remote="pixel" />
-  <project path="hardware/qcom/sm8150/data/ipacfg-mgr" name="hardware_qcom_sm8150_data_ipacfg-mgr" remote="pixel">
-    <linkfile src="os_pickup.mk" dest="hardware/qcom/sm8150/Android.mk" />
-    <linkfile src="os_pickup.bp" dest="hardware/qcom/sm8150/Android.bp" />
-  </project>
-  <project path="hardware/qcom/sm8150/display" name="hardware_qcom_sm8150_display" remote="pixel" />
-  <project path="hardware/qcom/sm8150/media" name="hardware_qcom_sm8150_media" remote="pixel" />
   <project path="hardware/qcom/wlan" name="hardware_qcom_wlan" remote="reborn" />
   <project path="hardware/ril" name="hardware_ril" remote="reborn" />
-
   <!-- Packages repos -->
   <project path="packages/apps/Camera2" name="packages_apps_Camera2" remote="reborn" />
   <project path="packages/apps/Nfc" name="packages_apps_Nfc" remote="reborn" />
@@ -102,10 +71,8 @@
   <project path="packages/providers/MediaProvider" name="packages_providers_MediaProvider" remote="reborn" />
   <project path="packages/services/Telecomm" name="packages_services_Telecomm" remote="reborn" />
   <project path="packages/services/Telephony" name="packages_services_Telephony" remote="reborn" />
-
   <!-- Prebuilts -->
   <project path="prebuilts/build-tools" name="prebuilts_build-tools" remote="reborn" clone-depth="1" />
-
   <!-- System Repos -->
   <project path="system/bpf" name="system_bpf" remote="reborn" />
   <project path="system/core" name="system_core" remote="reborn" />
@@ -120,8 +87,6 @@
   <project path="system/tools/mkbootimg" name="system_tools_mkbootimg" remote="reborn" />
   <project path="system/update_engine" name="system_update_engine" remote="reborn" />
   <project path="system/vold" name="system_vold" remote="reborn" />
-
   <!-- Tools Repos -->
   <project path="tools/metalava" name="tools_metalava" remote="reborn" />
-
 </manifest>
