@@ -9,6 +9,7 @@ on:
       - aosp17_reference.xml
       - aosp17_pe_bootstrap.xml
       - aosp17_pe_envsetup.xml
+      - aosp17_pe_p0_native.xml
       - .github/workflows/aosp17-manifest-structure.yml
 
 permissions:
@@ -26,6 +27,8 @@ jobs:
           - profile: aosp17_pe_bootstrap.xml
             expected: 1068
           - profile: aosp17_pe_envsetup.xml
+            expected: 1069
+          - profile: aosp17_pe_p0_native.xml
             expected: 1069
     steps:
       - name: Install official repo client
@@ -70,7 +73,16 @@ jobs:
           indexed = {p.get("path") or p.get("name"): p for p in projects}
           assert indexed["build/make"].get("name") == "platform/build", "core Make is not AOSP17"
           for path in ("art", "bionic", "system/core"):
-              assert indexed[path].get("name").startswith("platform/"), path
+              project = indexed[path]
+              if profile == "aosp17_pe_p0_native.xml" and path in ("art", "bionic"):
+                  assert project.get("name") == path, path
+                  expected_commit = {
+                      "art": "b753cf97923c3695338d21466fa14c57b480a59a",
+                      "bionic": "06356e41c5ed7b12220b24c05ba4fdb873b126a7",
+                  }[path]
+                  assert project.get("revision") == expected_commit, path
+              else:
+                  assert project.get("name").startswith("platform/"), path
           assert not any(path.startswith("device/google/") or
                          path.startswith("device/linaro/") or
                          path.startswith("device/amlogic/") for path in paths)
@@ -81,7 +93,7 @@ jobs:
               soong = indexed["build/soong"]
               assert soong.get("name") == "build_soong"
               assert soong.get("revision") == "6215d41c790a463b7795ce81ac77204c238cbf48"
-              if profile == "aosp17_pe_envsetup.xml":
+              if profile in ("aosp17_pe_envsetup.xml", "aosp17_pe_p0_native.xml"):
                   vendor = indexed["vendor/aosp"]
                   assert vendor.get("name") == "vendor_aosp"
                   assert len(vendor.get("revision", "")) == 40
