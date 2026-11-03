@@ -40,13 +40,13 @@ jobs:
             -b port/a17-aosp17-manifest-20261102 \
             -m aosp17_pe_p0_av.xml
 
-      - name: Fetch only eight active reviewed P0 source projects
+      - name: Fetch nine essential AOSP17 and PE P0 projects
         shell: bash
         run: |
           set -euo pipefail
           cd "$RUNNER_TEMP/checkout"
           "$RUNNER_TEMP/repo" sync --no-tags -c -j4 --fail-fast \
-            build/soong vendor/aosp art bionic system/core \
+            build/make build/soong vendor/aosp art bionic system/core \
             frameworks/native bootable/recovery frameworks/av
 
       - name: Confirm every checked-out source matches the pinned commit
@@ -59,6 +59,7 @@ jobs:
           from pathlib import Path
 
           expected = {
+              "build/make": "5ce6f787337d0223710bf7d4a16dbe6d2a35f777",
               "build/soong": "6215d41c790a463b7795ce81ac77204c238cbf48",
               "vendor/aosp": "a044adac1f764ade01148cf7c09beda9df686d91",
               "art": "b753cf97923c3695338d21466fa14c57b480a59a",
@@ -75,5 +76,5 @@ jobs:
               ).strip()
               assert current == sha, f"{project}: {current} != {sha}"
               print(f"PASS {project}: {current[:12]}")
-          print("PASS: eight selected P0 projects synced and pinned")
+          print("PASS: nine selected P0 projects synced and pinned")
           PY
