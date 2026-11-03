@@ -7,10 +7,14 @@ on:
     paths:
       - .github/workflows/aosp17-p0-source-sync.yml
       - aosp17_pe_p0_av.xml
+      - aosp17_pe_p0_base.xml
+      - aosp17_pe_p0_hardware.xml
   pull_request:
     paths:
       - .github/workflows/aosp17-p0-source-sync.yml
       - aosp17_pe_p0_av.xml
+      - aosp17_pe_p0_base.xml
+      - aosp17_pe_p0_hardware.xml
 
 permissions:
   contents: read
@@ -18,7 +22,7 @@ permissions:
 jobs:
   selected-source-sync:
     runs-on: ubuntu-latest
-    timeout-minutes: 55
+    timeout-minutes: 90
     steps:
       - name: Install official Android repo client
         shell: bash
@@ -38,16 +42,17 @@ jobs:
           "$RUNNER_TEMP/repo" init -q --no-clone-bundle \
             -u https://github.com/PixelExperience-Reborn/manifest \
             -b port/a17-aosp17-manifest-20261102 \
-            -m aosp17_pe_p0_av.xml
+            -m aosp17_pe_p0_hardware.xml
 
-      - name: Fetch nine essential AOSP17 and PE P0 projects
+      - name: Fetch eleven pinned AOSP17 and PE P0 projects
         shell: bash
         run: |
           set -euo pipefail
           cd "$RUNNER_TEMP/checkout"
           "$RUNNER_TEMP/repo" sync --no-tags -c -j4 --fail-fast \
             build/make build/soong vendor/aosp art bionic system/core \
-            frameworks/native bootable/recovery frameworks/av
+            frameworks/native bootable/recovery frameworks/av \
+            frameworks/base hardware/interfaces
 
       - name: Confirm every checked-out source matches the pinned commit
         shell: bash
@@ -68,6 +73,8 @@ jobs:
               "frameworks/native": "ae266dcb706d083868578cfedce381ef44488a07",
               "bootable/recovery": "0ed8dc4f93020555afdfc19141263ca40629ef74",
               "frameworks/av": "5db9a6151f33cacb810a8fe7615be8c23d3fa858",
+              "frameworks/base": "382d5c9c0b20bbdb67b70176bce02c7e64767b0c",
+              "hardware/interfaces": "735e364cbdd00b0d6e4dc33ea0866dbb6d971a11",
           }
           for project, sha in expected.items():
               assert Path(project).is_dir(), f"Missing checkout: {project}"
@@ -76,5 +83,16 @@ jobs:
               ).strip()
               assert current == sha, f"{project}: {current} != {sha}"
               print(f"PASS {project}: {current[:12]}")
-          print("PASS: nine selected P0 projects synced and pinned")
+          # Source checkout and C++ host tests are separate from a real Android build.
+          subprocess.run(
+              ["python3", "-m", "unittest", "discover", "-s",
+               "frameworks/base/tests/host", "-p", "test_pe_*.py", "-v"],
+              check=True,
+          )
+          subprocess.run(
+              ["python3", "-m", "unittest", "discover", "-s",
+               "hardware/interfaces/tests/host", "-p", "test_*.py", "-v"],
+              check=True,
+          )
+          print("PASS: eleven selected P0 projects synced and pinned")
           PY
