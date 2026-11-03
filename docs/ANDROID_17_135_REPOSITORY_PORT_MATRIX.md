@@ -17,11 +17,13 @@
 
 1. `build/make`: подготовлен локальный AOSP17-commit с PE `envsetup.sh`; нет опубликованной и собранной версии.
 2. `vendor/aosp`: черновой PR с Bash-командами PE, roomservice, версией, AVB/OTA preflight, bacon. Полная сборка не выполнена.
-3. `build/soong`: рабочая ветка `port/a17-soong-dumpvars-20261103` основана на AOSP17; опубликованы перенос отображения метаданных PE (`f67e76e`) и очистка ZIP SHA-256 sidecars (`cf78167`). Полная сборка Soong/Android17 не подтверждена.
+3. `build/soong`: ветка `port/a17-soong-dumpvars-20261103` основана на AOSP17; опубликованы PE build banner (`f67e76e`), очистка OTA SHA-256 sidecars (`cf78167`) и регрессионный Go-тест (`6215d41`). Полный Go/Soong bootstrap и Android17-сборка не выполнялись.
 4. Остальные исходники `art`, `bionic`, frameworks, services, hardware и prebuilts не могут считаться адаптированными только по имени ветки.
 5. В `vendor/aosp/config/common.mk` подключён `vendor/gms/products/gms.mk`, но отдельного форка `vendor_gms` в 135 нет. Нужна разрешённая, лицензионная стратегия GMS; не копировать проприетарные пакеты без права распространения.
 6. Qualcomm/NXP HAL необходимо проверять только для реально нужных sm8450/mondrian компонентов. Деревья иных телефонов в базу не включать.
 7. Устаревшие GCC 4.9 и старые clang prebuilts нельзя включать в актуальную систему сборки автоматически.
+
+Дополнительные результаты проверки P0: [решения по ART, Bionic и system/core](ANDROID_17_P0_SOURCE_DECISIONS.md).
 
 ## Условия завершения каждого репозитория
 
@@ -38,11 +40,11 @@
 
 | Приоритет | Путь | GitHub | Тип | Действие | Статус |
 |---|---|---|---|---|---|
-| P0 | `art` | [art](https://github.com/PixelExperience-Reborn/art) | Заменяет AOSP17 | Поднять AOSP17 + изучить PE-дельту; проверить сборку и API | Не проверен на Android17 |
-| P0 | `bionic` | [bionic](https://github.com/PixelExperience-Reborn/bionic) | Заменяет AOSP17 | Поднять AOSP17 + изучить PE-дельту; проверить сборку и API | Не проверен на Android17 |
+| P0 | `art` | [art](https://github.com/PixelExperience-Reborn/art) | Заменяет AOSP17 | Основа AOSP17 b753cf97923c; debug/tracing патчи PE требуют проверки | Аудит рисков PE начат; перенос и сборка отсутствуют |
+| P0 | `bionic` | [bionic](https://github.com/PixelExperience-Reborn/bionic) | Заменяет AOSP17 | Основа AOSP17 06356e41c5ed; DNS/linker/scudo изменения PE требуют проверки | Аудит рисков PE начат; перенос и сборка отсутствуют |
 | P0 | `bootable/recovery` | [bootable_recovery](https://github.com/PixelExperience-Reborn/bootable_recovery) | Заменяет AOSP17 | Поднять AOSP17 + изучить PE-дельту; проверить сборку и API | Не проверен на Android17 |
 | P0 | `build/make` | [build](https://github.com/PixelExperience-Reborn/build) | Заменяет AOSP17 | Поднять AOSP17 + изучить PE-дельту; проверить сборку и API | Локальный коммит; не опубликовано |
-| P0 | `build/soong` | [build_soong](https://github.com/PixelExperience-Reborn/build_soong/tree/port/a17-soong-dumpvars-20261103) | Заменяет AOSP17 | Перенос PE на AOSP17, проверка bootstrap, Go-тестов и Build/Make | Частично перенесён: 2 коммита в рабочей ветке; сборка не проверена |
+| P0 | `build/soong` | [build_soong](https://github.com/PixelExperience-Reborn/build_soong/tree/port/a17-soong-dumpvars-20261103) | Заменяет AOSP17 | Завершить Soong bootstrap, Go-тесты и интеграцию с Make | Частичный перенос: 3 коммита в AOSP17-ветке, включая тест; сборка не проверена |
 | P0 | `frameworks/av` | [frameworks_av](https://github.com/PixelExperience-Reborn/frameworks_av) | Заменяет AOSP17 | Поднять AOSP17 + изучить PE-дельту; проверить сборку и API | Не проверен на Android17 |
 | P0 | `frameworks/base` | [frameworks_base](https://github.com/PixelExperience-Reborn/frameworks_base) | Заменяет AOSP17 | Поднять AOSP17 + изучить PE-дельту; проверить сборку и API | Не проверен на Android17 |
 | P0 | `frameworks/native` | [frameworks_native](https://github.com/PixelExperience-Reborn/frameworks_native) | Заменяет AOSP17 | Поднять AOSP17 + изучить PE-дельту; проверить сборку и API | Не проверен на Android17 |
@@ -53,7 +55,7 @@
 | P0 | `packages/modules/Wifi` | [packages_modules_Wifi](https://github.com/PixelExperience-Reborn/packages_modules_Wifi) | Заменяет AOSP17 | Поднять AOSP17 + изучить PE-дельту; проверить сборку и API | Не проверен на Android17 |
 | P0 | `packages/modules/adb` | [packages_modules_adb](https://github.com/PixelExperience-Reborn/packages_modules_adb) | Заменяет AOSP17 | Поднять AOSP17 + изучить PE-дельту; проверить сборку и API | Не проверен на Android17 |
 | P0 | `prebuilts/build-tools` | [prebuilts_build-tools](https://github.com/PixelExperience-Reborn/prebuilts_build-tools) | Заменяет AOSP17 | Поднять AOSP17 + изучить PE-дельту; проверить сборку и API | Не проверен на Android17 |
-| P0 | `system/core` | [system_core](https://github.com/PixelExperience-Reborn/system_core) | Заменяет AOSP17 | Поднять AOSP17 + изучить PE-дельту; проверить сборку и API | Не проверен на Android17 |
+| P0 | `system/core` | [system_core](https://github.com/PixelExperience-Reborn/system_core) | Заменяет AOSP17 | Основа AOSP17 545d2487e381; не переносить ослабление защиты init/SafetyNet | Аудит безопасности начат; перенос и сборка отсутствуют |
 | P0 | `system/security` | [system_security](https://github.com/PixelExperience-Reborn/system_security) | Заменяет AOSP17 | Поднять AOSP17 + изучить PE-дельту; проверить сборку и API | Не проверен на Android17 |
 | P0 | `system/sepolicy` | [system_sepolicy](https://github.com/PixelExperience-Reborn/system_sepolicy) | Заменяет AOSP17 | Поднять AOSP17 + изучить PE-дельту; проверить сборку и API | Не проверен на Android17 |
 | P0 | `system/update_engine` | [system_update_engine](https://github.com/PixelExperience-Reborn/system_update_engine) | Заменяет AOSP17 | Поднять AOSP17 + изучить PE-дельту; проверить сборку и API | Не проверен на Android17 |
