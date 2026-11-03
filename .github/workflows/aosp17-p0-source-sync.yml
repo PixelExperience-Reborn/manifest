@@ -38,9 +38,9 @@ jobs:
           "$RUNNER_TEMP/repo" init -q --no-clone-bundle \
             -u https://github.com/PixelExperience-Reborn/manifest \
             -b port/a17-aosp17-manifest-20261102 \
-            -m aosp17_pe_p0_adb.xml
+            -m aosp17_pe_p0_security.xml
 
-      - name: Fetch sixteen pinned AOSP17 and PE P0 projects
+      - name: Fetch seventeen pinned AOSP17 and PE P0 projects
         shell: bash
         run: |
           set -euo pipefail
@@ -50,7 +50,8 @@ jobs:
             frameworks/native bootable/recovery frameworks/av \
             frameworks/base hardware/interfaces \
             packages/modules/Bluetooth packages/modules/Connectivity \
-            packages/modules/Permission packages/modules/Wifi packages/modules/adb
+            packages/modules/Permission packages/modules/Wifi packages/modules/adb \
+            system/security
 
       - name: Prepare Java 17 for Bluetooth OPP source regression
         uses: actions/setup-java@v4
@@ -84,6 +85,7 @@ jobs:
               "packages/modules/Permission": "f6e6e14b5c4d6e094c205683940a1328384338d9",
               "packages/modules/Wifi": "f228be88b2f0b8ed7a39ca1c4db94bc5aaaecbce",
               "packages/modules/adb": "6daac89c0d6e395f9ff2a032206a21e04421dc5f",
+              "system/security": "a939bea3461e668355b1df87230f9308a8d50837",
           }
           for project, sha in expected.items():
               assert Path(project).is_dir(), f"Missing checkout: {project}"
@@ -166,5 +168,18 @@ jobs:
           assert 'auth_required = android::base::GetBoolProperty("ro.adb.secure", false);' in adb_main
           assert "auth_required = false;  // Bypass authorization" in adb_main
           assert 'ro.adb.secure.recovery' not in adb_main, "Unexpected legacy PE auth patch"
-          print("PASS: sixteen selected P0 projects synced and pinned")
+          # Exact upstream security snapshot: do not silently introduce
+          # historical custom QSSI12 FBE_ICE handling to legacy Keymaster.
+          sec_root = Path("system/security")
+          sec_tree = subprocess.check_output(
+              ["git", "-C", str(sec_root), "rev-parse", "HEAD^{tree}"],
+              text=True,
+          ).strip()
+          assert sec_tree == "dcea0071b9c34f1542c576b3f46fc14d1fb14823", sec_tree
+          km = (sec_root / "keystore2/src/km_compat/km_compat.cpp").read_text()
+          assert "KeyMintDevice::generateKey(" in km
+          assert "convertKeyParametersToLegacy(extractGenerationParams(inKeyParams))" in km
+          assert "mDevice->generateKey(" in km
+          assert "KM_TAG_FBE_ICE" not in km, "Unexpected unreviewed Keymaster FBE_ICE backport"
+          print("PASS: seventeen selected P0 projects synced and pinned")
           PY

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+  <!-- P0: exact official AOSP17 system/security source. The historic PE
+       FBE_ICE Keymaster 4.0 backport is NOT carried until vendor HAL/FBE
+       behavior on mondrian has been independently verified. -->
+  <include name="aosp17_pe_p0_adb.xml" />
+  <remove-project name="platform/system/security" />
+  <remote name="reborn-security" fetch="https://github.com/PixelExperience-Reborn" />
+  <project path="system/security" name="system_security" remote="reborn-security"
+           revision="a939bea3461e668355b1df87230f9308a8d50837"
+           upstream="refs/heads/port/a17-system-security-aosp17-base-20261103"
+           groups="pdk" />
+</manifest>
