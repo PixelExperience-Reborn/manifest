@@ -38,9 +38,9 @@ jobs:
           "$RUNNER_TEMP/repo" init -q --no-clone-bundle \
             -u https://github.com/PixelExperience-Reborn/manifest \
             -b port/a17-aosp17-manifest-20261102 \
-            -m aosp17_pe_p0_sepolicy.xml
+            -m aosp17_pe_p0_update_engine.xml
 
-      - name: Fetch eighteen pinned AOSP17 and PE P0 projects
+      - name: Fetch nineteen pinned AOSP17 and PE P0 projects
         shell: bash
         run: |
           set -euo pipefail
@@ -51,7 +51,7 @@ jobs:
             frameworks/base hardware/interfaces \
             packages/modules/Bluetooth packages/modules/Connectivity \
             packages/modules/Permission packages/modules/Wifi packages/modules/adb \
-            system/security system/sepolicy
+            system/security system/sepolicy system/update_engine
 
       - name: Prepare Java 17 for Bluetooth OPP source regression
         uses: actions/setup-java@v4
@@ -87,6 +87,7 @@ jobs:
               "packages/modules/adb": "6daac89c0d6e395f9ff2a032206a21e04421dc5f",
               "system/security": "a939bea3461e668355b1df87230f9308a8d50837",
               "system/sepolicy": "f12e84e0ba4fe3d1cc093af15c41ceb8dba8cc69",
+              "system/update_engine": "c0309b604010b9b2e2c58d684e86b6090b74ad77",
           }
           for project, sha in expected.items():
               assert Path(project).is_dir(), f"Missing checkout: {project}"
@@ -193,5 +194,21 @@ jobs:
           assert "FS_IOC_REMOVE_ENCRYPTION_KEY" in vold_policy
           wifi_props = (policy / "private/property_contexts").read_text()
           assert "wifi.interface.           u:object_r:wifi_hal_prop:s0 prefix string" in wifi_props
-          print("PASS: eighteen selected P0 projects synced and pinned")
+          # Preserve official OTA signature verification, metadata
+          # authentication and explicit debug-only downgrade permission.
+          ota_root = Path("system/update_engine")
+          ota_tree = subprocess.check_output(
+              ["git", "-C", str(ota_root), "rev-parse", "HEAD^{tree}"], text=True
+          ).strip()
+          assert ota_tree == "9eb8e796382bcd0b4366526766ccd08d15503ab2", ota_tree
+          hardware = (ota_root / "aosp/hardware_android.cc").read_text()
+          assert 'GetBoolProperty("ro.ota.allow_downgrade", false) &&' in hardware
+          assert 'GetBoolProperty("ro.debuggable", false);' in hardware
+          verifier = (ota_root / "payload_consumer/payload_verifier.cc").read_text()
+          assert "TEST_AND_RETURN_FALSE(!public_keys_.empty());" in verifier
+          assert "Payload signature verification skipped" not in verifier
+          delta = (ota_root / "payload_consumer/delta_performer.cc").read_text()
+          assert "ValidateMetadataSignature(" in delta
+          assert "payload_verifier->VerifySignature(" in delta
+          print("PASS: nineteen selected P0 projects synced and pinned")
           PY
