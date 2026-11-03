@@ -27,3 +27,9 @@
 5. Only port an old PE UI/API delta to a separate reviewed A17 branch if it offers proven value and source/test compatibility. Never label a Git-tree or XML source check as a successful Soong Android build.
 
 **Unverified:** entire Android17 checkout and compilation, Settings consumer linkage, on-device time zone picker display/behavior, CTS/VTS and mondrian boot. Manifest remains Draft.
+
+## Verified source CI and optional legacy delta (2026-11-04)
+
+- [21-profile structure #41742535222](https://github.com/PixelExperience-Reborn/manifest/actions/runs/41742535222) **PASS**, [targeted source sync #41742535131](https://github.com/PixelExperience-Reborn/manifest/actions/runs/41742535131) **PASS**, and [22-project selected checkout #41742534953](https://github.com/PixelExperience-Reborn/manifest/actions/runs/41742534953) **PASS**.
+- We also created a **separate, unmerged PE UI candidate** [`port/a17-timezonepicker-pe-theme-candidate-20261104`](https://github.com/PixelExperience-Reborn/frameworks_opt_timezonepicker/tree/port/a17-timezonepicker-pe-theme-candidate-20261104) on top of the official snapshot. Its only Android source change combines the historical `itemBackground` and `selectableItemBackground` foreground. [CI #41742744312](https://github.com/PixelExperience-Reborn/frameworks_opt_timezonepicker/actions/runs/41742744312) **PASS** verifies the one-file source delta, parses resources and protects old `DialogFragment`/`sdk_version` API behavior. The manifest **continues to use the clean official source**, not this optional branch.
+- Before considering the UI delta production-ready, it still needs a real Android17 resource/Soong build, Settings consumer integration, light/dark theme rendering, keyboard and TalkBack focus, localization and selection tests on mondrian. Static CI cannot establish these.
