@@ -15,15 +15,21 @@
 
 ## Что сделано и что блокирует базу
 
-1. `build/make`: подготовлен локальный AOSP17-commit с PE `envsetup.sh`; нет опубликованной и собранной версии.
+1. `build/make`: подготовлен локальный AOSP17-commit с PE `envsetup.sh`; нет опубликованной и собранной версии. В изолированных профилях используется оригинальный AOSP17 build/make до опубликования проверенной PE-ветки.
 2. `vendor/aosp`: черновой PR с Bash-командами PE, roomservice, версией, AVB/OTA preflight, bacon. Полная сборка не выполнена.
 3. `build/soong`: ветка `port/a17-soong-dumpvars-20261103` основана на AOSP17; опубликованы PE build banner (`f67e76e`), очистка OTA SHA-256 sidecars (`cf78167`) и регрессионный Go-тест (`6215d41`). Полный Go/Soong bootstrap и Android17-сборка не выполнялись.
 4. Остальные исходники `art`, `bionic`, frameworks, services, hardware и prebuilts не могут считаться адаптированными только по имени ветки.
-5. В `vendor/aosp/config/common.mk` подключён `vendor/gms/products/gms.mk`, но отдельного форка `vendor_gms` в 135 нет. Нужна разрешённая, лицензионная стратегия GMS; не копировать проприетарные пакеты без права распространения.
+5. `vendor/aosp`: доступ к отсутствующему проприетарному `vendor/gms/products/gms.mk` теперь явно зависит от `WITH_GMS=true` и проверяется на наличие; Google-only свойства, Gboard и SetupWizard также условны. Лицензионный источник GMS и полная проверка product.mk по-прежнему отсутствуют.
 6. Qualcomm/NXP HAL необходимо проверять только для реально нужных sm8450/mondrian компонентов. Деревья иных телефонов в базу не включать.
 7. Устаревшие GCC 4.9 и старые clang prebuilts нельзя включать в актуальную систему сборки автоматически.
 
 Дополнительные результаты проверки P0: [решения по ART, Bionic и system/core](ANDROID_17_P0_SOURCE_DECISIONS.md).
+
+## Изолированная основа для проверки AOSP 17
+
+Созданы отдельные профили [AOSP17 Reference](../aosp17_reference.xml) и [AOSP17 + PE Soong Bootstrap](../aosp17_pe_bootstrap.xml), каждый с ожидаемыми **1071 активными проектами** (официальные AOSP 17, минус 16 нерелевантных деревьев; второй профиль заменяет только Soong). Данные профили не подменяют и не удаляют 135 исторических PE-форков. Их назначение — исключить Android14-исходники из первичного AOSP17 bootstrap и подключать мигрированные PE-проекты после проверок. Подробности: [bootstrap profiles](ANDROID_17_BOOTSTRAP_PROFILES.md).
+
+**Результат `repo sync` и компиляция отсутствуют; ни один профиль пока нельзя называть готовой PixelExperience A17.**
 
 ## Условия завершения каждого репозитория
 
@@ -59,7 +65,7 @@
 | P0 | `system/security` | [system_security](https://github.com/PixelExperience-Reborn/system_security) | Заменяет AOSP17 | Поднять AOSP17 + изучить PE-дельту; проверить сборку и API | Не проверен на Android17 |
 | P0 | `system/sepolicy` | [system_sepolicy](https://github.com/PixelExperience-Reborn/system_sepolicy) | Заменяет AOSP17 | Поднять AOSP17 + изучить PE-дельту; проверить сборку и API | Не проверен на Android17 |
 | P0 | `system/update_engine` | [system_update_engine](https://github.com/PixelExperience-Reborn/system_update_engine) | Заменяет AOSP17 | Поднять AOSP17 + изучить PE-дельту; проверить сборку и API | Не проверен на Android17 |
-| P0 | `vendor/aosp` | [vendor_aosp](https://github.com/PixelExperience-Reborn/vendor_aosp) | Дополнение PE | Поднять AOSP17 + изучить PE-дельту; проверить сборку и API | Черновой PR #1; Linux-сборка не проверена |
+| P0 | `vendor/aosp` | [vendor_aosp](https://github.com/PixelExperience-Reborn/vendor_aosp/tree/port/a17-vendor-envsetup-20261102) | Дополнение PE | Проверить PE-конфигурацию, GMS/без-GMS и полную product-сборку на AOSP17 | Черновой PR #1, явная GMS-изоляция; Linux-сборка не проверена |
 | P1 | `device/custom/sepolicy` | [device_custom_sepolicy](https://github.com/PixelExperience-Reborn/device_custom_sepolicy) | Дополнение PE | Перенести необходимые PE-изменения и проверить Android17 API | Не проверен на Android17 |
 | P1 | `frameworks/opt/telephony` | [frameworks_opt_telephony](https://github.com/PixelExperience-Reborn/frameworks_opt_telephony) | Заменяет AOSP17 | Перенести необходимые PE-изменения и проверить Android17 API | Не проверен на Android17 |
 | P1 | `frameworks/opt/timezonepicker` | [frameworks_opt_timezonepicker](https://github.com/PixelExperience-Reborn/frameworks_opt_timezonepicker) | Заменяет AOSP17 | Перенести необходимые PE-изменения и проверить Android17 API | Не проверен на Android17 |
