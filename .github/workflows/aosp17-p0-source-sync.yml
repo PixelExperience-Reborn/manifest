@@ -12,6 +12,7 @@ on:
       - aosp17_pe_p0_bluetooth.xml
       - aosp17_pe_p0_connectivity.xml
       - aosp17_pe_p0_permission.xml
+      - aosp17_pe_p0_wifi.xml
   pull_request:
     paths:
       - .github/workflows/aosp17-p0-source-sync.yml
@@ -21,6 +22,7 @@ on:
       - aosp17_pe_p0_bluetooth.xml
       - aosp17_pe_p0_connectivity.xml
       - aosp17_pe_p0_permission.xml
+      - aosp17_pe_p0_wifi.xml
 
 permissions:
   contents: read
@@ -48,9 +50,9 @@ jobs:
           "$RUNNER_TEMP/repo" init -q --no-clone-bundle \
             -u https://github.com/PixelExperience-Reborn/manifest \
             -b port/a17-aosp17-manifest-20261102 \
-            -m aosp17_pe_p0_permission.xml
+            -m aosp17_pe_p0_wifi.xml
 
-      - name: Fetch fourteen pinned AOSP17 and PE P0 projects
+      - name: Fetch fifteen pinned AOSP17 and PE P0 projects
         shell: bash
         run: |
           set -euo pipefail
@@ -60,7 +62,7 @@ jobs:
             frameworks/native bootable/recovery frameworks/av \
             frameworks/base hardware/interfaces \
             packages/modules/Bluetooth packages/modules/Connectivity \
-            packages/modules/Permission
+            packages/modules/Permission packages/modules/Wifi
 
       - name: Prepare Java 17 for Bluetooth OPP source regression
         uses: actions/setup-java@v4
@@ -92,6 +94,7 @@ jobs:
               "packages/modules/Bluetooth": "e7c2f47e3c73c4f2b83f03145441e419f45124b3",
               "packages/modules/Connectivity": "701882b51546230c6c32c9654a3f7b9814429e13",
               "packages/modules/Permission": "f6e6e14b5c4d6e094c205683940a1328384338d9",
+              "packages/modules/Wifi": "f228be88b2f0b8ed7a39ca1c4db94bc5aaaecbce",
           }
           for project, sha in expected.items():
               assert Path(project).is_dir(), f"Missing checkout: {project}"
@@ -144,5 +147,22 @@ jobs:
               source = (permission_root / role).read_text()
               assert "UserUtils.isManagedProfile(user, context)" in source, role
               assert "grantNotificationAccessForPackageAsUser" in source, role
-          print("PASS: fourteen selected P0 projects synced and pinned")
+          # AOSP17 WiFi is a zero-delta exact source mirror. Check the official
+          # tree, default regulatory notifications, and permission gate.
+          wifi_root = Path("packages/modules/Wifi")
+          wifi_tree = subprocess.check_output(
+              ["git", "-C", str(wifi_root), "rev-parse", "HEAD^{tree}"],
+              text=True,
+          ).strip()
+          assert wifi_tree == "9d1062a94a9d7c7c4f4ef86a834154e2001f8114", wifi_tree
+          cc = (wifi_root / "service/java/com/android/server/wifi/WifiCountryCode.java").read_text()
+          method = cc.split("private void handleCountryCodeChanged(String country)", 1)[1]
+          method = method.split("\n    }", 1)[0]
+          assert "mDriverCountryCode = country;" in method
+          assert "notifyListener(country);" in method
+          p2p = (wifi_root / "service/java/com/android/server/wifi/p2p/WifiP2pServiceImpl.java").read_text()
+          miracast = p2p.split("public void setMiracastMode(int mode)", 1)[1]
+          miracast = miracast.split("\n    }", 1)[0]
+          assert "checkConfigureWifiDisplayPermission()" in miracast
+          print("PASS: fifteen selected P0 projects synced and pinned")
           PY

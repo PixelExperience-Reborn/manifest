@@ -2,7 +2,7 @@
 
 **Date:** 2026-11-03. **Target device:** POCO F5 Pro / Redmi K60 (`mondrian`) only.
 
-**Status:** official AOSP17 source commit/tree identified and source import workflow launched; no verified clean Wi-Fi snapshot ref at the time of writing. No PE Wi-Fi patch has been applied, no Wi-Fi Android17 build or device tests have run.
+**Status:** exact official AOSP17 source tree independently verified and published in a new root snapshot, with **zero PE functional patches**. Wi-Fi profile and source sync validation are pending; Android Wi-Fi module/APEX build and device tests have not run.
 
 ## Exact source identity
 
@@ -31,3 +31,10 @@
 6. On **mondrian** test 2.4/5/6 GHz only as hardware/region support permits, WPA2/WPA3, scan/roam/sleep/resume, hotspot, tethering, STA+P2P, Miracast start/stop/remote display, multi-STA if supported, MAC privacy, airplane mode and recovery from disconnect.
 
 **No bootable-ROM claim:** source sync is not equivalent to building Wi-Fi APEX or validating vendor blobs, SELinux/VINTF, recovery/OTA, device boot or RF performance.
+
+## Verified exact source snapshot and opt-in profile
+
+- [GitHub Actions import #41717006140](https://github.com/PixelExperience-Reborn/packages_modules_Wifi/actions/runs/41717006140) **passed**.
+- The GitHub Git API independently reports [snapshot commit `f228be88b2f0b8ed7a39ca1c4db94bc5aaaecbce`](https://github.com/PixelExperience-Reborn/packages_modules_Wifi/commit/f228be88b2f0b8ed7a39ca1c4db94bc5aaaecbce) as a root with tree **`9d1062a94a9d7c7c4f4ef86a834154e2001f8114`**, exactly matching the Google tag. Its commit SHA is different from the official Google commit by design; historical PE `seventeen` stays intact.
+- [`aosp17_pe_p0_wifi.xml`](../aosp17_pe_p0_wifi.xml) extends the Permission graph and overrides only `packages/modules/Wifi` to immutable snapshot `f228be88b2f0b8ed7a39ca1c4db94bc5aaaecbce`. No functional Wi-Fi source code is changed and no Wi-Fi delta PR is necessary.
+- [Targeted Linux source CI](../.github/workflows/aosp17-p0-wifi-source-sync.yml) checks both exact commit and tree SHA and verifies original country-code change notifications and access-control permission checks on WFD mode changes. [Joint 15-project source CI](../.github/workflows/aosp17-p0-source-sync.yml) repeats the source checks. Results are **not assumed** until the actual GitHub Actions finish.
