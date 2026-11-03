@@ -38,9 +38,9 @@ jobs:
           "$RUNNER_TEMP/repo" init -q --no-clone-bundle \
             -u https://github.com/PixelExperience-Reborn/manifest \
             -b port/a17-aosp17-manifest-20261102 \
-            -m aosp17_pe_p0_security.xml
+            -m aosp17_pe_p0_sepolicy.xml
 
-      - name: Fetch seventeen pinned AOSP17 and PE P0 projects
+      - name: Fetch eighteen pinned AOSP17 and PE P0 projects
         shell: bash
         run: |
           set -euo pipefail
@@ -51,7 +51,7 @@ jobs:
             frameworks/base hardware/interfaces \
             packages/modules/Bluetooth packages/modules/Connectivity \
             packages/modules/Permission packages/modules/Wifi packages/modules/adb \
-            system/security
+            system/security system/sepolicy
 
       - name: Prepare Java 17 for Bluetooth OPP source regression
         uses: actions/setup-java@v4
@@ -86,6 +86,7 @@ jobs:
               "packages/modules/Wifi": "f228be88b2f0b8ed7a39ca1c4db94bc5aaaecbce",
               "packages/modules/adb": "6daac89c0d6e395f9ff2a032206a21e04421dc5f",
               "system/security": "a939bea3461e668355b1df87230f9308a8d50837",
+              "system/sepolicy": "f12e84e0ba4fe3d1cc093af15c41ceb8dba8cc69",
           }
           for project, sha in expected.items():
               assert Path(project).is_dir(), f"Missing checkout: {project}"
@@ -181,5 +182,16 @@ jobs:
           assert "convertKeyParametersToLegacy(extractGenerationParams(inKeyParams))" in km
           assert "mDevice->generateKey(" in km
           assert "KM_TAG_FBE_ICE" not in km, "Unexpected unreviewed Keymaster FBE_ICE backport"
-          print("PASS: seventeen selected P0 projects synced and pinned")
+          # Preserve official AOSP17 SELinux neverallow and encryption-key rules.
+          policy = Path("system/sepolicy")
+          policy_tree = subprocess.check_output(
+              ["git", "-C", str(policy), "rev-parse", "HEAD^{tree}"], text=True
+          ).strip()
+          assert policy_tree == "f0e857a84958d5472dee9187c54f7b4f191a415a", policy_tree
+          vold_policy = (policy / "private/vold.te").read_text()
+          assert "FS_IOC_ADD_ENCRYPTION_KEY" in vold_policy
+          assert "FS_IOC_REMOVE_ENCRYPTION_KEY" in vold_policy
+          wifi_props = (policy / "private/property_contexts").read_text()
+          assert "wifi.interface.           u:object_r:wifi_hal_prop:s0 prefix string" in wifi_props
+          print("PASS: eighteen selected P0 projects synced and pinned")
           PY

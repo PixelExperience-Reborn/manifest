@@ -25,6 +25,7 @@ on:
       - aosp17_pe_p0_wifi.xml
       - aosp17_pe_p0_adb.xml
       - aosp17_pe_p0_security.xml
+      - aosp17_pe_p0_sepolicy.xml
       - .github/workflows/aosp17-manifest-structure.yml
 
 permissions:
@@ -68,6 +69,8 @@ jobs:
           - profile: aosp17_pe_p0_adb.xml
             expected: 1069
           - profile: aosp17_pe_p0_security.xml
+            expected: 1069
+          - profile: aosp17_pe_p0_sepolicy.xml
             expected: 1069
     steps:
       - name: Install official repo client
@@ -113,86 +116,93 @@ jobs:
           assert indexed["build/make"].get("name") == "platform/build", "core Make is not AOSP17"
           for path in ("art", "bionic", "system/core"):
               project = indexed[path]
-              if profile in ("aosp17_pe_p0_native.xml", "aosp17_pe_p0_core.xml", "aosp17_pe_p0_frameworks.xml", "aosp17_pe_p0_recovery.xml", "aosp17_pe_p0_av.xml", "aosp17_pe_p0_base.xml", "aosp17_pe_p0_hardware.xml", "aosp17_pe_p0_bluetooth.xml", "aosp17_pe_p0_connectivity.xml", "aosp17_pe_p0_permission.xml", "aosp17_pe_p0_wifi.xml", "aosp17_pe_p0_adb.xml", "aosp17_pe_p0_security.xml") and path in ("art", "bionic"):
+              if profile in ("aosp17_pe_p0_native.xml", "aosp17_pe_p0_core.xml", "aosp17_pe_p0_frameworks.xml", "aosp17_pe_p0_recovery.xml", "aosp17_pe_p0_av.xml", "aosp17_pe_p0_base.xml", "aosp17_pe_p0_hardware.xml", "aosp17_pe_p0_bluetooth.xml", "aosp17_pe_p0_connectivity.xml", "aosp17_pe_p0_permission.xml", "aosp17_pe_p0_wifi.xml", "aosp17_pe_p0_adb.xml", "aosp17_pe_p0_security.xml", "aosp17_pe_p0_sepolicy.xml") and path in ("art", "bionic"):
                   assert project.get("name") == path, path
                   expected_commit = {
                       "art": "b753cf97923c3695338d21466fa14c57b480a59a",
                       "bionic": "06356e41c5ed7b12220b24c05ba4fdb873b126a7",
                   }[path]
                   assert project.get("revision") == expected_commit, path
-              elif profile in ("aosp17_pe_p0_core.xml", "aosp17_pe_p0_frameworks.xml", "aosp17_pe_p0_recovery.xml", "aosp17_pe_p0_av.xml", "aosp17_pe_p0_base.xml", "aosp17_pe_p0_hardware.xml", "aosp17_pe_p0_bluetooth.xml", "aosp17_pe_p0_connectivity.xml", "aosp17_pe_p0_permission.xml", "aosp17_pe_p0_wifi.xml", "aosp17_pe_p0_adb.xml", "aosp17_pe_p0_security.xml") and path == "system/core":
+              elif profile in ("aosp17_pe_p0_core.xml", "aosp17_pe_p0_frameworks.xml", "aosp17_pe_p0_recovery.xml", "aosp17_pe_p0_av.xml", "aosp17_pe_p0_base.xml", "aosp17_pe_p0_hardware.xml", "aosp17_pe_p0_bluetooth.xml", "aosp17_pe_p0_connectivity.xml", "aosp17_pe_p0_permission.xml", "aosp17_pe_p0_wifi.xml", "aosp17_pe_p0_adb.xml", "aosp17_pe_p0_security.xml", "aosp17_pe_p0_sepolicy.xml") and path == "system/core":
                   assert project.get("name") == "system_core"
                   assert project.get("revision") == "8e0f22aaac0ee4114a83646e2c96d07578145bfa"
               else:
                   assert project.get("name").startswith("platform/"), path
-          if profile in ("aosp17_pe_p0_frameworks.xml", "aosp17_pe_p0_recovery.xml", "aosp17_pe_p0_av.xml", "aosp17_pe_p0_base.xml", "aosp17_pe_p0_hardware.xml", "aosp17_pe_p0_bluetooth.xml", "aosp17_pe_p0_connectivity.xml", "aosp17_pe_p0_permission.xml", "aosp17_pe_p0_wifi.xml", "aosp17_pe_p0_adb.xml", "aosp17_pe_p0_security.xml"):
+          if profile in ("aosp17_pe_p0_frameworks.xml", "aosp17_pe_p0_recovery.xml", "aosp17_pe_p0_av.xml", "aosp17_pe_p0_base.xml", "aosp17_pe_p0_hardware.xml", "aosp17_pe_p0_bluetooth.xml", "aosp17_pe_p0_connectivity.xml", "aosp17_pe_p0_permission.xml", "aosp17_pe_p0_wifi.xml", "aosp17_pe_p0_adb.xml", "aosp17_pe_p0_security.xml", "aosp17_pe_p0_sepolicy.xml"):
               assert indexed["frameworks/native"].get("name") == "frameworks_native"
               assert indexed["frameworks/native"].get("revision") == "ae266dcb706d083868578cfedce381ef44488a07"
           else:
               assert indexed["frameworks/native"].get("name") == "platform/frameworks/native"
-          if profile in ("aosp17_pe_p0_recovery.xml", "aosp17_pe_p0_av.xml", "aosp17_pe_p0_base.xml", "aosp17_pe_p0_hardware.xml", "aosp17_pe_p0_bluetooth.xml", "aosp17_pe_p0_connectivity.xml", "aosp17_pe_p0_permission.xml", "aosp17_pe_p0_wifi.xml", "aosp17_pe_p0_adb.xml", "aosp17_pe_p0_security.xml"):
+          if profile in ("aosp17_pe_p0_recovery.xml", "aosp17_pe_p0_av.xml", "aosp17_pe_p0_base.xml", "aosp17_pe_p0_hardware.xml", "aosp17_pe_p0_bluetooth.xml", "aosp17_pe_p0_connectivity.xml", "aosp17_pe_p0_permission.xml", "aosp17_pe_p0_wifi.xml", "aosp17_pe_p0_adb.xml", "aosp17_pe_p0_security.xml", "aosp17_pe_p0_sepolicy.xml"):
               assert indexed["bootable/recovery"].get("name") == "bootable_recovery"
               assert indexed["bootable/recovery"].get("revision") == "0ed8dc4f93020555afdfc19141263ca40629ef74"
           else:
               assert indexed["bootable/recovery"].get("name") == "platform/bootable/recovery"
-          if profile in ("aosp17_pe_p0_av.xml", "aosp17_pe_p0_base.xml", "aosp17_pe_p0_hardware.xml", "aosp17_pe_p0_bluetooth.xml", "aosp17_pe_p0_connectivity.xml", "aosp17_pe_p0_permission.xml", "aosp17_pe_p0_wifi.xml", "aosp17_pe_p0_adb.xml", "aosp17_pe_p0_security.xml"):
+          if profile in ("aosp17_pe_p0_av.xml", "aosp17_pe_p0_base.xml", "aosp17_pe_p0_hardware.xml", "aosp17_pe_p0_bluetooth.xml", "aosp17_pe_p0_connectivity.xml", "aosp17_pe_p0_permission.xml", "aosp17_pe_p0_wifi.xml", "aosp17_pe_p0_adb.xml", "aosp17_pe_p0_security.xml", "aosp17_pe_p0_sepolicy.xml"):
               assert indexed["frameworks/av"].get("name") == "frameworks_av"
               assert indexed["frameworks/av"].get("revision") == "5db9a6151f33cacb810a8fe7615be8c23d3fa858"
           else:
               assert indexed["frameworks/av"].get("name") == "platform/frameworks/av"
           framework_base = indexed["frameworks/base"]
-          if profile in ("aosp17_pe_p0_base.xml", "aosp17_pe_p0_hardware.xml", "aosp17_pe_p0_bluetooth.xml", "aosp17_pe_p0_connectivity.xml", "aosp17_pe_p0_permission.xml", "aosp17_pe_p0_wifi.xml", "aosp17_pe_p0_adb.xml", "aosp17_pe_p0_security.xml"):
+          if profile in ("aosp17_pe_p0_base.xml", "aosp17_pe_p0_hardware.xml", "aosp17_pe_p0_bluetooth.xml", "aosp17_pe_p0_connectivity.xml", "aosp17_pe_p0_permission.xml", "aosp17_pe_p0_wifi.xml", "aosp17_pe_p0_adb.xml", "aosp17_pe_p0_security.xml", "aosp17_pe_p0_sepolicy.xml"):
               assert framework_base.get("name") == "frameworks_base"
               assert framework_base.get("revision") == "382d5c9c0b20bbdb67b70176bce02c7e64767b0c"
           else:
               assert framework_base.get("name") == "platform/frameworks/base"
           hardware = indexed["hardware/interfaces"]
-          if profile in ("aosp17_pe_p0_hardware.xml", "aosp17_pe_p0_bluetooth.xml", "aosp17_pe_p0_connectivity.xml", "aosp17_pe_p0_permission.xml", "aosp17_pe_p0_wifi.xml", "aosp17_pe_p0_adb.xml", "aosp17_pe_p0_security.xml"):
+          if profile in ("aosp17_pe_p0_hardware.xml", "aosp17_pe_p0_bluetooth.xml", "aosp17_pe_p0_connectivity.xml", "aosp17_pe_p0_permission.xml", "aosp17_pe_p0_wifi.xml", "aosp17_pe_p0_adb.xml", "aosp17_pe_p0_security.xml", "aosp17_pe_p0_sepolicy.xml"):
               assert hardware.get("name") == "hardware_interfaces", hardware.attrib
               assert hardware.get("revision") == "735e364cbdd00b0d6e4dc33ea0866dbb6d971a11", hardware.attrib
           else:
               assert hardware.get("name") == "platform/hardware/interfaces", hardware.attrib
           bluetooth = indexed["packages/modules/Bluetooth"]
-          if profile in ("aosp17_pe_p0_bluetooth.xml", "aosp17_pe_p0_connectivity.xml", "aosp17_pe_p0_permission.xml", "aosp17_pe_p0_wifi.xml", "aosp17_pe_p0_adb.xml", "aosp17_pe_p0_security.xml"):
+          if profile in ("aosp17_pe_p0_bluetooth.xml", "aosp17_pe_p0_connectivity.xml", "aosp17_pe_p0_permission.xml", "aosp17_pe_p0_wifi.xml", "aosp17_pe_p0_adb.xml", "aosp17_pe_p0_security.xml", "aosp17_pe_p0_sepolicy.xml"):
               assert bluetooth.get("name") == "packages_modules_Bluetooth", bluetooth.attrib
               assert bluetooth.get("revision") == "e7c2f47e3c73c4f2b83f03145441e419f45124b3", bluetooth.attrib
           else:
               assert bluetooth.get("name") == "platform/packages/modules/Bluetooth", bluetooth.attrib
           connectivity = indexed["packages/modules/Connectivity"]
-          if profile in ("aosp17_pe_p0_connectivity.xml", "aosp17_pe_p0_permission.xml", "aosp17_pe_p0_wifi.xml", "aosp17_pe_p0_adb.xml", "aosp17_pe_p0_security.xml"):
+          if profile in ("aosp17_pe_p0_connectivity.xml", "aosp17_pe_p0_permission.xml", "aosp17_pe_p0_wifi.xml", "aosp17_pe_p0_adb.xml", "aosp17_pe_p0_security.xml", "aosp17_pe_p0_sepolicy.xml"):
               assert connectivity.get("name") == "packages_modules_Connectivity", connectivity.attrib
               assert connectivity.get("revision") == "701882b51546230c6c32c9654a3f7b9814429e13", connectivity.attrib
               assert connectivity.get("groups") == "pdk-cw-fs,pdk-fs", connectivity.attrib
           else:
               assert connectivity.get("name") == "platform/packages/modules/Connectivity", connectivity.attrib
           permission = indexed["packages/modules/Permission"]
-          if profile in ("aosp17_pe_p0_permission.xml", "aosp17_pe_p0_wifi.xml", "aosp17_pe_p0_adb.xml", "aosp17_pe_p0_security.xml"):
+          if profile in ("aosp17_pe_p0_permission.xml", "aosp17_pe_p0_wifi.xml", "aosp17_pe_p0_adb.xml", "aosp17_pe_p0_security.xml", "aosp17_pe_p0_sepolicy.xml"):
               assert permission.get("name") == "packages_modules_Permission", permission.attrib
               assert permission.get("revision") == "f6e6e14b5c4d6e094c205683940a1328384338d9", permission.attrib
               assert permission.get("groups") == "pdk-cw-fs,pdk-fs", permission.attrib
           else:
               assert permission.get("name") == "platform/packages/modules/Permission", permission.attrib
           wifi = indexed["packages/modules/Wifi"]
-          if profile in ("aosp17_pe_p0_wifi.xml", "aosp17_pe_p0_adb.xml", "aosp17_pe_p0_security.xml"):
+          if profile in ("aosp17_pe_p0_wifi.xml", "aosp17_pe_p0_adb.xml", "aosp17_pe_p0_security.xml", "aosp17_pe_p0_sepolicy.xml"):
               assert wifi.get("name") == "packages_modules_Wifi", wifi.attrib
               assert wifi.get("revision") == "f228be88b2f0b8ed7a39ca1c4db94bc5aaaecbce", wifi.attrib
               assert wifi.get("groups") == "pdk-cw-fs,pdk-fs,sysui-studio", wifi.attrib
           else:
               assert wifi.get("name") == "platform/packages/modules/Wifi", wifi.attrib
           adb = indexed["packages/modules/adb"]
-          if profile in ("aosp17_pe_p0_adb.xml", "aosp17_pe_p0_security.xml"):
+          if profile in ("aosp17_pe_p0_adb.xml", "aosp17_pe_p0_security.xml", "aosp17_pe_p0_sepolicy.xml"):
               assert adb.get("name") == "packages_modules_adb", adb.attrib
               assert adb.get("revision") == "6daac89c0d6e395f9ff2a032206a21e04421dc5f", adb.attrib
               assert adb.get("groups") == "pdk", adb.attrib
           else:
               assert adb.get("name") == "platform/packages/modules/adb", adb.attrib
           security = indexed["system/security"]
-          if profile == "aosp17_pe_p0_security.xml":
+          if profile in ("aosp17_pe_p0_security.xml", "aosp17_pe_p0_sepolicy.xml"):
               assert security.get("name") == "system_security", security.attrib
               assert security.get("revision") == "a939bea3461e668355b1df87230f9308a8d50837", security.attrib
               assert security.get("groups") == "pdk", security.attrib
           else:
               assert security.get("name") == "platform/system/security", security.attrib
+          sepolicy = indexed["system/sepolicy"]
+          if profile == "aosp17_pe_p0_sepolicy.xml":
+              assert sepolicy.get("name") == "system_sepolicy", sepolicy.attrib
+              assert sepolicy.get("revision") == "f12e84e0ba4fe3d1cc093af15c41ceb8dba8cc69", sepolicy.attrib
+              assert sepolicy.get("groups") == "pdk", sepolicy.attrib
+          else:
+              assert sepolicy.get("name") == "platform/system/sepolicy", sepolicy.attrib
           assert not any(path.startswith("device/google/") or
                          path.startswith("device/linaro/") or
                          path.startswith("device/amlogic/") for path in paths)
@@ -203,7 +213,7 @@ jobs:
               soong = indexed["build/soong"]
               assert soong.get("name") == "build_soong"
               assert soong.get("revision") == "6215d41c790a463b7795ce81ac77204c238cbf48"
-              if profile in ("aosp17_pe_envsetup.xml", "aosp17_pe_p0_native.xml", "aosp17_pe_p0_core.xml", "aosp17_pe_p0_frameworks.xml", "aosp17_pe_p0_recovery.xml", "aosp17_pe_p0_av.xml", "aosp17_pe_p0_base.xml", "aosp17_pe_p0_hardware.xml", "aosp17_pe_p0_bluetooth.xml", "aosp17_pe_p0_connectivity.xml", "aosp17_pe_p0_permission.xml", "aosp17_pe_p0_wifi.xml", "aosp17_pe_p0_adb.xml", "aosp17_pe_p0_security.xml"):
+              if profile in ("aosp17_pe_envsetup.xml", "aosp17_pe_p0_native.xml", "aosp17_pe_p0_core.xml", "aosp17_pe_p0_frameworks.xml", "aosp17_pe_p0_recovery.xml", "aosp17_pe_p0_av.xml", "aosp17_pe_p0_base.xml", "aosp17_pe_p0_hardware.xml", "aosp17_pe_p0_bluetooth.xml", "aosp17_pe_p0_connectivity.xml", "aosp17_pe_p0_permission.xml", "aosp17_pe_p0_wifi.xml", "aosp17_pe_p0_adb.xml", "aosp17_pe_p0_security.xml", "aosp17_pe_p0_sepolicy.xml"):
                   vendor = indexed["vendor/aosp"]
                   assert vendor.get("name") == "vendor_aosp"
                   assert len(vendor.get("revision", "")) == 40
