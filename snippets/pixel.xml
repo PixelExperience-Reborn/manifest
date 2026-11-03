@@ -36,7 +36,7 @@
     <linkfile src="target" dest="build/target" />
     <linkfile src="tools" dest="build/tools" />
   </project>
-  <project path="build/soong" name="build_soong" remote="reborn">
+  <project path="build/soong" name="build_soong" remote="reborn" revision="refs/heads/port/a17-soong-dumpvars-20261103">
     <linkfile src="root.bp" dest="Android.bp" />
     <linkfile src="bootstrap.bash" dest="bootstrap.bash" />
   </project>
