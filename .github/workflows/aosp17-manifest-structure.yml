@@ -10,6 +10,7 @@ on:
       - aosp17_pe_bootstrap.xml
       - aosp17_pe_envsetup.xml
       - aosp17_pe_p0_native.xml
+      - aosp17_pe_p0_core.xml
       - .github/workflows/aosp17-manifest-structure.yml
 
 permissions:
@@ -29,6 +30,8 @@ jobs:
           - profile: aosp17_pe_envsetup.xml
             expected: 1069
           - profile: aosp17_pe_p0_native.xml
+            expected: 1069
+          - profile: aosp17_pe_p0_core.xml
             expected: 1069
     steps:
       - name: Install official repo client
@@ -74,13 +77,16 @@ jobs:
           assert indexed["build/make"].get("name") == "platform/build", "core Make is not AOSP17"
           for path in ("art", "bionic", "system/core"):
               project = indexed[path]
-              if profile == "aosp17_pe_p0_native.xml" and path in ("art", "bionic"):
+              if profile in ("aosp17_pe_p0_native.xml", "aosp17_pe_p0_core.xml") and path in ("art", "bionic"):
                   assert project.get("name") == path, path
                   expected_commit = {
                       "art": "b753cf97923c3695338d21466fa14c57b480a59a",
                       "bionic": "06356e41c5ed7b12220b24c05ba4fdb873b126a7",
                   }[path]
                   assert project.get("revision") == expected_commit, path
+              elif profile == "aosp17_pe_p0_core.xml" and path == "system/core":
+                  assert project.get("name") == "system_core"
+                  assert project.get("revision") == "8e0f22aaac0ee4114a83646e2c96d07578145bfa"
               else:
                   assert project.get("name").startswith("platform/"), path
           assert not any(path.startswith("device/google/") or
@@ -93,7 +99,7 @@ jobs:
               soong = indexed["build/soong"]
               assert soong.get("name") == "build_soong"
               assert soong.get("revision") == "6215d41c790a463b7795ce81ac77204c238cbf48"
-              if profile in ("aosp17_pe_envsetup.xml", "aosp17_pe_p0_native.xml"):
+              if profile in ("aosp17_pe_envsetup.xml", "aosp17_pe_p0_native.xml", "aosp17_pe_p0_core.xml"):
                   vendor = indexed["vendor/aosp"]
                   assert vendor.get("name") == "vendor_aosp"
                   assert len(vendor.get("revision", "")) == 40
