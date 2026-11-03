@@ -23,6 +23,25 @@
 
 These are **sampled high-impact historical commits**, not a complete list of all PE commits. Preserve custom features through explicit functionality requirements and controlled ports, rather than saying everything is migrated merely because a clean AOSP source tree was copied.
 
+## Additional legacy-code inventory (first 95 recent commit subjects inspected)
+
+The migration review also enumerated 95 recent commits from the historical PE `seventeen` branch and fetched the actual diffs of the high-impact commits below. These decisions are preliminary until the exact AOSP17 implementations can be compiled and compared.
+
+| Legacy change | Observed dependency / risk | AOSP17 decision |
+| --- | --- | --- |
+| [`bf1bb8e34`](https://github.com/PixelExperience-Reborn/frameworks_base/commit/bf1bb8e34), [`1b33198bc`](https://github.com/PixelExperience-Reborn/frameworks_base/commit/1b33198bc), [`8d75c5afa`](https://github.com/PixelExperience-Reborn/frameworks_base/commit/8d75c5afa) | Old Lineage `vendor.lineage.touch-V1.0-java` HIDL bindings, custom SettingsProvider keys and InputMethodManagerService observers for high touch polling, glove mode and gestures | **Do not cherry-pick into platform P0.** Check whether mondrian's current A17 hardware interface actually exposes an equivalent feature and identify its current HAL path first. Avoid a dead legacy dependency. |
+| [`66fce24ff`](https://github.com/PixelExperience-Reborn/frameworks_base/commit/66fce24ff) | AOD requirement changed in old DozeSensors Java for screen-off UDFPS | **Defer.** Validate AOSP17 biometric/doze lifecycle, fingerprint HAL and physical mondrian UDFPS; must not accidentally enable the sensor in unsupported states. |
+| [`38b8bfa67`](https://github.com/PixelExperience-Reborn/frameworks_base/commit/38b8bfa67) | Adjusted ordering of timeout callback removal inside RemoteDisplayChangeController to avoid stuck display | **Candidate for upstream-deduplication check.** Compare with Android17 WindowManager logic before deciding a port; monitor lifecycle/regression tests. |
+| [`4784327ec`](https://github.com/PixelExperience-Reborn/frameworks_base/commit/4784327ec) | Refresh silent-notification setting when UserTracker changes users | **Candidate for upstream-deduplication check.** Verify current A17 KeyguardNotificationVisibilityProvider and multi-user tests. |
+| [`db774b82c`](https://github.com/PixelExperience-Reborn/frameworks_base/commit/db774b82c) | Cross-service DeviceIdle/JobScheduler/AlarmManager policy changes and API/proto/test modifications | **Defer.** Requires exact Android17 service API checks, power-allowlist tests and CTS. No arbitrary background power policy port. |
+| [`1f017d308`](https://github.com/PixelExperience-Reborn/frameworks_base/commit/1f017d308) | Moves fingerprint-removal completion callback to every event rather than only final removal | **Defer.** Verify Android17 biometrics contracts; repeated success callbacks could change client lifecycle. |
+| [`f80e7b92f`](https://github.com/PixelExperience-Reborn/frameworks_base/commit/f80e7b92f) | Adds old Lineage resource for ignoring IWLAN status in the mobile icon pipeline | **Defer.** Validate Android17 mobile state pipeline with actual mondrian IMS/IWLAN network behavior and resource APIs. |
+| [`4612bb30c`](https://github.com/PixelExperience-Reborn/frameworks_base/commit/4612bb30c) | Restricts SystemServer FD leak monitor from all debuggable builds to eng only | **Do not port for P0.** Removing observability needs a measured justification, particularly during bring-up. |
+| [`7b7da5c0d`](https://github.com/PixelExperience-Reborn/frameworks_base/commit/7b7da5c0d) | Makes SystemUI screenshot service exported while retaining a custom permission check | **Reject for clean bring-up unless required and security-reviewed.** Changes interprocess service exposure; no mondrian requirement established. |
+| [`7da55215d`](https://github.com/PixelExperience-Reborn/frameworks_base/commit/7da55215d) | Adds Binder APIs and persistent notification-sound cooldown state | **P1 feature candidate, not P0.** Requires permission, upgrade and binder compatibility review; avoid adding nonessential API surface before platform boots. |
+
+**Important:** reviewing the most recent 95 commits is not equivalent to an exhaustive historical Git range-diff; older feature patches and merge commits require separate inventory. No commits in this table have been applied to Android17.
+
 ## Mandatory integration boundaries
 
 1. **Resource and API compatibility:** Android17 `framework-res`, SettingsProvider, hidden APIs, SystemUI Dagger/Compose/Kotlin, resource overlays and Settings must agree on names/types. Old resource XML should not be transplanted.
