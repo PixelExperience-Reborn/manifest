@@ -1,6 +1,6 @@
 # Android 17 bring-up profiles — source selection and acceptance
 
-**State: staged, unmerged, and not yet validated with Linux `repo sync`, Soong bootstrap, compilation or boot.**
+**State: staged and unmerged. Selected P0-project `repo sync` and SHA pin checks have passed on Linux CI; complete 1069-project sync, Soong bootstrap, Android compilation and boot are not yet validated.**
 
 The 135 PixelExperience-Reborn forks are kept as historical PE source references. Their default branches are named `seventeen`, but most contain Android 14 code. **Do not use the four PE override snippets as a ready-to-build AOSP 17 source graph.**
 
@@ -60,6 +60,12 @@ In the staged AOSP17 environment profile, core `build/make` stays official and u
 
 The vendor PR uses GitHub Actions to test Bash syntax, PE breakfast/brunch argument translation, and the `vendorsetup` integration. These checks are not a Soong bootstrap, product build or boot test.
 
+## Verified Linux source synchronization (not a product build)
+
+[GitHub Actions run 41639702260](https://github.com/PixelExperience-Reborn/manifest/actions/runs/41639702260) executed the official `repo sync` on Linux for nine exact AOSP17/PE P0 checkout paths and verified each resulting HEAD commit against its pinned SHA: `build/make` (official AOSP17 r1 `5ce6f787337d`), `build/soong`, `vendor/aosp`, `art`, `bionic`, `system/core`, `frameworks/native`, `bootable/recovery` and `frameworks/av`.
+
+This proves the selected projects actually download and resolve to their chosen Git revisions. It does **not** prove that the other AOSP17 projects can all be synced, or that linker/Soong/Java/Kotlin dependencies compile.
+
 ## Required validation gates (not run)
 
 1. On an appropriately provisioned Linux host, use `repo init -u https://github.com/PixelExperience-Reborn/manifest -b port/a17-aosp17-manifest-20261102 -m aosp17_reference.xml` followed by `repo manifest -r` and `repo sync`. Record errors, exact revisions and object identity.
@@ -69,4 +75,4 @@ The vendor PR uses GitHub Actions to test Bash syntax, PE breakfast/brunch argum
 5. Validate build product discovery; later add ONLY mondrian's independent device/vendor/kernel trees, respecting their licensing and appropriate Qualcomm HALs.
 6. Before release: product build, target-files, AVB and signing policy, SELinux enforcing, boot, telephony, Wi-Fi, camera, performance, CTS/VTS subsets and OTA upgrade/rollback.
 
-The profiles have undergone static source/name/path checks; a GitHub Actions `repo init` / `repo manifest` parser check has been added for validation. There is still no complete `repo sync` or Android17 build. Do not merge the existing staged manifest PR or advertise a functional Android 17 ROM until the gates pass.
+The profiles have passed `repo init` / `repo manifest` parser checks. A real Linux `repo sync` of **nine selected P0 projects** also passed, but the full 1069-project checkout, Android17 Make/Soong bootstrap, product build and boot remain untested. Do not merge the existing staged manifest PR or advertise a functional Android 17 ROM until the gates pass.
