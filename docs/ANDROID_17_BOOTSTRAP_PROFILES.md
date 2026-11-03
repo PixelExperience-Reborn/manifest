@@ -15,6 +15,7 @@ The 135 PixelExperience-Reborn forks are kept as historical PE source references
 | [`aosp17_pe_p0_core.xml`](../aosp17_pe_p0_core.xml) | Above + exact official AOSP17 system/core source tree from PE fork | **1072 declared / 1069 repo-selected** | No System Core PE patches imported |
 | [`aosp17_pe_p0_frameworks.xml`](../aosp17_pe_p0_frameworks.xml) | Above + official AOSP17 frameworks/native mirrored with full history | **1072 declared / 1069 repo-selected** | Frameworks Native PE changes are not yet ported |
 | [`aosp17_pe_p0_recovery.xml`](../aosp17_pe_p0_recovery.xml) | Above + reviewed AOSP17 PE Recovery changes | **1072 declared / 1069 repo-selected** | PE device title and optional-safe stage parsing only |
+| [`aosp17_pe_p0_av.xml`](../aosp17_pe_p0_av.xml) | Above + official AOSP17 frameworks/av and selectively ported PE Codec2 release guards | **1072 declared / 1069 repo-selected** | Reviewed Codec2 delta only, Android gtests not executed |
 | [`default.xml`](../default.xml) | Existing **experimental historical PE staging manifest**, NOT safe for a build | 1016 AOSP projects + 135 PE fork routes = **1151 projects** | **Many unported forks still active** |
 
 **Project counts:** 1087 AOSP project declarations minus 16 unrelated device removals leaves 1071 declared checkouts. The official `repo manifest` default selection further excludes 3 upstream `notdefault` Darwin prebuilts (`prebuilts/clang/host/darwin-x86`, `prebuilts/go/darwin-x86` and `prebuilts/rust-toolchain/darwin`). Therefore 1068 AOSP/Soong projects and 1069 projects with the PE vendor are exported by `repo manifest`. These upstream entries are retained, not deleted.
@@ -45,6 +46,8 @@ The 135 PixelExperience-Reborn forks are kept as historical PE source references
 - Old PE commits remain on the `seventeen` branches. Neither the legacy ART performance switches, Bionic hosts/linker/memory-hardening changes nor System Core property/AVB bypasses have been blindly cherry-picked onto AOSP17.
 - The `repo` project graph is parsed by CI for these profiles; this confirms correct paths and pins, **not** ABI compatibility, full sync, Go tests, a product build, Verified Boot or working ROM.
 
+- `frameworks/av`: official full-history AOSP17 source commit `475269ec44acec82792be6b01fb8e16357d4d2c8` (tree `6205f7fbf4fdd2c4b4197b02e960c5bac05b9cd1`), then two PE Codec2 buffer release guards and new Android gtests in working branch `port/a17-frameworks-av-pe-20261103`. Pinned commit `5db9a6151f33cacb810a8fe7615be8c23d3fa858`. [Delta and security audit](ANDROID_17_FRAMEWORKS_AV_PORT_AUDIT.md). Source CI and manifest parser CI passed, but `ccodec_unit_test` compilation/execution still required.
+
 ## Why this is a separate profile
 
 We must be able to test the **official Android 17 platform unchanged** before introducing individual PE patches. A successful `repo sync` of the old `default.xml` would still place Android 14-era ART/Bionic/frameworks sources in the tree. This makes source-level failures impossible to attribute reliably.
@@ -60,7 +63,7 @@ The vendor PR uses GitHub Actions to test Bash syntax, PE breakfast/brunch argum
 ## Required validation gates (not run)
 
 1. On an appropriately provisioned Linux host, use `repo init -u https://github.com/PixelExperience-Reborn/manifest -b port/a17-aosp17-manifest-20261102 -m aosp17_reference.xml` followed by `repo manifest -r` and `repo sync`. Record errors, exact revisions and object identity.
-2. Repeat with `-m aosp17_pe_bootstrap.xml`, then each successive `-m aosp17_pe_p0_native.xml`, `aosp17_pe_p0_core.xml`, `aosp17_pe_p0_frameworks.xml` and `aosp17_pe_p0_recovery.xml`. Verify immutable source pins, dependencies, host/Android ABI, compiled Recovery and OTA policy before merging.
+2. Repeat with `-m aosp17_pe_bootstrap.xml`, then each successive `-m aosp17_pe_p0_native.xml`, `aosp17_pe_p0_core.xml`, `aosp17_pe_p0_frameworks.xml`, `aosp17_pe_p0_recovery.xml` and `aosp17_pe_p0_av.xml`. Verify immutable source pins, dependencies, host/Android ABI, compiled Recovery/Codec2 and OTA policy before merging.
 3. Run a matched AOSP17 Make/Soong bootstrap and the PE Soong Go test; investigate each failure rather than importing old Android14 fixes wholesale.
 4. Check `aosp17_pe_envsetup.xml` against the official `repo` manifest parser and confirm the only added checkout is `vendor/aosp`. Check the vendor shell integration in a full synced AOSP17 environment.
 5. Validate build product discovery; later add ONLY mondrian's independent device/vendor/kernel trees, respecting their licensing and appropriate Qualcomm HALs.
