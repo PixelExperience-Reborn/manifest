@@ -1,0 +1,39 @@
+name: PixelExperience 135 repository inventory integrity
+
+on:
+  push:
+    branches:
+      - port/a17-aosp17-manifest-20261102
+    paths:
+      - docs/ANDROID_17_135_REPOSITORY_PORT_MATRIX.md
+      - snippets/pixel.xml
+      - snippets/pixel-extras.xml
+      - snippets/pixel-caf.xml
+      - tools/validate_135_repository_matrix.py
+      - .github/workflows/aosp17-matrix-135-integrity.yml
+  pull_request:
+    paths:
+      - docs/ANDROID_17_135_REPOSITORY_PORT_MATRIX.md
+      - snippets/pixel.xml
+      - snippets/pixel-extras.xml
+      - snippets/pixel-caf.xml
+      - tools/validate_135_repository_matrix.py
+      - .github/workflows/aosp17-matrix-135-integrity.yml
+
+permissions:
+  contents: read
+
+jobs:
+  validate-inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            docs
+            snippets
+            tools
+          sparse-checkout-cone-mode: true
+      - name: Validate 135 source repository inventory
+        run: python3 tools/validate_135_repository_matrix.py
