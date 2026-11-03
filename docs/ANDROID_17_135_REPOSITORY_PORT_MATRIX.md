@@ -31,7 +31,7 @@
 
 **Результат `repo sync` и компиляция отсутствуют; ни один профиль пока нельзя называть готовой PixelExperience A17.**
 
-**Проверенная замена для нативного P0:** [`aosp17_pe_p0_native.xml`](../aosp17_pe_p0_native.xml) добавляет закреплённые AOSP17 ART (`b753cf97923c`) и Bionic (`06356e41c5ed`) вместо официальных checkout путей, не меняя остальной платформенный граф. Результат `repo manifest` через CI: 1069 default-selected проектов. Это валидация исходников/manifest, но не Android компиляции.
+**Проверенные нативные P0-профили:** [`aosp17_pe_p0_native.xml`](../aosp17_pe_p0_native.xml) закрепляет официальные исходные SHA для ART (`b753cf97923c`) и Bionic (`06356e41c5ed`). [`aosp17_pe_p0_core.xml`](../aosp17_pe_p0_core.xml) добавляет точное дерево AOSP17 `system/core`, воспроизведённое как отдельный GitHub snapshot `8e0f22aa` (tree SHA `332cc42d`, upstream SHA `545d2487`). CI с официальным `repo manifest` прошёл для обоих профилей: 1069 выбранных проектов. Это не компиляция и не тест на mondrian.
 
 ## Условия завершения каждого репозитория
 
@@ -63,7 +63,7 @@
 | P0 | `packages/modules/Wifi` | [packages_modules_Wifi](https://github.com/PixelExperience-Reborn/packages_modules_Wifi) | Заменяет AOSP17 | Поднять AOSP17 + изучить PE-дельту; проверить сборку и API | Не проверен на Android17 |
 | P0 | `packages/modules/adb` | [packages_modules_adb](https://github.com/PixelExperience-Reborn/packages_modules_adb) | Заменяет AOSP17 | Поднять AOSP17 + изучить PE-дельту; проверить сборку и API | Не проверен на Android17 |
 | P0 | `prebuilts/build-tools` | [prebuilts_build-tools](https://github.com/PixelExperience-Reborn/prebuilts_build-tools) | Заменяет AOSP17 | Поднять AOSP17 + изучить PE-дельту; проверить сборку и API | Не проверен на Android17 |
-| P0 | `system/core` | [system_core](https://github.com/PixelExperience-Reborn/system_core) | Заменяет AOSP17 | Основа AOSP17 545d2487e381; не переносить ослабление защиты init/SafetyNet | Аудит безопасности начат; перенос и сборка отсутствуют |
+| P0 | `system/core` | [system_core](https://github.com/PixelExperience-Reborn/system_core/tree/port/a17-system-core-aosp17-base-20261103) | Заменяет AOSP17 | Точный исходный AOSP17 tree `332cc42dfc29`; Github-совместимый snapshot `8e0f22aa`; не переносить SafetyNet/property/AVB ослабления | AOSP17 файловая основа опубликована, полный исторический Git импорт заблокирован 219MB объектом; CI дерева PASS, сборка не проверена |
 | P0 | `system/security` | [system_security](https://github.com/PixelExperience-Reborn/system_security) | Заменяет AOSP17 | Поднять AOSP17 + изучить PE-дельту; проверить сборку и API | Не проверен на Android17 |
 | P0 | `system/sepolicy` | [system_sepolicy](https://github.com/PixelExperience-Reborn/system_sepolicy) | Заменяет AOSP17 | Поднять AOSP17 + изучить PE-дельту; проверить сборку и API | Не проверен на Android17 |
 | P0 | `system/update_engine` | [system_update_engine](https://github.com/PixelExperience-Reborn/system_update_engine) | Заменяет AOSP17 | Поднять AOSP17 + изучить PE-дельту; проверить сборку и API | Не проверен на Android17 |
