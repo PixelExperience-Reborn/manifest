@@ -1,4 +1,4 @@
-name: AOSP17 P0 selected source sync
+name: AOSP17 P0 and P1 vold selected source sync
 
 on:
   push:
@@ -38,9 +38,9 @@ jobs:
           "$RUNNER_TEMP/repo" init -q --no-clone-bundle \
             -u https://github.com/PixelExperience-Reborn/manifest \
             -b port/a17-aosp17-manifest-20261102 \
-            -m aosp17_pe_p0_update_engine.xml
+            -m aosp17_pe_p1_vold.xml
 
-      - name: Fetch nineteen pinned AOSP17 and PE P0 projects
+      - name: Fetch twenty pinned P0/P1 AOSP17 and PE projects
         shell: bash
         run: |
           set -euo pipefail
@@ -51,7 +51,8 @@ jobs:
             frameworks/base hardware/interfaces \
             packages/modules/Bluetooth packages/modules/Connectivity \
             packages/modules/Permission packages/modules/Wifi packages/modules/adb \
-            system/security system/sepolicy system/update_engine
+            system/security system/sepolicy system/update_engine \
+            system/vold
 
       - name: Prepare Java 17 for Bluetooth OPP source regression
         uses: actions/setup-java@v4
@@ -88,6 +89,7 @@ jobs:
               "system/security": "a939bea3461e668355b1df87230f9308a8d50837",
               "system/sepolicy": "f12e84e0ba4fe3d1cc093af15c41ceb8dba8cc69",
               "system/update_engine": "c0309b604010b9b2e2c58d684e86b6090b74ad77",
+              "system/vold": "76516faf8c3bd5e0eb330611a40793cd137f1f8a",
           }
           for project, sha in expected.items():
               assert Path(project).is_dir(), f"Missing checkout: {project}"
@@ -210,5 +212,24 @@ jobs:
           delta = (ota_root / "payload_consumer/delta_performer.cc").read_text()
           assert "ValidateMetadataSignature(" in delta
           assert "payload_verifier->VerifySignature(" in delta
-          print("PASS: nineteen selected P0 projects synced and pinned")
+          # P1 system/vold is a zero-delta AOSP17 snapshot. Retain
+          # upstream encryption flows and refuse old CAF FBE_ICE injections.
+          vold_root = Path("system/vold")
+          vold_tree = subprocess.check_output(
+              ["git", "-C", str(vold_root), "rev-parse", "HEAD^{tree}"],
+              text=True,
+          ).strip()
+          assert vold_tree == "8a39be56cc76830d199878b5ea854022a71d3af2", vold_tree
+          crypt = (vold_root / "FsCrypt.cpp").read_text()
+          assert "get_volume_file_encryption_options(" in crypt
+          assert "KM_TAG_FBE_ICE" not in crypt
+          storage = (vold_root / "KeyStorage.cpp").read_text()
+          assert "KM_TAG_FBE_ICE" not in storage
+          metadata = (vold_root / "MetadataCrypt.cpp").read_text()
+          assert "fscrypt_mount_metadata_encrypted(" in metadata
+          assert "is_metadata_wrapped_key_supported(" not in metadata
+          maintenance = (vold_root / "IdleMaint.cpp").read_text()
+          assert "int RunIdleMaint(" in maintenance
+          assert "void Trim(" in maintenance
+          print("PASS: twenty selected P0/P1 projects synced and pinned")
           PY
