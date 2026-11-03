@@ -119,6 +119,12 @@ jobs:
               assert excluded not in paths, "notdefault Darwin prebuilt unexpectedly selected"
 
           indexed = {p.get("path") or p.get("name"): p for p in projects}
+          # P1 device/custom/sepolicy is an Android14-era PE/Lineage policy
+          # addon, not an AOSP17 project. Do not activate historical
+          # recovery-permissive or vendor-domain rules until CIL/neverallow
+          # and mondrian vendor API compatibility have been demonstrated.
+          assert "device/custom/sepolicy" not in indexed, "unreviewed legacy policy activated"
+          assert all(p.get("name") != "device_custom_sepolicy" for p in projects)
           assert indexed["build/make"].get("name") == "platform/build", "core Make is not AOSP17"
           for path in ("art", "bionic", "system/core"):
               project = indexed[path]
