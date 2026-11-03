@@ -11,6 +11,8 @@ The 135 PixelExperience-Reborn forks are kept as historical PE source references
 | [`aosp17_reference.xml`](../aosp17_reference.xml) | Clean AOSP 17 comparison baseline | 1087 AOSP declared, 16 removed = **1071 declared / 1068 repo-selected** | **None** |
 | [`aosp17_pe_bootstrap.xml`](../aosp17_pe_bootstrap.xml) | Test source compatibility of the first PE Soong port against the otherwise unchanged AOSP17 project graph | 1070 AOSP + 1 PE Soong = **1071 declared / 1068 repo-selected** | **None intentionally enabled** |
 | [`aosp17_pe_envsetup.xml`](../aosp17_pe_envsetup.xml) | Use AOSP17 Make/Soong plus PE vendor functions from the native vendorsetup hook | 1070 AOSP + 1 PE Soong + 1 PE vendor = **1072 declared / 1069 repo-selected** | **None intentionally enabled** |
+| [`aosp17_pe_p0_native.xml`](../aosp17_pe_p0_native.xml) | PE ART and Bionic repositories at verified immutable official AOSP17 commits | **1072 declared / 1069 repo-selected** | No ART/Bionic PE patches imported |
+| [`aosp17_pe_p0_core.xml`](../aosp17_pe_p0_core.xml) | Above + exact official AOSP17 system/core source tree from PE fork | **1072 declared / 1069 repo-selected** | No System Core PE patches imported |
 | [`default.xml`](../default.xml) | Existing **experimental historical PE staging manifest**, NOT safe for a build | 1016 AOSP projects + 135 PE fork routes = **1151 projects** | **Many unported forks still active** |
 
 **Project counts:** 1087 AOSP project declarations minus 16 unrelated device removals leaves 1071 declared checkouts. The official `repo manifest` default selection further excludes 3 upstream `notdefault` Darwin prebuilts (`prebuilts/clang/host/darwin-x86`, `prebuilts/go/darwin-x86` and `prebuilts/rust-toolchain/darwin`). Therefore 1068 AOSP/Soong projects and 1069 projects with the PE vendor are exported by `repo manifest`. These upstream entries are retained, not deleted.
@@ -31,6 +33,14 @@ The 135 PixelExperience-Reborn forks are kept as historical PE source references
 - The PE profile deliberately omits the AOSP superproject acceleration metadata because a custom project revision replaces one upstream project.
 - Changes staged in Soong: PE banner variable display, `installclean` removal of `*.zip.sha256sum`, and a regression test. No Linux Soong build/Go test result is claimed.
 
+## P0 source provenance
+
+- `art`: upstream AOSP17 commit `b753cf97923c3695338d21466fa14c57b480a59a`, identical full-history import into [our ART branch](https://github.com/PixelExperience-Reborn/art/tree/port/a17-art-aosp17-base-20261103). Verified tree `539d87e9b7c4b00b7f1443cca44578c5b9f6e5b2`.
+- `bionic`: upstream AOSP17 commit `06356e41c5ed7b12220b24c05ba4fdb873b126a7`, identical full-history import into [our Bionic branch](https://github.com/PixelExperience-Reborn/bionic/tree/port/a17-bionic-aosp17-base-20261103). Verified tree `31f89de9fffb766531426cc6ea69d20a5c1c8093`.
+- `system/core`: upstream AOSP17 commit `545d2487e38192a2ce25040897ced877cf6b4f53`; [our System Core branch](https://github.com/PixelExperience-Reborn/system_core/tree/port/a17-system-core-aosp17-base-20261103) uses a parentless snapshot commit `8e0f22aaac0ee4114a83646e2c96d07578145bfa` with the **exact same upstream tree** `332cc42dfc29e8660d45b2c27ddc7c2ad4925868`. GitHub rejected the full official history due to an unrelated 219 MB historical blob. Only the history was condensed; source files were not altered.
+- Old PE commits remain on the `seventeen` branches. Neither the legacy ART performance switches, Bionic hosts/linker/memory-hardening changes nor System Core property/AVB bypasses have been blindly cherry-picked onto AOSP17.
+- The `repo` project graph is parsed by CI for these profiles; this confirms correct paths and pins, **not** ABI compatibility, full sync, Go tests, a product build, Verified Boot or working ROM.
+
 ## Why this is a separate profile
 
 We must be able to test the **official Android 17 platform unchanged** before introducing individual PE patches. A successful `repo sync` of the old `default.xml` would still place Android 14-era ART/Bionic/frameworks sources in the tree. This makes source-level failures impossible to attribute reliably.
@@ -46,7 +56,7 @@ The vendor PR uses GitHub Actions to test Bash syntax, PE breakfast/brunch argum
 ## Required validation gates (not run)
 
 1. On an appropriately provisioned Linux host, use `repo init -u https://github.com/PixelExperience-Reborn/manifest -b port/a17-aosp17-manifest-20261102 -m aosp17_reference.xml` followed by `repo manifest -r` and `repo sync`. Record errors, exact revisions and object identity.
-2. Repeat with `-m aosp17_pe_bootstrap.xml`. Confirm only the expected Soong source differs from the reference checkout and the pinned commit exists.
+2. Repeat with `-m aosp17_pe_bootstrap.xml`, then `-m aosp17_pe_p0_native.xml` and `-m aosp17_pe_p0_core.xml`. Confirm Soong/ART/Bionic/System Core source revisions and verify matching files, ABI and dependencies.
 3. Run a matched AOSP17 Make/Soong bootstrap and the PE Soong Go test; investigate each failure rather than importing old Android14 fixes wholesale.
 4. Check `aosp17_pe_envsetup.xml` against the official `repo` manifest parser and confirm the only added checkout is `vendor/aosp`. Check the vendor shell integration in a full synced AOSP17 environment.
 5. Validate build product discovery; later add ONLY mondrian's independent device/vendor/kernel trees, respecting their licensing and appropriate Qualcomm HALs.
