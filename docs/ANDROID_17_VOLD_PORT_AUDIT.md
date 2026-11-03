@@ -37,3 +37,9 @@ This is a **targeted first-pass review**, not an exhaustive range-diff of every 
 5. Avoid global SELinux `neverallow` relaxations, unverified Keymaster vendor tags or masking encryption failures with destructive formats.
 
 **Unverified:** complete 1069 default-selected source projects, platform compilation and packaged ROM, FBE/metadata runtime, signed OTA and mondrian boot. Keep the manifest Draft.
+
+## Device-tree evidence: encryption and recovery mismatch
+
+- The dedicated [mondrian storage compatibility preflight](ANDROID_17_MONDRIAN_STORAGE_PREFLIGHT.md) identifies the **actual** main fstab's `wrappedkey_v0` FBE/metadata encryption, recovery fstab's older `ice,wrappedkey` parameters, and EROFS-versus-ext4 partition type differences. `BoardConfigCommon.mk` explicitly selects this recovery fstab. This is a concrete outstanding recovery integration risk, not just a general future test item.
+- The vendor makefile also contains both KeyMint AIDL and Keymaster 4.1 services. Their presence does **not** justify blindly adding old `KM_TAG_FBE_ICE` code; verify runtime HAL behavior and compatible ciphertext/key formats first.
+- [P1 targeted vold source check #41734986161](https://github.com/PixelExperience-Reborn/manifest/actions/runs/41734986161) and [19-profile structure check #41734986061](https://github.com/PixelExperience-Reborn/manifest/actions/runs/41734986061) **passed**. Joint 20 selected-project CI was still running at this checkpoint.
