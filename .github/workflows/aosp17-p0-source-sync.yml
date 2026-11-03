@@ -38,9 +38,9 @@ jobs:
           "$RUNNER_TEMP/repo" init -q --no-clone-bundle \
             -u https://github.com/PixelExperience-Reborn/manifest \
             -b port/a17-aosp17-manifest-20261102 \
-            -m aosp17_pe_p1_telephony.xml
+            -m aosp17_pe_p1_timezonepicker.xml
 
-      - name: Fetch twenty-one pinned P0/P1 AOSP17 and PE projects
+      - name: Fetch twenty-two pinned P0/P1 AOSP17 and PE projects
         shell: bash
         run: |
           set -euo pipefail
@@ -52,7 +52,8 @@ jobs:
             packages/modules/Bluetooth packages/modules/Connectivity \
             packages/modules/Permission packages/modules/Wifi packages/modules/adb \
             system/security system/sepolicy system/update_engine \
-            system/vold frameworks/opt/telephony
+            system/vold frameworks/opt/telephony \
+            frameworks/opt/timezonepicker
 
       - name: Prepare Java 17 for Bluetooth OPP source regression
         uses: actions/setup-java@v4
@@ -91,6 +92,7 @@ jobs:
               "system/update_engine": "c0309b604010b9b2e2c58d684e86b6090b74ad77",
               "system/vold": "76516faf8c3bd5e0eb330611a40793cd137f1f8a",
               "frameworks/opt/telephony": "548270c2e6ab41b036c670339fa0d4b04ca1ed59",
+              "frameworks/opt/timezonepicker": "7a5698b6c651db16f243fe8d3d28008e4243e04c",
           }
           for project, sha in expected.items():
               assert Path(project).is_dir(), f"Missing checkout: {project}"
@@ -247,5 +249,21 @@ jobs:
           assert "ro.telephony.block_binder_thread_on_incoming_calls" not in ims
           assert not (tel / "src/java/com/android/internal/telephony/SubscriptionController.java").exists()
           assert (tel / "src/java/com/android/internal/telephony/subscription/SubscriptionManagerService.java").exists()
-          print("PASS: twenty-one selected P0/P1 projects synced and pinned")
+          # Keep the official AOSP17 library API intact; older PE changes
+          # to Fragment/AndroidX and UI styling require independent review.
+          picker_root = Path("frameworks/opt/timezonepicker")
+          picker_tree = subprocess.check_output(
+              ["git", "-C", str(picker_root), "rev-parse", "HEAD^{tree}"], text=True
+          ).strip()
+          assert picker_tree == "5561969c791e41a211ae706fa40f82fca83cc3c0", picker_tree
+          picker_bp = (picker_root / "Android.bp").read_text()
+          assert 'name: "android-opt-timezonepicker"' in picker_bp
+          assert 'sdk_version: "17"' in picker_bp
+          assert 'androidx.fragment_fragment' not in picker_bp
+          dialog = (picker_root / "src/com/android/timezonepicker/TimeZonePickerDialog.java").read_text()
+          assert "import android.app.DialogFragment;" in dialog
+          assert "import androidx.fragment.app.DialogFragment;" not in dialog
+          picker_layout = (picker_root / "res/layout/time_zone_item.xml").read_text()
+          assert 'android:background="?android:attr/selectableItemBackground"' in picker_layout
+          print("PASS: twenty-two selected P0/P1 projects synced and pinned")
           PY
