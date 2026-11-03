@@ -1,0 +1,84 @@
+name: AOSP17 manifest structure
+
+on:
+  push:
+    branches:
+      - port/a17-aosp17-manifest-20261102
+  pull_request:
+    paths:
+      - aosp17_reference.xml
+      - aosp17_pe_bootstrap.xml
+      - aosp17_pe_envsetup.xml
+      - .github/workflows/aosp17-manifest-structure.yml
+
+permissions:
+  contents: read
+
+jobs:
+  resolve-profiles:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - profile: aosp17_reference.xml
+            expected: 1071
+          - profile: aosp17_pe_bootstrap.xml
+            expected: 1071
+          - profile: aosp17_pe_envsetup.xml
+            expected: 1072
+    steps:
+      - name: Install official repo client
+        run: |
+          curl --fail --silent --show-error --location \
+            https://storage.googleapis.com/git-repo-downloads/repo \
+            --output "$RUNNER_TEMP/repo"
+          chmod +x "$RUNNER_TEMP/repo"
+      - name: Parse and export effective project graph without repo sync
+        env:
+          PROFILE: ${{ matrix.profile }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/checkout"
+          cd "$RUNNER_TEMP/checkout"
+          "$RUNNER_TEMP/repo" init -q --no-clone-bundle \
+            -u https://github.com/PixelExperience-Reborn/manifest \
+            -b port/a17-aosp17-manifest-20261102 -m "$PROFILE"
+          "$RUNNER_TEMP/repo" manifest -o "$RUNNER_TEMP/resolved.xml"
+      - name: Validate no device-tree imports or old PE platform forks
+        env:
+          PROFILE: ${{ matrix.profile }}
+          EXPECTED: ${{ matrix.expected }}
+        run: |
+          python3 - <<'PY'
+          import os
+          import xml.etree.ElementTree as ET
+
+          root = ET.parse(os.environ["RUNNER_TEMP"] + "/resolved.xml").getroot()
+          projects = root.findall(".//project")
+          profile = os.environ["PROFILE"]
+          expected = int(os.environ["EXPECTED"])
+          paths = [p.get("path") or p.get("name") for p in projects]
+          assert len(paths) == expected, (profile, len(paths), expected)
+          assert len(set(paths)) == len(paths), "duplicate checkout path"
+          indexed = {p.get("path") or p.get("name"): p for p in projects}
+          assert indexed["build/make"].get("name") == "platform/build", "core Make is not AOSP17"
+          for path in ("art", "bionic", "system/core"):
+              assert indexed[path].get("name").startswith("platform/"), path
+          assert not any(path.startswith("device/google/") or
+                         path.startswith("device/linaro/") or
+                         path.startswith("device/amlogic/") for path in paths)
+          if profile == "aosp17_reference.xml":
+              assert indexed["build/soong"].get("name") == "platform/build/soong"
+              assert "vendor/aosp" not in indexed
+          else:
+              soong = indexed["build/soong"]
+              assert soong.get("name") == "build_soong"
+              assert soong.get("revision") == "6215d41c790a463b7795ce81ac77204c238cbf48"
+              if profile == "aosp17_pe_envsetup.xml":
+                  vendor = indexed["vendor/aosp"]
+                  assert vendor.get("name") == "vendor_aosp"
+                  assert len(vendor.get("revision", "")) == 40
+              else:
+                  assert "vendor/aosp" not in indexed
+          print(f"PASS: {profile}: {len(paths)} projects, no duplicates, AOSP17 Make/ART/Bionic/core")
+          PY
