@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+  <!-- P0: exact AOSP17 frameworks/base snapshot plus one reviewed PE legacy
+       toast resource change; Android build and mondrian validation still pending.
+       This is a separate opt-in profile, not the legacy PE default.xml. -->
+  <include name="aosp17_pe_p0_av.xml" />
+  <remove-project name="platform/frameworks/base" />
+  <remote name="reborn-base" fetch="https://github.com/PixelExperience-Reborn" />
+  <project path="frameworks/base" name="frameworks_base" remote="reborn-base"
+           revision="382d5c9c0b20bbdb67b70176bce02c7e64767b0c"
+           upstream="refs/heads/port/a17-frameworks-base-pe-20261103"
+           groups="pdk,sysui-studio" />
+</manifest>
