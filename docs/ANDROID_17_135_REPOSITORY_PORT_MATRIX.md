@@ -17,7 +17,7 @@
 
 1. `build/make`: подготовлен локальный AOSP17-commit с PE `envsetup.sh`; нет опубликованной и собранной версии.
 2. `vendor/aosp`: черновой PR с Bash-командами PE, roomservice, версией, AVB/OTA preflight, bacon. Полная сборка не выполнена.
-3. `build/soong`: история изучалась, перенос в исходники на AOSP17 не подтверждён.
+3. `build/soong`: рабочая ветка `port/a17-soong-dumpvars-20261103` основана на AOSP17; опубликованы перенос отображения метаданных PE (`f67e76e`) и очистка ZIP SHA-256 sidecars (`cf78167`). Полная сборка Soong/Android17 не подтверждена.
 4. Остальные исходники `art`, `bionic`, frameworks, services, hardware и prebuilts не могут считаться адаптированными только по имени ветки.
 5. В `vendor/aosp/config/common.mk` подключён `vendor/gms/products/gms.mk`, но отдельного форка `vendor_gms` в 135 нет. Нужна разрешённая, лицензионная стратегия GMS; не копировать проприетарные пакеты без права распространения.
 6. Qualcomm/NXP HAL необходимо проверять только для реально нужных sm8450/mondrian компонентов. Деревья иных телефонов в базу не включать.
@@ -42,7 +42,7 @@
 | P0 | `bionic` | [bionic](https://github.com/PixelExperience-Reborn/bionic) | Заменяет AOSP17 | Поднять AOSP17 + изучить PE-дельту; проверить сборку и API | Не проверен на Android17 |
 | P0 | `bootable/recovery` | [bootable_recovery](https://github.com/PixelExperience-Reborn/bootable_recovery) | Заменяет AOSP17 | Поднять AOSP17 + изучить PE-дельту; проверить сборку и API | Не проверен на Android17 |
 | P0 | `build/make` | [build](https://github.com/PixelExperience-Reborn/build) | Заменяет AOSP17 | Поднять AOSP17 + изучить PE-дельту; проверить сборку и API | Локальный коммит; не опубликовано |
-| P0 | `build/soong` | [build_soong](https://github.com/PixelExperience-Reborn/build_soong) | Заменяет AOSP17 | Поднять AOSP17 + изучить PE-дельту; проверить сборку и API | Проверена история, перенос не подтверждён |
+| P0 | `build/soong` | [build_soong](https://github.com/PixelExperience-Reborn/build_soong/tree/port/a17-soong-dumpvars-20261103) | Заменяет AOSP17 | Перенос PE на AOSP17, проверка bootstrap, Go-тестов и Build/Make | Частично перенесён: 2 коммита в рабочей ветке; сборка не проверена |
 | P0 | `frameworks/av` | [frameworks_av](https://github.com/PixelExperience-Reborn/frameworks_av) | Заменяет AOSP17 | Поднять AOSP17 + изучить PE-дельту; проверить сборку и API | Не проверен на Android17 |
 | P0 | `frameworks/base` | [frameworks_base](https://github.com/PixelExperience-Reborn/frameworks_base) | Заменяет AOSP17 | Поднять AOSP17 + изучить PE-дельту; проверить сборку и API | Не проверен на Android17 |
 | P0 | `frameworks/native` | [frameworks_native](https://github.com/PixelExperience-Reborn/frameworks_native) | Заменяет AOSP17 | Поднять AOSP17 + изучить PE-дельту; проверить сборку и API | Не проверен на Android17 |
