@@ -8,10 +8,12 @@ The 135 PixelExperience-Reborn forks are kept as historical PE source references
 
 | Profile | Purpose | Active project graph (static) | Android 14 PE code |
 | --- | --- | --- | --- |
-| [`aosp17_reference.xml`](../aosp17_reference.xml) | Clean AOSP 17 comparison baseline | 1087 official AOSP projects, 16 unrelated device trees removed = **1071 projects** | **None** |
-| [`aosp17_pe_bootstrap.xml`](../aosp17_pe_bootstrap.xml) | Test source compatibility of the first PE Soong port against the otherwise unchanged AOSP17 project graph | 1070 official AOSP projects + 1 reviewed PE Soong work branch = **1071 projects** | **None intentionally enabled** |
-| [`aosp17_pe_envsetup.xml`](../aosp17_pe_envsetup.xml) | Use AOSP17 Make/Soong plus PE vendor functions from the native vendorsetup hook | 1070 official AOSP + 1 PE Soong + 1 PE vendor = **1072 projects** | **None intentionally enabled** |
+| [`aosp17_reference.xml`](../aosp17_reference.xml) | Clean AOSP 17 comparison baseline | 1087 AOSP declared, 16 removed = **1071 declared / 1068 repo-selected** | **None** |
+| [`aosp17_pe_bootstrap.xml`](../aosp17_pe_bootstrap.xml) | Test source compatibility of the first PE Soong port against the otherwise unchanged AOSP17 project graph | 1070 AOSP + 1 PE Soong = **1071 declared / 1068 repo-selected** | **None intentionally enabled** |
+| [`aosp17_pe_envsetup.xml`](../aosp17_pe_envsetup.xml) | Use AOSP17 Make/Soong plus PE vendor functions from the native vendorsetup hook | 1070 AOSP + 1 PE Soong + 1 PE vendor = **1072 declared / 1069 repo-selected** | **None intentionally enabled** |
 | [`default.xml`](../default.xml) | Existing **experimental historical PE staging manifest**, NOT safe for a build | 1016 AOSP projects + 135 PE fork routes = **1151 projects** | **Many unported forks still active** |
+
+**Project counts:** 1087 AOSP project declarations minus 16 unrelated device removals leaves 1071 declared checkouts. The official `repo manifest` default selection further excludes 3 upstream `notdefault` Darwin prebuilts (`prebuilts/clang/host/darwin-x86`, `prebuilts/go/darwin-x86` and `prebuilts/rust-toolchain/darwin`). Therefore 1068 AOSP/Soong projects and 1069 projects with the PE vendor are exported by `repo manifest`. These upstream entries are retained, not deleted.
 
 ### AOSP source
 
