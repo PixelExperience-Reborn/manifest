@@ -4,7 +4,7 @@
 
 **Target:** PixelExperience-Reborn Android 17 for POCO F5 Pro / Redmi K60 (`mondrian`) only.
 
-**Status:** official source verified by public Android Git tag; isolated source import CI **started**, not yet confirmed successful. Old PixelExperience A14 `seventeen` remains unchanged. Do not merge any unreviewed device/HAL patches.
+**Status:** exact AOSP17 source snapshot independently verified and imported; one reviewed PE Audio HIDL null-guard change staged in [Draft PR #1](https://github.com/PixelExperience-Reborn/hardware_interfaces/pull/1). Host C++ tests passed; actual Android HAL/VINTF/VTS and mondrian device tests have not run. Old PixelExperience A14 `seventeen` remains unchanged.
 
 ## Source and safety
 
@@ -42,3 +42,12 @@ The original commits below were inspected, together with the AOSP17 files at exa
 6. Full AOSP17 platform build, HAL VINTF/VTS, fingerprints, Bluetooth codecs/audio, camera, encryption, power/perf and device boots for mondrian remain hard blockers for declaring completion.
 
 **Current declaration:** source import in progress, historical-delta triage performed. No Android17 HAL patch, build, VINTF result or actual device validation is claimed here.
+
+## Verified bring-up checkpoint (2026-11-03)
+
+- [Source import #41705878021](https://github.com/PixelExperience-Reborn/hardware_interfaces/actions/runs/41705878021) **passed**. GitHub Git API independently confirmed published pristine snapshot commit `965e06d0293443f382676c1ec40b4cdfd2e262ac` with tree **`f5630c44a784efc32362ad4a8c51d9707f0e73a6`** (same as official upstream).
+- PE working branch `port/a17-hardware-interfaces-pe-20261103` starts from this verified snapshot. [Production patch `57978c8`](https://github.com/PixelExperience-Reborn/hardware_interfaces/commit/57978c8eee5e25a47746d6ed9bf0a622353a857c) adds one early `halGetter == nullptr` guard and uses existing `Result::NOT_SUPPORTED` without changing other HAL dispatch behavior.
+- Actual production `Device::getAudioPortImpl` function is extracted and compiled as C++17 with minimal fake HAL types by [`test_audio_port_guard.py`](https://github.com/PixelExperience-Reborn/hardware_interfaces/blob/port/a17-hardware-interfaces-pe-20261103/tests/host/test_audio_port_guard.py). The tests exercise absent getter, working getter and conversions that fail before/after dispatch. [CI #41706669761](https://github.com/PixelExperience-Reborn/hardware_interfaces/actions/runs/41706669761) **passed**.
+- Draft [hardware_interfaces PR #1](https://github.com/PixelExperience-Reborn/hardware_interfaces/pull/1) isolates precisely `735e364cbdd00b0d6e4dc33ea0866dbb6d971a11`, with production, host test and CI changes only.
+- New [`aosp17_pe_p0_hardware.xml`](../aosp17_pe_p0_hardware.xml) includes the previously reviewed base/AV/Recovery/native/core/ART/Bionic source graph, replaces only `hardware/interfaces`, and pins the immutable PR SHA. It does not modify the historical default manifest. New manifest parser and targeted source-sync jobs are required before marking manifest integration verified.
+- **Still unverified:** complete Android17 platform build, native HAL compilation, audio VTS, codec offload, fingerprint, camera, KeyMint/FBE, device boots and end-to-end hardware tests on mondrian. Do not merge into production.
