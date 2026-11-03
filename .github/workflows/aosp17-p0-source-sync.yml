@@ -9,12 +9,14 @@ on:
       - aosp17_pe_p0_av.xml
       - aosp17_pe_p0_base.xml
       - aosp17_pe_p0_hardware.xml
+      - aosp17_pe_p0_bluetooth.xml
   pull_request:
     paths:
       - .github/workflows/aosp17-p0-source-sync.yml
       - aosp17_pe_p0_av.xml
       - aosp17_pe_p0_base.xml
       - aosp17_pe_p0_hardware.xml
+      - aosp17_pe_p0_bluetooth.xml
 
 permissions:
   contents: read
@@ -42,9 +44,9 @@ jobs:
           "$RUNNER_TEMP/repo" init -q --no-clone-bundle \
             -u https://github.com/PixelExperience-Reborn/manifest \
             -b port/a17-aosp17-manifest-20261102 \
-            -m aosp17_pe_p0_hardware.xml
+            -m aosp17_pe_p0_bluetooth.xml
 
-      - name: Fetch eleven pinned AOSP17 and PE P0 projects
+      - name: Fetch twelve pinned AOSP17 and PE P0 projects
         shell: bash
         run: |
           set -euo pipefail
@@ -52,7 +54,13 @@ jobs:
           "$RUNNER_TEMP/repo" sync --no-tags -c -j4 --fail-fast \
             build/make build/soong vendor/aosp art bionic system/core \
             frameworks/native bootable/recovery frameworks/av \
-            frameworks/base hardware/interfaces
+            frameworks/base hardware/interfaces packages/modules/Bluetooth
+
+      - name: Prepare Java 17 for Bluetooth OPP source regression
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
 
       - name: Confirm every checked-out source matches the pinned commit
         shell: bash
@@ -75,6 +83,7 @@ jobs:
               "frameworks/av": "5db9a6151f33cacb810a8fe7615be8c23d3fa858",
               "frameworks/base": "382d5c9c0b20bbdb67b70176bce02c7e64767b0c",
               "hardware/interfaces": "735e364cbdd00b0d6e4dc33ea0866dbb6d971a11",
+              "packages/modules/Bluetooth": "e7c2f47e3c73c4f2b83f03145441e419f45124b3",
           }
           for project, sha in expected.items():
               assert Path(project).is_dir(), f"Missing checkout: {project}"
@@ -94,5 +103,10 @@ jobs:
                "hardware/interfaces/tests/host", "-p", "test_*.py", "-v"],
               check=True,
           )
-          print("PASS: eleven selected P0 projects synced and pinned")
+          subprocess.run(
+              ["python3", "-m", "unittest", "discover", "-s",
+               "packages/modules/Bluetooth/tests/host", "-p", "test_*.py", "-v"],
+              check=True,
+          )
+          print("PASS: twelve selected P0 projects synced and pinned")
           PY
