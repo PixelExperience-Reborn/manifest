@@ -31,3 +31,8 @@
 - Use the current mondrian device/vendor SELinux policy only after compatibility review. Keep device-specific allow rules scoped to correct labels/domains and do not add global vendor exemptions.
 
 **Unverified:** complete 1069-project sync, SELinux/Soong build, device boot, encryption/AVB, recovery/OTA and radio/vendor tests. Keep source integration in Draft.
+
+## Confirmed source CI
+
+- [system/sepolicy targeted source sync #41726747320](https://github.com/PixelExperience-Reborn/manifest/actions/runs/41726747320) **passed**.
+- [Joint 18 selected P0 projects #41726754727](https://github.com/PixelExperience-Reborn/manifest/actions/runs/41726754727) **passed**. No CIL build, SELinux neverallow analysis, VTS or enforcing device boot has yet been demonstrated.

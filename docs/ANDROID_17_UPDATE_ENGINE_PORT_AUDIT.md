@@ -34,3 +34,9 @@
 5. Only then decide any PE update UX/backend changes; never relax cryptographic verification or rollback protections to resolve an OTA failure.
 
 **Still unverified:** full 1069-project repo sync, platform/Soong build, APK/APEX/product signing, device recovery/OTA, SELinux/VINTF and mondrian boot. Keep manifest PR in Draft.
+
+## Confirmed source CI checkpoint
+
+- [18-profile manifest structure #41727616461](https://github.com/PixelExperience-Reborn/manifest/actions/runs/41727616461) **passed**.
+- [update_engine targeted Linux repo sync #41727616362](https://github.com/PixelExperience-Reborn/manifest/actions/runs/41727616362) **passed** exact snapshot SHA, Google Git tree, unchanged OTA signature-verification source, and debug-gated downgrade policy.
+- The [joint 19-source P0 sync #41727616297](https://github.com/PixelExperience-Reborn/manifest/actions/runs/41727616297) remained **in progress** at this checkpoint. Android payload tests and real signed OTA are still pending.

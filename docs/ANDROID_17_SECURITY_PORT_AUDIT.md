@@ -27,3 +27,8 @@
 5. Only then create a separate tested PE delta branch/PR if a concrete missing function can be reproduced and fixed. No security fallbacks or policy relaxations to hide a failing HAL.
 
 **Unverified:** full 1069-project sync, Android17 Soong compilation, signing, runtime, KeyMint/FBE/CTS/VTS, recovery, OTA and device boot. The manifest remains Draft.
+
+## Confirmed source CI
+
+- [system/security targeted source sync #41726062661](https://github.com/PixelExperience-Reborn/manifest/actions/runs/41726062661) **passed**.
+- [Joint 17 selected source projects #41726062482](https://github.com/PixelExperience-Reborn/manifest/actions/runs/41726062482) **passed**; Android keystore/FBE HAL and device tests remain unverified.
