@@ -27,3 +27,9 @@
 5. Only after positive regression evidence, create a separate reviewed A17 PE patch branch and draft PR. Keep the old `seventeen` history unchanged.
 
 **Unverified:** complete 1069-project source checkout, Soong/Telephony compilation, CTS/VTS, modem/IMS compatibility, mondrian boot and real radio behavior. Draft manifest is not a production ROM.
+
+## Confirmed source CI (2026-11-04)
+
+- [Structure of 20 profiles #41741271918](https://github.com/PixelExperience-Reborn/manifest/actions/runs/41741271918) **PASS**.
+- [Targeted Linux telephony source sync #41741272123](https://github.com/PixelExperience-Reborn/manifest/actions/runs/41741272123) **PASS**, including exact snapshot commit/tree and the unchanged current IMS source invariants.
+- [Joint 21-project source sync #41741272056](https://github.com/PixelExperience-Reborn/manifest/actions/runs/41741272056) **PASS**; [replay #41741264763](https://github.com/PixelExperience-Reborn/manifest/actions/runs/41741264763) also **PASS**. These runs are **not** telephony module compilation, CTS or a modem/IMS device test.
