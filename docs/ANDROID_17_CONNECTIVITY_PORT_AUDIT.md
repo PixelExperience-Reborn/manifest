@@ -2,7 +2,7 @@
 
 **Date:** 2026-11-03. **Device target:** POCO F5 Pro / Redmi K60 (`mondrian`) only.
 
-**Current state:** AOSP17 source tag and exact commit/tree identified and locally verified by GitHub Actions fetch step; publishing the owned clean-source snapshot is **in progress**, not confirmed. Historical PE Android14 `seventeen` remains unchanged. No old PE patch has been cherry-picked.
+**Current state:** official AOSP17 source tree imported and independently verified, with **zero PE functional modifications**. Historical PE Android14 `seventeen` remains unchanged. Manifest graph/source-sync acceptance is pending; Android module compilation and device tests have not run.
 
 ## Reproducible AOSP17 source
 
@@ -32,3 +32,12 @@ The comparison reads exact AOSP17 commit `347fbd34...` through a public Git mirr
 5. Finally test mobile data, APN selection, DUN/tethering, network switching, VPN, Private DNS, IPv4/IPv6, Wi-Fi and cellular on real mondrian; run relevant CTS/VTS suites.
 
 **No success claim:** full 1069-project sync, platform/Soong build, APEX, hardware test, OTA and device boot remain unverified.
+
+## Exact snapshot and opt-in source integration (2026-11-03)
+
+- [Connectivity source import #41713047058](https://github.com/PixelExperience-Reborn/packages_modules_Connectivity/actions/runs/41713047058) **passed**. GitHub Git API independently confirms snapshot commit `701882b51546230c6c32c9654a3f7b9814429e13` has exact official tree `3a9df5486bd2b0d48cf22a4df8b8e097d36da07d`, with zero parents. It is not the original Google commit, only the identical file tree.
+- [`aosp17_pe_p0_connectivity.xml`](../aosp17_pe_p0_connectivity.xml) includes the previously reviewed Bluetooth profile and replaces only `packages/modules/Connectivity` at `701882b51546230c6c32c9654a3f7b9814429e13`. The historical default manifest remains unchanged.
+- The [dedicated source CI](../.github/workflows/aosp17-p0-connectivity-source-sync.yml) will check exact pinned HEAD and tree after Linux `repo sync`, and enforce that AOSP17 dynamic socket debug logging and `TelephonyManager.isTetheringApnRequired()` are not overwritten by old PE code. The [joint selected-source CI](../.github/workflows/aosp17-p0-source-sync.yml) now covers thirteen P0 checkouts, pending real execution.
+- No draft PR in this source fork because **there is no PE-specific source delta to propose**. Any later justified change should start from this exact source branch, use tests, and get a separate draft PR.
+
+**Still required:** actual full Connectivity/NetworkStack/Tethering build and tests, other complete AOSP17 framework dependencies, tethering/APN cellular tests on mondrian, and complete product build.

@@ -10,6 +10,7 @@ on:
       - aosp17_pe_p0_base.xml
       - aosp17_pe_p0_hardware.xml
       - aosp17_pe_p0_bluetooth.xml
+      - aosp17_pe_p0_connectivity.xml
   pull_request:
     paths:
       - .github/workflows/aosp17-p0-source-sync.yml
@@ -17,6 +18,7 @@ on:
       - aosp17_pe_p0_base.xml
       - aosp17_pe_p0_hardware.xml
       - aosp17_pe_p0_bluetooth.xml
+      - aosp17_pe_p0_connectivity.xml
 
 permissions:
   contents: read
@@ -44,9 +46,9 @@ jobs:
           "$RUNNER_TEMP/repo" init -q --no-clone-bundle \
             -u https://github.com/PixelExperience-Reborn/manifest \
             -b port/a17-aosp17-manifest-20261102 \
-            -m aosp17_pe_p0_bluetooth.xml
+            -m aosp17_pe_p0_connectivity.xml
 
-      - name: Fetch twelve pinned AOSP17 and PE P0 projects
+      - name: Fetch thirteen pinned AOSP17 and PE P0 projects
         shell: bash
         run: |
           set -euo pipefail
@@ -54,7 +56,8 @@ jobs:
           "$RUNNER_TEMP/repo" sync --no-tags -c -j4 --fail-fast \
             build/make build/soong vendor/aosp art bionic system/core \
             frameworks/native bootable/recovery frameworks/av \
-            frameworks/base hardware/interfaces packages/modules/Bluetooth
+            frameworks/base hardware/interfaces \
+            packages/modules/Bluetooth packages/modules/Connectivity
 
       - name: Prepare Java 17 for Bluetooth OPP source regression
         uses: actions/setup-java@v4
@@ -84,6 +87,7 @@ jobs:
               "frameworks/base": "382d5c9c0b20bbdb67b70176bce02c7e64767b0c",
               "hardware/interfaces": "735e364cbdd00b0d6e4dc33ea0866dbb6d971a11",
               "packages/modules/Bluetooth": "e7c2f47e3c73c4f2b83f03145441e419f45124b3",
+              "packages/modules/Connectivity": "701882b51546230c6c32c9654a3f7b9814429e13",
           }
           for project, sha in expected.items():
               assert Path(project).is_dir(), f"Missing checkout: {project}"
@@ -108,5 +112,16 @@ jobs:
                "packages/modules/Bluetooth/tests/host", "-p", "test_*.py", "-v"],
               check=True,
           )
-          print("PASS: twelve selected P0 projects synced and pinned")
+          # Connectivity is currently a zero-delta AOSP17 source mirror.
+          # Guard against accidental reintroduction of deprecated A14 PE patches.
+          traffic = Path("packages/modules/Connectivity/framework-t/src/android/net/TrafficStats.java").read_text()
+          assert "LOGD = Log.isLoggable(TAG, Log.DEBUG)" in traffic, "AOSP17 debug policy regressed"
+          tethering = Path(
+              "packages/modules/Connectivity/Tethering/src/"
+              "com/android/networkstack/tethering/TetheringConfiguration.java"
+          ).read_text()
+          check = tethering.split("public static boolean checkDunRequired(Context ctx)", 1)[1]
+          check = check.split("public int getOffloadPollInterval()", 1)[0]
+          assert "tm.isTetheringApnRequired()" in check, "AOSP17 carrier DUN check missing"
+          print("PASS: thirteen selected P0 projects synced and pinned")
           PY
