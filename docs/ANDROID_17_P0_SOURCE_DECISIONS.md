@@ -38,7 +38,7 @@ Historical Reborn forks still have Android 14-era changes; the default-branch na
 
 ## P0 integration sequencing
 
-1. **build/make**: AOSP 17 source base and PE envsetup port exists as a *local* Termux commit; it still needs publishing to a separate GitHub branch. Do not sync the old PE fourteen code as Android 17.
+1. **build/make**: the verified AOSP17 source is used **unchanged** in the three bootstrap profiles. The earlier local PE envsetup patch to core Make has been superseded: `vendor/aosp/vendorsetup.sh` now loads PE functions via AOSP17 `source_vendorsetup()`. Bash tests and the official `repo` manifest parser pass in GitHub Actions. Future PE Build/Make deltas require evidence of a concrete Android17 need; the old PE fourteen branch must not be synced as platform Make.
 2. **build/soong**: [staged Android 17 branch](https://github.com/PixelExperience-Reborn/build_soong/tree/port/a17-soong-dumpvars-20261103) includes PE build banner metadata, removal of stale PE OTA sidecars on installclean, and a regression test. Complete Soong bootstrap/build validation before declaring ported.
 3. **art / bionic / system/core**: begin from the pinned upstream commits in this document. Only add PE deltas after reviewing behavioral/security impact.
 4. **frameworks and modules**: review platform APIs and namespace dependencies before enabling PE features.
