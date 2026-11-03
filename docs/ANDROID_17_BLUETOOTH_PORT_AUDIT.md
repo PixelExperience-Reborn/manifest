@@ -39,3 +39,5 @@
 5. Complete Bluetooth classic/LE, pairing, SBC/AAC/aptX/LDAC negotiation, suspend/resume, HCI, CTS/VTS and real mondrian device tests.
 
 **Not done:** full compilation, signed APEX, controller hardware tests, vendor audio interaction, real PE device boot. Keep PR and staged manifest draft.
+
+- **Manifest checks:** [11-profile structure CI #41708380008](https://github.com/PixelExperience-Reborn/manifest/actions/runs/41708380008) and [Bluetooth targeted source sync #41708380563](https://github.com/PixelExperience-Reborn/manifest/actions/runs/41708380563) both **passed**. Immutable Bluetooth SHA `e7c2f47e3c73c4f2b83f03145441e419f45124b3` was verified after actual Linux checkout. Joint sync of all twelve selected P0 projects remains a separate gate and was still in progress at the last check.
