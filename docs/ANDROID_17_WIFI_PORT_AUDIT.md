@@ -38,3 +38,9 @@
 - The GitHub Git API independently reports [snapshot commit `f228be88b2f0b8ed7a39ca1c4db94bc5aaaecbce`](https://github.com/PixelExperience-Reborn/packages_modules_Wifi/commit/f228be88b2f0b8ed7a39ca1c4db94bc5aaaecbce) as a root with tree **`9d1062a94a9d7c7c4f4ef86a834154e2001f8114`**, exactly matching the Google tag. Its commit SHA is different from the official Google commit by design; historical PE `seventeen` stays intact.
 - [`aosp17_pe_p0_wifi.xml`](../aosp17_pe_p0_wifi.xml) extends the Permission graph and overrides only `packages/modules/Wifi` to immutable snapshot `f228be88b2f0b8ed7a39ca1c4db94bc5aaaecbce`. No functional Wi-Fi source code is changed and no Wi-Fi delta PR is necessary.
 - [Targeted Linux source CI](../.github/workflows/aosp17-p0-wifi-source-sync.yml) checks both exact commit and tree SHA and verifies original country-code change notifications and access-control permission checks on WFD mode changes. [Joint 15-project source CI](../.github/workflows/aosp17-p0-source-sync.yml) repeats the source checks. Results are **not assumed** until the actual GitHub Actions finish.
+
+## Source integration CI checkpoint
+
+- [All 14 manifest profiles #41717574821](https://github.com/PixelExperience-Reborn/manifest/actions/runs/41717574821) **passed** structural validation, with 1069 selected projects in the Wi-Fi profile and unique checkout paths.
+- [Targeted Wi-Fi Linux `repo sync` #41717574929](https://github.com/PixelExperience-Reborn/manifest/actions/runs/41717574929) **passed**, including the pinned snapshot `f228be88b2f0b8ed7a39ca1c4db94bc5aaaecbce` and Git tree `9d1062a94a9d7c7c4f4ef86a834154e2001f8114`, plus AOSP17 country-code and WFD authorization checks.
+- The [15 selected P0 project source-sync #41717574838](https://github.com/PixelExperience-Reborn/manifest/actions/runs/41717574838) remained **in progress** at the latest review. No 15-project success or full ROM build claim is warranted until GitHub confirms it.
