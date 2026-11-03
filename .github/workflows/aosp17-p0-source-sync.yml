@@ -1,0 +1,79 @@
+name: AOSP17 P0 selected source sync
+
+on:
+  push:
+    branches:
+      - port/a17-aosp17-manifest-20261102
+    paths:
+      - .github/workflows/aosp17-p0-source-sync.yml
+      - aosp17_pe_p0_av.xml
+  pull_request:
+    paths:
+      - .github/workflows/aosp17-p0-source-sync.yml
+      - aosp17_pe_p0_av.xml
+
+permissions:
+  contents: read
+
+jobs:
+  selected-source-sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - name: Install official Android repo client
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location \
+            https://storage.googleapis.com/git-repo-downloads/repo \
+            --output "$RUNNER_TEMP/repo"
+          chmod +x "$RUNNER_TEMP/repo"
+
+      - name: Initialize the reviewed AOSP17 manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/checkout"
+          cd "$RUNNER_TEMP/checkout"
+          "$RUNNER_TEMP/repo" init -q --no-clone-bundle \
+            -u https://github.com/PixelExperience-Reborn/manifest \
+            -b port/a17-aosp17-manifest-20261102 \
+            -m aosp17_pe_p0_av.xml
+
+      - name: Fetch only eight active reviewed P0 source projects
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/checkout"
+          "$RUNNER_TEMP/repo" sync --no-tags -c -j4 --fail-fast \
+            build/soong vendor/aosp art bionic system/core \
+            frameworks/native bootable/recovery frameworks/av
+
+      - name: Confirm every checked-out source matches the pinned commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/checkout"
+          python3 - <<'PY'
+          import subprocess
+          from pathlib import Path
+
+          expected = {
+              "build/soong": "6215d41c790a463b7795ce81ac77204c238cbf48",
+              "vendor/aosp": "a044adac1f764ade01148cf7c09beda9df686d91",
+              "art": "b753cf97923c3695338d21466fa14c57b480a59a",
+              "bionic": "06356e41c5ed7b12220b24c05ba4fdb873b126a7",
+              "system/core": "8e0f22aaac0ee4114a83646e2c96d07578145bfa",
+              "frameworks/native": "ae266dcb706d083868578cfedce381ef44488a07",
+              "bootable/recovery": "0ed8dc4f93020555afdfc19141263ca40629ef74",
+              "frameworks/av": "5db9a6151f33cacb810a8fe7615be8c23d3fa858",
+          }
+          for project, sha in expected.items():
+              assert Path(project).is_dir(), f"Missing checkout: {project}"
+              current = subprocess.check_output(
+                  ["git", "-C", project, "rev-parse", "HEAD"], text=True
+              ).strip()
+              assert current == sha, f"{project}: {current} != {sha}"
+              print(f"PASS {project}: {current[:12]}")
+          print("PASS: eight selected P0 projects synced and pinned")
+          PY
