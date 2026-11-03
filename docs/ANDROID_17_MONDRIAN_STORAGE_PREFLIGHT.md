@@ -29,3 +29,7 @@ This review relies on the existing owned device and proprietary vendor repositor
 5. Build and test the relevant modules, recovery image and AVB/OTA chain; then examine KeyMint service registration, `vold` logs, AVC denials, mounting results, encrypted direct boot, credential unlock and reboot. Passing a source-level Git tree check is not proof of data compatibility.
 
 **Critical open risk:** the recovery table differs in both encryption and system filesystem options from the main fstab. This requires resolution or explicit validation before calling the ROM and recovery bootable on mondrian.
+
+## Source CI result
+
+- [Targeted vold source sync #41734986161](https://github.com/PixelExperience-Reborn/manifest/actions/runs/41734986161), [19-profile manifest structure #41734986061](https://github.com/PixelExperience-Reborn/manifest/actions/runs/41734986061), and [combined 20-source checkout #41734995050](https://github.com/PixelExperience-Reborn/manifest/actions/runs/41734995050) **passed**. These CI checks validate selected source revision and structure only. They do **not** resolve the mismatches in this report or prove encryption/recovery correctness.

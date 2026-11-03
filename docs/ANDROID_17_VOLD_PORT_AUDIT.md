@@ -43,3 +43,8 @@ This is a **targeted first-pass review**, not an exhaustive range-diff of every 
 - The dedicated [mondrian storage compatibility preflight](ANDROID_17_MONDRIAN_STORAGE_PREFLIGHT.md) identifies the **actual** main fstab's `wrappedkey_v0` FBE/metadata encryption, recovery fstab's older `ice,wrappedkey` parameters, and EROFS-versus-ext4 partition type differences. `BoardConfigCommon.mk` explicitly selects this recovery fstab. This is a concrete outstanding recovery integration risk, not just a general future test item.
 - The vendor makefile also contains both KeyMint AIDL and Keymaster 4.1 services. Their presence does **not** justify blindly adding old `KM_TAG_FBE_ICE` code; verify runtime HAL behavior and compatible ciphertext/key formats first.
 - [P1 targeted vold source check #41734986161](https://github.com/PixelExperience-Reborn/manifest/actions/runs/41734986161) and [19-profile structure check #41734986061](https://github.com/PixelExperience-Reborn/manifest/actions/runs/41734986061) **passed**. Joint 20 selected-project CI was still running at this checkpoint.
+
+## Combined CI milestone
+
+- [Combined 20-source P0/P1 run #41734995050](https://github.com/PixelExperience-Reborn/manifest/actions/runs/41734995050) **passed** on manifest commit `3132a920f55d4681c77d5c4b73cd905cf2fd0803`. All selected source SHAs and predefined host/source checks passed; no actual `vold` module compilation or device FBE test was performed.
+- The next [mondrian fstab and vendor KeyMint audit](ANDROID_17_MONDRIAN_STORAGE_PREFLIGHT.md) is a separate required gate before boot/recovery claims. The two fstab files differ substantially.
