@@ -43,3 +43,5 @@ The comparison reads exact AOSP17 commit `347fbd34...` through a public Git mirr
 **Still required:** actual full Connectivity/NetworkStack/Tethering build and tests, other complete AOSP17 framework dependencies, tethering/APN cellular tests on mondrian, and complete product build.
 
 - **Validation result:** [Connectivity selected source CI #41713844857](https://github.com/PixelExperience-Reborn/manifest/actions/runs/41713844857) and [12-profile structure CI #41713844911](https://github.com/PixelExperience-Reborn/manifest/actions/runs/41713844911) **passed**. The combined 13-project source sync is a separate acceptance gate and was still executing at the last check.
+
+- [Joint 13-project source sync #41713844843](https://github.com/PixelExperience-Reborn/manifest/actions/runs/41713844843) **passed**, including pinned source and checks that the AOSP17 dynamic TrafficStats debug flag and DUN carrier policy are retained. This is not a compiled NetworkStack or on-device tethering test.

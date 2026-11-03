@@ -28,3 +28,5 @@ This is a review of selected meaningful historical commits, **not a comprehensiv
 - Do not ship debug/test APEX keys from the AOSP tree as release signing credentials. Release key management, signing and module compatibility remain separate requirements.
 
 **Outstanding:** Android17 complete Soong build, permission APEX/application compile, SELinux and role behavior, CTS/VTS/AppOps, integration with system services and actual on-device permission behavior on mondrian.
+
+- [13-profile structure CI #41714646564](https://github.com/PixelExperience-Reborn/manifest/actions/runs/41714646564) **passed**. [Permission targeted Linux source sync #41714659988](https://github.com/PixelExperience-Reborn/manifest/actions/runs/41714659988) **passed** the exact snapshot commit/tree checks and all four managed-profile notification access assertions. Joint 14-P0-project sync and Android Permission APEX compilation are separate unverified gates.
