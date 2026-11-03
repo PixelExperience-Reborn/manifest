@@ -10,6 +10,7 @@ The 135 PixelExperience-Reborn forks are kept as historical PE source references
 | --- | --- | --- | --- |
 | [`aosp17_reference.xml`](../aosp17_reference.xml) | Clean AOSP 17 comparison baseline | 1087 official AOSP projects, 16 unrelated device trees removed = **1071 projects** | **None** |
 | [`aosp17_pe_bootstrap.xml`](../aosp17_pe_bootstrap.xml) | Test source compatibility of the first PE Soong port against the otherwise unchanged AOSP17 project graph | 1070 official AOSP projects + 1 reviewed PE Soong work branch = **1071 projects** | **None intentionally enabled** |
+| [`aosp17_pe_envsetup.xml`](../aosp17_pe_envsetup.xml) | Use AOSP17 Make/Soong plus PE vendor functions from the native vendorsetup hook | 1070 official AOSP + 1 PE Soong + 1 PE vendor = **1072 projects** | **None intentionally enabled** |
 | [`default.xml`](../default.xml) | Existing **experimental historical PE staging manifest**, NOT safe for a build | 1016 AOSP projects + 135 PE fork routes = **1151 projects** | **Many unported forks still active** |
 
 ### AOSP source
@@ -17,7 +18,7 @@ The 135 PixelExperience-Reborn forks are kept as historical PE source references
 - AOSP release: `refs/tags/android-17.0.0_r1`. The reference profile retains the official AOSP project layout and build/make, ART, Bionic, system/core and other platform dependencies.
 - Unrelated device trees removed: Amlogic Yukawa; Google ATV/contexthub/cuttlefish/sdv/trout/car; Linaro Dragonboard/HiKey and corresponding kernel projects (16 exact removals in these profiles).
 - AOSP `device/common`, `device/generic/*` and `device/sample` remain because the generic platform tools/targets may depend on them. These are **not** third-party mondrian device trees and do not constitute a new port for other phones.
-- Neither profile includes proprietary GMS, an unrelated device tree, or a mondrian-specific target. These are controlled later through licensed GMS and a **mondrian-only** device manifest.
+- None of these profiles includes proprietary GMS, an unrelated device tree, or a mondrian-specific target. These are controlled later through licensed GMS and a **mondrian-only** device manifest.
 
 ### PE Soong port, immutable pin
 
@@ -34,12 +35,19 @@ We must be able to test the **official Android 17 platform unchanged** before in
 
 The 135 project tracker stays complete; a fork moves into a PE bootstrap/bring-up profile only after its baseline and PE-specific delta are separately reviewed and the appropriate checks pass. The count of historical forks is **not** the count of active overrides in an initial AOSP17 bootstrap.
 
+## Native PE environment helpers
+
+In the staged AOSP17 environment profile, core `build/make` stays official and unchanged. Upstream AOSP17 `source_vendorsetup()` automatically loads `vendor/aosp/vendorsetup.sh`, which now sources the existing PE `vendor/aosp/build/envsetup.sh` helper definitions. That preserves native AOSP17 `lunch`, product discovery and release configuration without importing an Android14 build/make fork or applying the old redundant Make hook.
+
+The vendor PR uses GitHub Actions to test Bash syntax, PE breakfast/brunch argument translation, and the `vendorsetup` integration. These checks are not a Soong bootstrap, product build or boot test.
+
 ## Required validation gates (not run)
 
 1. On an appropriately provisioned Linux host, use `repo init -u https://github.com/PixelExperience-Reborn/manifest -b port/a17-aosp17-manifest-20261102 -m aosp17_reference.xml` followed by `repo manifest -r` and `repo sync`. Record errors, exact revisions and object identity.
 2. Repeat with `-m aosp17_pe_bootstrap.xml`. Confirm only the expected Soong source differs from the reference checkout and the pinned commit exists.
 3. Run a matched AOSP17 Make/Soong bootstrap and the PE Soong Go test; investigate each failure rather than importing old Android14 fixes wholesale.
-4. Validate build product discovery; later add ONLY mondrian's independent device/vendor/kernel trees, respecting their licensing and appropriate Qualcomm HALs.
-5. Before release: product build, target-files, AVB and signing policy, SELinux enforcing, boot, telephony, Wi-Fi, camera, performance, CTS/VTS subsets and OTA upgrade/rollback.
+4. Check `aosp17_pe_envsetup.xml` against the official `repo` manifest parser and confirm the only added checkout is `vendor/aosp`. Check the vendor shell integration in a full synced AOSP17 environment.
+5. Validate build product discovery; later add ONLY mondrian's independent device/vendor/kernel trees, respecting their licensing and appropriate Qualcomm HALs.
+6. Before release: product build, target-files, AVB and signing policy, SELinux enforcing, boot, telephony, Wi-Fi, camera, performance, CTS/VTS subsets and OTA upgrade/rollback.
 
-The manifest profiles above have undergone **static source/name/path checks only**, not an actual `repo init` / `repo sync` or full build. Do not merge the existing staged manifest PR or advertise a functional Android 17 ROM until the gates pass.
+The profiles have undergone static source/name/path checks; a GitHub Actions `repo init` / `repo manifest` parser check has been added for validation. There is still no complete `repo sync` or Android17 build. Do not merge the existing staged manifest PR or advertise a functional Android 17 ROM until the gates pass.
