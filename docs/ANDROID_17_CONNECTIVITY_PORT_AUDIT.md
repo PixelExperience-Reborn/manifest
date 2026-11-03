@@ -41,3 +41,5 @@ The comparison reads exact AOSP17 commit `347fbd34...` through a public Git mirr
 - No draft PR in this source fork because **there is no PE-specific source delta to propose**. Any later justified change should start from this exact source branch, use tests, and get a separate draft PR.
 
 **Still required:** actual full Connectivity/NetworkStack/Tethering build and tests, other complete AOSP17 framework dependencies, tethering/APN cellular tests on mondrian, and complete product build.
+
+- **Validation result:** [Connectivity selected source CI #41713844857](https://github.com/PixelExperience-Reborn/manifest/actions/runs/41713844857) and [12-profile structure CI #41713844911](https://github.com/PixelExperience-Reborn/manifest/actions/runs/41713844911) **passed**. The combined 13-project source sync is a separate acceptance gate and was still executing at the last check.
