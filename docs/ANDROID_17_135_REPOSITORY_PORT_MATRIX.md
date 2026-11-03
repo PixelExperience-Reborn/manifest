@@ -31,7 +31,7 @@
 
 **Результат `repo sync` и компиляция отсутствуют; ни один профиль пока нельзя называть готовой PixelExperience A17.**
 
-**Проверенные нативные P0-профили:** [`aosp17_pe_p0_native.xml`](../aosp17_pe_p0_native.xml) закрепляет официальные исходные SHA для ART (`b753cf97923c`) и Bionic (`06356e41c5ed`). [`aosp17_pe_p0_core.xml`](../aosp17_pe_p0_core.xml) добавляет точное дерево AOSP17 `system/core`, воспроизведённое как отдельный GitHub snapshot `8e0f22aa` (tree SHA `332cc42d`, upstream SHA `545d2487`). CI с официальным `repo manifest` прошёл для обоих профилей: 1069 выбранных проектов. Это не компиляция и не тест на mondrian.
+**Проверенные нативные P0-профили:** [`aosp17_pe_p0_native.xml`](../aosp17_pe_p0_native.xml) закрепляет официальные исходные SHA для ART (`b753cf97923c`) и Bionic (`06356e41c5ed`). [`aosp17_pe_p0_core.xml`](../aosp17_pe_p0_core.xml) добавляет точное дерево AOSP17 `system/core`, воспроизведённое как отдельный GitHub snapshot `8e0f22aa` (tree SHA `332cc42d`, upstream SHA `545d2487`). CI с официальным `repo manifest` прошёл для обоих профилей: 1069 выбранных проектов. Добавлен также [`aosp17_pe_p0_frameworks.xml`](../aosp17_pe_p0_frameworks.xml), закрепляющий официальный `frameworks/native` AOSP17 без PE-патчей; профиль прошёл проверку через `repo manifest`. Это не компиляция и не тест на mondrian.
 
 ## Условия завершения каждого репозитория
 
@@ -55,7 +55,7 @@
 | P0 | `build/soong` | [build_soong](https://github.com/PixelExperience-Reborn/build_soong/tree/port/a17-soong-dumpvars-20261103) | Заменяет AOSP17 | Завершить Soong bootstrap, Go-тесты и интеграцию с Make | Частичный перенос: 3 коммита в AOSP17-ветке, включая тест; сборка не проверена |
 | P0 | `frameworks/av` | [frameworks_av](https://github.com/PixelExperience-Reborn/frameworks_av) | Заменяет AOSP17 | Поднять AOSP17 + изучить PE-дельту; проверить сборку и API | Не проверен на Android17 |
 | P0 | `frameworks/base` | [frameworks_base](https://github.com/PixelExperience-Reborn/frameworks_base) | Заменяет AOSP17 | Поднять AOSP17 + изучить PE-дельту; проверить сборку и API | Не проверен на Android17 |
-| P0 | `frameworks/native` | [frameworks_native](https://github.com/PixelExperience-Reborn/frameworks_native) | Заменяет AOSP17 | Поднять AOSP17 + изучить PE-дельту; проверить сборку и API | Не проверен на Android17 |
+| P0 | `frameworks/native` | [frameworks_native](https://github.com/PixelExperience-Reborn/frameworks_native/tree/port/a17-frameworks-native-aosp17-base-20261103) | Заменяет AOSP17 | Основа AOSP17 `ae266dcb706d`, дерево `d0554d887577`; далее ревью PE-дельт и API/ABI | Полная история AOSP17 опубликована; SHA/tree и CI импорта проверены; сборка не проверена |
 | P0 | `hardware/interfaces` | [hardware_interfaces](https://github.com/PixelExperience-Reborn/hardware_interfaces) | Заменяет AOSP17 | Поднять AOSP17 + изучить PE-дельту; проверить сборку и API | Не проверен на Android17 |
 | P0 | `packages/modules/Bluetooth` | [packages_modules_Bluetooth](https://github.com/PixelExperience-Reborn/packages_modules_Bluetooth) | Заменяет AOSP17 | Поднять AOSP17 + изучить PE-дельту; проверить сборку и API | Не проверен на Android17 |
 | P0 | `packages/modules/Connectivity` | [packages_modules_Connectivity](https://github.com/PixelExperience-Reborn/packages_modules_Connectivity) | Заменяет AOSP17 | Поднять AOSP17 + изучить PE-дельту; проверить сборку и API | Не проверен на Android17 |
