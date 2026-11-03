@@ -13,6 +13,7 @@ on:
       - aosp17_pe_p0_connectivity.xml
       - aosp17_pe_p0_permission.xml
       - aosp17_pe_p0_wifi.xml
+      - aosp17_pe_p0_adb.xml
   pull_request:
     paths:
       - .github/workflows/aosp17-p0-source-sync.yml
@@ -23,6 +24,7 @@ on:
       - aosp17_pe_p0_connectivity.xml
       - aosp17_pe_p0_permission.xml
       - aosp17_pe_p0_wifi.xml
+      - aosp17_pe_p0_adb.xml
 
 permissions:
   contents: read
@@ -50,9 +52,9 @@ jobs:
           "$RUNNER_TEMP/repo" init -q --no-clone-bundle \
             -u https://github.com/PixelExperience-Reborn/manifest \
             -b port/a17-aosp17-manifest-20261102 \
-            -m aosp17_pe_p0_wifi.xml
+            -m aosp17_pe_p0_adb.xml
 
-      - name: Fetch fifteen pinned AOSP17 and PE P0 projects
+      - name: Fetch sixteen pinned AOSP17 and PE P0 projects
         shell: bash
         run: |
           set -euo pipefail
@@ -62,7 +64,7 @@ jobs:
             frameworks/native bootable/recovery frameworks/av \
             frameworks/base hardware/interfaces \
             packages/modules/Bluetooth packages/modules/Connectivity \
-            packages/modules/Permission packages/modules/Wifi
+            packages/modules/Permission packages/modules/Wifi packages/modules/adb
 
       - name: Prepare Java 17 for Bluetooth OPP source regression
         uses: actions/setup-java@v4
@@ -95,6 +97,7 @@ jobs:
               "packages/modules/Connectivity": "701882b51546230c6c32c9654a3f7b9814429e13",
               "packages/modules/Permission": "f6e6e14b5c4d6e094c205683940a1328384338d9",
               "packages/modules/Wifi": "f228be88b2f0b8ed7a39ca1c4db94bc5aaaecbce",
+              "packages/modules/adb": "6daac89c0d6e395f9ff2a032206a21e04421dc5f",
           }
           for project, sha in expected.items():
               assert Path(project).is_dir(), f"Missing checkout: {project}"
@@ -164,5 +167,18 @@ jobs:
           miracast = p2p.split("public void setMiracastMode(int mode)", 1)[1]
           miracast = miracast.split("\n    }", 1)[0]
           assert "checkConfigureWifiDisplayPermission()" in miracast
-          print("PASS: fifteen selected P0 projects synced and pinned")
+          # adbd is an exact, zero-delta AOSP17 snapshot. Verify identity and
+          # explicitly retain the upstream recovery/fastbootd rescue behavior.
+          adb_root = Path("packages/modules/adb")
+          adb_tree = subprocess.check_output(
+              ["git", "-C", str(adb_root), "rev-parse", "HEAD^{tree}"],
+              text=True,
+          ).strip()
+          assert adb_tree == "db70f52edb597631efbba79c00276bb68cb06831", adb_tree
+          adb_main = (adb_root / "daemon/main.cpp").read_text()
+          assert 'GetProperty("ro.boot.verifiedbootstate", "") == "orange"' in adb_main
+          assert 'auth_required = android::base::GetBoolProperty("ro.adb.secure", false);' in adb_main
+          assert "auth_required = false;  // Bypass authorization" in adb_main
+          assert 'ro.adb.secure.recovery' not in adb_main, "Unexpected legacy PE auth patch"
+          print("PASS: sixteen selected P0 projects synced and pinned")
           PY
