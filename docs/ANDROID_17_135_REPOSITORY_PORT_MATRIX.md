@@ -31,6 +31,8 @@
 
 **Результат `repo sync` и компиляция отсутствуют; ни один профиль пока нельзя называть готовой PixelExperience A17.**
 
+**Проверенная замена для нативного P0:** [`aosp17_pe_p0_native.xml`](../aosp17_pe_p0_native.xml) добавляет закреплённые AOSP17 ART (`b753cf97923c`) и Bionic (`06356e41c5ed`) вместо официальных checkout путей, не меняя остальной платформенный граф. Результат `repo manifest` через CI: 1069 default-selected проектов. Это валидация исходников/manifest, но не Android компиляции.
+
 ## Условия завершения каждого репозитория
 
 Точное закрепление источника AOSP17 → сравнение истории и PE-патчей → отбор нужных изменений → ревью и проверка совместимости интерфейсов/зависимостей → локальные тесты/сборка → PR → проверка в целом дереве. Статус `seventeen` не заменяет ни одного из этих шагов.
@@ -46,8 +48,8 @@
 
 | Приоритет | Путь | GitHub | Тип | Действие | Статус |
 |---|---|---|---|---|---|
-| P0 | `art` | [art](https://github.com/PixelExperience-Reborn/art) | Заменяет AOSP17 | Основа AOSP17 b753cf97923c; debug/tracing патчи PE требуют проверки | Аудит рисков PE начат; перенос и сборка отсутствуют |
-| P0 | `bionic` | [bionic](https://github.com/PixelExperience-Reborn/bionic) | Заменяет AOSP17 | Основа AOSP17 06356e41c5ed; DNS/linker/scudo изменения PE требуют проверки | Аудит рисков PE начат; перенос и сборка отсутствуют |
+| P0 | `art` | [art](https://github.com/PixelExperience-Reborn/art/tree/port/a17-art-aosp17-base-20261103) | Заменяет AOSP17 | Основа AOSP17 b753cf97923c (полная история, SHA/tree подтверждены); отдельно проверить необходимые PE-дельты | Официальные исходники Android17 опубликованы; CI импорта PASS; PE-патчи не перенесены; сборка не проверена |
+| P0 | `bionic` | [bionic](https://github.com/PixelExperience-Reborn/bionic/tree/port/a17-bionic-aosp17-base-20261103) | Заменяет AOSP17 | Основа AOSP17 06356e41c5ed (полная история, SHA/tree подтверждены); отдельно проверить DNS/linker/scudo PE-дельты | Официальные исходники Android17 опубликованы; CI импорта PASS; PE-патчи не перенесены; сборка не проверена |
 | P0 | `bootable/recovery` | [bootable_recovery](https://github.com/PixelExperience-Reborn/bootable_recovery) | Заменяет AOSP17 | Поднять AOSP17 + изучить PE-дельту; проверить сборку и API | Не проверен на Android17 |
 | P0 | `build/make` | [build](https://github.com/PixelExperience-Reborn/build) | Заменяет AOSP17 | Для первичного bootstrap использовать официальный AOSP17; PE-helper через native vendorsetup; остальные PE-дельты ревьюить по необходимости | 3 manifest-профиля используют официальный AOSP17 Make; repo parser CI PASS; сборки нет |
 | P0 | `build/soong` | [build_soong](https://github.com/PixelExperience-Reborn/build_soong/tree/port/a17-soong-dumpvars-20261103) | Заменяет AOSP17 | Завершить Soong bootstrap, Go-тесты и интеграцию с Make | Частичный перенос: 3 коммита в AOSP17-ветке, включая тест; сборка не проверена |
