@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - port/a17-aosp17-manifest-20261102
+    paths:
+      - 'aosp17_*.xml'
+      - '.github/workflows/aosp17-manifest-structure.yml'
   pull_request:
     paths:
       - aosp17_reference.xml

@@ -5,26 +5,12 @@ on:
     branches:
       - port/a17-aosp17-manifest-20261102
     paths:
-      - .github/workflows/aosp17-p0-source-sync.yml
-      - aosp17_pe_p0_av.xml
-      - aosp17_pe_p0_base.xml
-      - aosp17_pe_p0_hardware.xml
-      - aosp17_pe_p0_bluetooth.xml
-      - aosp17_pe_p0_connectivity.xml
-      - aosp17_pe_p0_permission.xml
-      - aosp17_pe_p0_wifi.xml
-      - aosp17_pe_p0_adb.xml
+      - 'aosp17_*.xml'
+      - '.github/workflows/aosp17-p0-source-sync.yml'
   pull_request:
     paths:
-      - .github/workflows/aosp17-p0-source-sync.yml
-      - aosp17_pe_p0_av.xml
-      - aosp17_pe_p0_base.xml
-      - aosp17_pe_p0_hardware.xml
-      - aosp17_pe_p0_bluetooth.xml
-      - aosp17_pe_p0_connectivity.xml
-      - aosp17_pe_p0_permission.xml
-      - aosp17_pe_p0_wifi.xml
-      - aosp17_pe_p0_adb.xml
+      - 'aosp17_*.xml'
+      - '.github/workflows/aosp17-p0-source-sync.yml'
 
 permissions:
   contents: read

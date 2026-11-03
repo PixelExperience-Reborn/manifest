@@ -35,3 +35,9 @@ This is a targeted review of selected historical platform-specific PE changes, *
 5. Only after test data and documented security policy: open a separate reviewed PR for any PE-specific recovery change. Do not merge old patch blindly.
 
 **Release blockers:** full 1069 selected-project sync, Soong/Make build, target files, ADB/fastboot recovery integration, AVB, CTS/VTS and mondrian boot tests have not run. Keep the manifest PR in Draft.
+
+## Verified manifest CI milestone
+
+- [15-profile structural CI #41719994433](https://github.com/PixelExperience-Reborn/manifest/actions/runs/41719994433) **passed**; the adb profile contains 1069 default-selected checkouts.
+- [Targeted adb Linux source sync #41719994839](https://github.com/PixelExperience-Reborn/manifest/actions/runs/41719994839) **passed** immutable HEAD/tree checks and confirms the AOSP17 authorization source has not been rewritten.
+- [Joint 16-project selected source sync #41720003802](https://github.com/PixelExperience-Reborn/manifest/actions/runs/41720003802) **passed**; full device/host adb build and the critical fastbootd rescue tests are still missing.

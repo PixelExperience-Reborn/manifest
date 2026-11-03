@@ -28,3 +28,7 @@
 5. Separate full ROM build, recovery, AVB/OTA, CTS/VTS, and mondrian validation are still unverified.
 
 **No claim:** the ADB and 16-project selected source checks do not download/build every AOSP17 build tool and do not demonstrate a bootable ROM.
+
+## Verified source provenance checkpoint
+
+- [Google build-tools source check #41721043093](https://github.com/PixelExperience-Reborn/manifest/actions/runs/41721043093) **passed** exact AOSP17 commit `9b6c8c6a2f582a9d7817fd8275c8014959c60cc4` and tree `ea52996a4beaea187e897b10ce36bcb913b92e02`, without cloning all binary files or publishing a replacement fork. No executable runtime compatibility test was included.
