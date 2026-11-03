@@ -1,0 +1,40 @@
+# P0 — frameworks/base: Android 17 migration audit and dependencies
+
+**Status:** first-pass source/patch comparison. The separate official-AOSP17 source import job [41638866565](https://github.com/PixelExperience-Reborn/frameworks_base/actions/runs/41638866565) was still running at the time of this note. **No PE frameworks/base source patch, Android17 framework compilation or mondrian device test is yet accepted.**
+
+## Source model
+
+- Historical PE fork: [`frameworks_base/seventeen`](https://github.com/PixelExperience-Reborn/frameworks_base/tree/seventeen) contains PE customizations built on Android14 code. It is source evidence to **select and adapt** changes, not a compatible Android17 replacement.
+- Official upstream: [`platform/frameworks/base` AOSP `android-17.0.0_r1`](https://android.googlesource.com/platform/frameworks/base/+/refs/tags/android-17.0.0_r1), commit `94b4c163b7dfe5ce3607f7bb8456f9573f7de57d`, tree `908a2ce43657451526181a33ee94fc688add3117`.
+- Source code at the exact upstream commit was compared for targeted classes through the public `GrapheneOS/platform_frameworks_base` Git mirror at the same Git commit (not used as a new ROM base). The official AOSP17 checkout must remain the authoritative source.
+- Preserve the old `seventeen` branch. Import the official AOSP17 commit into a separate branch; then create a **distinct PE-delta branch** whose PR base is the clean Android17 branch. This makes the PE diff reviewable, unlike merging the whole A14 tree at once.
+
+## Verified old PE changes and their Android17 impact
+
+| Original PE change | Android 17 finding | Decision |
+| --- | --- | --- |
+| [`6a5bde1265fe` SideFps null guard](https://github.com/PixelExperience-Reborn/frameworks_base/commit/6a5bde1265fe) | `SideFpsEventHandler.notifyPowerPressed()` in AOSP17 already obtains `FingerprintManager` and **returns when it is null**. `onFingerprintSensorReady()` also checks `FEATURE_FINGERPRINT`. | **Already handled upstream for the null manager path**; do not duplicate old guard. More complete system tests still required. |
+| [`ed33c0c3196d` configurable volume panel position](https://github.com/PixelExperience-Reborn/frameworks_base/commit/ed33c0c3196d), subsequent `d41ca6496bf4` gravity corrections | Original patch modifies `packages/SystemUI/src/com/android/systemui/volume/VolumeDialogImpl.java`. This old file is absent in checked AOSP17; the modern component is `packages/SystemUI/src/com/android/systemui/volume/dialog/VolumeDialog.kt`, with vertical `Gravity.END` and horizontal `Gravity.TOP or Gravity.END`. | **Reimplementation required**, not cherry-pick. Must preserve correct LTR/RTL, window touch region, layout mode and animation on AOSP17. |
+| [`7925615633a5` and `4e093fb89aa8` UDFPS framework dimming](https://github.com/PixelExperience-Reborn/frameworks_base/commit/7925615633a5) | Original PE patches target old UdfpsController Java/Kotlin and resource configuration; the checked Android17 `UdfpsControllerOverlay.kt` uses different dependencies/flags and does not contain the old `FLAG_DIM_BEHIND` pattern. | **Defer**, compare AOSP17 brightness/alpha model and system UDFPS behavior; default off until device tests. |
+| [`54623637a227` haptic fling in EdgeEffect](https://github.com/PixelExperience-Reborn/frameworks_base/commit/54623637a227) | Original patch adds `Vibrator` and `VibrationEffect` calls directly in `EdgeEffect.java`. Current AOSP17 `EdgeEffect` has different scrolling/render behavior and no identical direct-Vibrator path. | **Defer** until haptic routing, permissions, accessibility and performance are checked; do not add unbounded haptics by default. |
+| [`34241d26643b` PixelPropsUtils](https://github.com/PixelExperience-Reborn/frameworks_base/commit/34241d26643b), [`d59703eb8b8a` certified props](https://github.com/PixelExperience-Reborn/frameworks_base/commit/d59703eb8b8a) | Instrumentation/PackageManager injection spoofs device/Google certification data for applications. Not needed for a valid, secure AOSP17 framework bring-up. | **Reject** from clean framework port. |
+| [`353904a6c5e6` wildcard required RRO properties](https://github.com/PixelExperience-Reborn/frameworks_base/commit/353904a6c5e6) | Broadens manifest overlay required-system-property semantics. | **Defer** pending Android17 overlay parser/security review and necessity. |
+| [`5ac7814a3019`, `d0058a2a57c3` custom Back long-press](https://github.com/PixelExperience-Reborn/frameworks_base/commit/5ac7814a3019) | Touches `PhoneWindowManager`, hidden Settings keys and input events, which have changed through Android17 policy and predictive back. | **Defer** until modern Input/Window policy API and CTS/accessibility validation. |
+
+These are **sampled high-impact historical commits**, not a complete list of all PE commits. Preserve custom features through explicit functionality requirements and controlled ports, rather than saying everything is migrated merely because a clean AOSP source tree was copied.
+
+## Mandatory integration boundaries
+
+1. **Resource and API compatibility:** Android17 `framework-res`, SettingsProvider, hidden APIs, SystemUI Dagger/Compose/Kotlin, resource overlays and Settings must agree on names/types. Old resource XML should not be transplanted.
+2. **System services:** Test SystemServer, PackageManager, ActivityManager/WindowManager, notification/media, thermal/power, biometrics and telephony dependency changes.
+3. **Security:** Keep property access controls, SELinux, PermissionManager, AppOps, Verified Boot and package identity policies intact.
+4. **mondrian UX:** Preserve correct UDFPS, display, haptics, status bar/landscape, volume panel and camera interactions without adding old A14 frameworks wholesale.
+5. **Build/release tests:** Run actual `framework-minus-apex`, SystemUI, Settings, relevant unit tests, hidden-API checks and product build after a full consistent `repo sync`. UI/runtime tests must run on the device or suitable target.
+
+## Current validation
+
+- GitHub Actions has passed real nine-project P0 source synchronization up to `frameworks/av` in [run 41639702260](https://github.com/PixelExperience-Reborn/manifest/actions/runs/41639702260); **this does not include frameworks/base yet**.
+- The official AOSP17 frameworks/base source import is handled independently in [run 41638866565](https://github.com/PixelExperience-Reborn/frameworks_base/actions/runs/41638866565). Do not mark it completed before that run and the resulting branch/tree pass verification.
+- No targeted Android17 frameworks/base Java/Kotlin patch or compiler/test run is claimed here.
+
+**Acceptance:** source commit + exact tree verified → PE patches individually reviewed → Android17 framework/SystemUI/Settings builds → tests → mondrian bring-up → only then ready for merge.
