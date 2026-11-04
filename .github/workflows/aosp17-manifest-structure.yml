@@ -155,6 +155,12 @@ jobs:
           assert indexed["packages/modules/Nfc"].get("name") == "platform/packages/modules/Nfc", "AOSP17 NFC module replaced"
           assert indexed["prebuilts/module_sdk/Nfc"].get("name") == "platform/prebuilts/module_sdk/Nfc", "AOSP17 NFC SDK replaced"
           assert indexed["hardware/nxp/nfc"].get("name") == "platform/hardware/nxp/nfc", "AOSP17 NXP HAL source replaced"
+          # The archived PE Settings tree is Android14-era and requires
+          # faceunlock_framework / vendor.lineage.fastcharge plus obsolete
+          # SettingsLib defaults. Keep AOSP17 Settings until Soong/API and
+          # per-feature device/security reviews have passed.
+          assert indexed["packages/apps/Settings"].get("name") == "platform/packages/apps/Settings", "unreviewed Settings replacement"
+          assert all(p.get("name") != "packages_apps_Settings" for p in projects)
           assert indexed["build/make"].get("name") == "platform/build", "core Make is not AOSP17"
           for path in ("art", "bionic", "system/core"):
               project = indexed[path]
