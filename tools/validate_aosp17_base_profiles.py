@@ -87,6 +87,10 @@ OFFICIAL_PATHS = {
     "external/dtc": "platform/external/dtc",
     "external/e2fsprogs": "platform/external/e2fsprogs",
     "external/gptfdisk": "platform/external/gptfdisk",
+    "external/icu": "platform/external/icu",
+    "external/libcxx": "platform/external/libcxx",
+    "external/libnl": "platform/external/libnl",
+    "external/mksh": "platform/external/mksh",
     "packages/apps/Settings": "platform/packages/apps/Settings",
     "packages/apps/Camera2": "platform/packages/apps/Camera2",
     "packages/modules/Nfc": "platform/packages/modules/Nfc",
@@ -99,6 +103,8 @@ OFFICIAL_PATHS = {
     "system/tools/mkbootimg": "platform/system/tools/mkbootimg",
 }
 FORBIDDEN_PATH_PREFIXES = (
+    "external/json-c/",
+    "external/ntfs-3g/",
     "external/ant-wireless/",
     "device/xiaomi/",
     "hardware/custom/",
@@ -112,6 +118,7 @@ FORBIDDEN_NAMES = {
     "external_avb",
     "external_cronet", "external_dtc", "external_e2fsprogs",
     "external_gptfdisk", "external_connectivity",
+    "external_icu", "external_json-c", "external_libcxx", "external_libnl", "external_mksh",
 }
 
 
@@ -186,6 +193,9 @@ def validate():
         expected_selected = 1068 + int(index >= 2)
         if len(projects) - notdefault != expected_selected:
             raise ValueError(f"{file}: default-selected count changed")
+        for legacy_path in ("external/json-c", "external/ntfs-3g"):
+            if legacy_path in projects:
+                raise ValueError(f"{file}: unreviewed historical PE external dependency {legacy_path}")
         if projects.get("external/avb") is None:
             raise ValueError(f"{file}: official AVB missing")
         for p, official in OFFICIAL_PATHS.items():
