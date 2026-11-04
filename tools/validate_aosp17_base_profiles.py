@@ -96,6 +96,8 @@ OFFICIAL_PATHS = {
     "external/mksh": "platform/external/mksh",
     "external/tinyxml2": "platform/external/tinyxml2",
     "external/wpa_supplicant_8": "platform/external/wpa_supplicant_8",
+    "hardware/broadcom/libbt": "platform/hardware/broadcom/libbt",
+    "hardware/libhardware": "platform/hardware/libhardware",
     "packages/apps/Settings": "platform/packages/apps/Settings",
     "packages/apps/Camera2": "platform/packages/apps/Camera2",
     "packages/modules/Nfc": "platform/packages/modules/Nfc",
@@ -125,6 +127,8 @@ FORBIDDEN_NAMES = {
     "external_gptfdisk", "external_connectivity",
     "external_icu", "external_json-c", "external_libcxx", "external_libnl", "external_mksh",
     "external_tinyxml", "external_wpa_supplicant_8",
+    "hardware_broadcom_libbt", "hardware_custom_compat",
+    "hardware_google_pixel", "hardware_libhardware",
 }
 
 
@@ -199,7 +203,8 @@ def validate():
         expected_selected = 1068 + int(index >= 2)
         if len(projects) - notdefault != expected_selected:
             raise ValueError(f"{file}: default-selected count changed")
-        for legacy_path in ("external/json-c", "external/ntfs-3g", "external/tinyxml"):
+        for legacy_path in ("external/json-c", "external/ntfs-3g", "external/tinyxml",
+                            "hardware/custom/compat", "hardware/google/pixel"):
             if legacy_path in projects:
                 raise ValueError(f"{file}: unreviewed historical PE external dependency {legacy_path}")
         if projects.get("external/avb") is None:
