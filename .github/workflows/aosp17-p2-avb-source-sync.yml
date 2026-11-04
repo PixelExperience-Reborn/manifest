@@ -1,0 +1,82 @@
+name: AOSP17 P2 official AVB source boundary
+
+on:
+  push:
+    branches:
+      - port/a17-aosp17-manifest-20261102
+    paths:
+      - aosp17_reference.xml
+      - aosp17_pe_p1_timezonepicker.xml
+      - .github/workflows/aosp17-p2-avb-source-sync.yml
+      - docs/ANDROID_17_135_REPOSITORY_PORT_MATRIX.md
+  pull_request:
+    paths:
+      - aosp17_reference.xml
+      - aosp17_pe_p1_timezonepicker.xml
+      - .github/workflows/aosp17-p2-avb-source-sync.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  official-aosp17-avb-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    steps:
+      - name: Download official Android repo launcher
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fLsS --retry 4 https://storage.googleapis.com/git-repo-downloads/repo -o "$RUNNER_TEMP/repo"
+          chmod +x "$RUNNER_TEMP/repo"
+      - name: Initialize staged PE/AOSP17 profile and assert AVB ownership
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/aosp"
+          cd "$RUNNER_TEMP/aosp"
+          "$RUNNER_TEMP/repo" init -q --no-clone-bundle --partial-clone --clone-filter=blob:none \
+            -u https://github.com/PixelExperience-Reborn/manifest \
+            -b port/a17-aosp17-manifest-20261102 -m aosp17_pe_p1_timezonepicker.xml
+          "$RUNNER_TEMP/repo" manifest -o "$RUNNER_TEMP/effective-manifest.xml"
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          import xml.etree.ElementTree as ET
+
+          projects = ET.parse(Path(os.environ["RUNNER_TEMP"]) / "effective-manifest.xml").getroot().findall("project")
+          paths = {p.get("path") or p.get("name"): p.get("name") for p in projects}
+          assert paths.get("external/avb") == "platform/external/avb", paths.get("external/avb")
+          assert "external_avb" not in paths.values(), "Android14 PE AVB archive selected"
+          assert "external/avb" in paths, "missing official AVB project"
+          print("PASS: official AOSP17 AVB is sole selected external/avb checkout")
+          PY
+      - name: Sync only official Android17 AVB
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/aosp"
+          "$RUNNER_TEMP/repo" sync -c -j2 --no-tags --fail-fast external/avb
+      - name: Verify release SHA/tree and source-level signing invariants
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/aosp/external/avb"
+          test "$(git rev-parse HEAD)" = "ba2dec4b035b0a3b61c5f8f8a74d86bcd450b1ee"
+          test "$(git rev-parse HEAD^{tree})" = "03312e0570b5893b9ac940e5ec3148287e4130e6"
+          python3 - <<'PY'
+          from pathlib import Path
+          avbtool = Path("avbtool.py").read_text()
+          bp = Path("Android.bp").read_text()
+          assert Path("libavb_cert").is_dir(), "Android17 certificate backend not found"
+          assert Path("rust").is_dir(), "Android17 Rust support not found"
+          assert not Path("libavb_atx").exists(), "historical Android14 ATX directory unexpectedly present"
+          assert "ANDROID_SECURE_STORAGE_CMD" not in avbtool, "unreviewed PE signing extension present"
+          assert "TMP__KEY_FILE_NAME" not in avbtool, "unreviewed PE temp key file environment present"
+          assert "AVB_VBMETA_IMAGE_FLAGS_HASHTREE_DISABLED = 1" in avbtool
+          assert "AVB_VBMETA_IMAGE_FLAGS_VERIFICATION_DISABLED = 2" in avbtool
+          assert 'name: "libavb"' in bp
+          print("PASS: official AOSP17 AVB SHA/tree and selected signing source boundaries")
+          print("NOT TESTED: AVB compilation, signed images, production keys, locked boot, OTA, mondrian")
+          PY
