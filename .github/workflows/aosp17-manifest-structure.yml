@@ -266,6 +266,12 @@ jobs:
           assert indexed["system/sepolicy"].get("name") == "platform/system/sepolicy", "AOSP17 platform SELinux policy replaced"
           assert "device/qcom/sepolicy" not in indexed, "unreviewed Qualcomm SELinux API snapshot mutation activated"
           assert all(p.get("name") != "device_qcom_sepolicy" for p in projects)
+          # Qualcomm CAF QSSI14 sm8450 sepolicy depends on the archived,
+          # rejected generic QCOM SEPolicy.mk and bundles broad vendor HAL,
+          # KeyMint, dontaudit and unrelated-device policies. Native
+          # PE-Reborn mondrian policy must be assembled per actual service.
+          assert "device/qcom/sepolicy_vndr/sm8450" not in indexed, "unreviewed old CAF sm8450 vendor SELinux policy activated"
+          assert all(p.get("name") != "device_qcom_sepolicy_vndr_sm8450" for p in projects)
           assert indexed["frameworks/base"].get("name") == "platform/frameworks/base", "official AOSP17 SystemUI source replaced"
           assert indexed["packages/apps/Settings"].get("name") == "platform/packages/apps/Settings", "official AOSP17 Settings source replaced"
           assert indexed["system/libufdt"].get("name") == "platform/system/libufdt", "AOSP17 DTBO tool source missing or replaced"
