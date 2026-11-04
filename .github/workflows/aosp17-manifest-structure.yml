@@ -142,6 +142,11 @@ jobs:
           assert "packages/apps/Aperture" not in indexed, "unreviewed Aperture activated"
           assert all(p.get("name") != "packages_apps_Aperture" for p in projects)
           assert indexed["packages/apps/Camera2"].get("name") == "platform/packages/apps/Camera2", "unreviewed camera replacement"
+          # The archived face-unlock app is privileged/platform-signed and
+          # depends on missing vendor code plus unreviewed biometric tokens.
+          # Its old AIDL/hidden API path is never silently loaded into A17.
+          assert "packages/apps/FaceUnlockService" not in indexed, "unreviewed face unlock service activated"
+          assert all(p.get("name") != "packages_apps_FaceUnlockService" for p in projects)
           assert indexed["build/make"].get("name") == "platform/build", "core Make is not AOSP17"
           for path in ("art", "bionic", "system/core"):
               project = indexed[path]
