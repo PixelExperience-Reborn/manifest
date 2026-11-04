@@ -147,6 +147,14 @@ jobs:
           # Its old AIDL/hidden API path is never silently loaded into A17.
           assert "packages/apps/FaceUnlockService" not in indexed, "unreviewed face unlock service activated"
           assert all(p.get("name") != "packages_apps_FaceUnlockService" for p in projects)
+          # Android 17 NFC lives in packages/modules/Nfc (Mainline-ready
+          # with both NfcNci and NfcNciApex packaging variants). Do not let
+          # the archived Android14 packages/apps/Nfc create a duplicate NfcNci.
+          assert "packages/apps/Nfc" not in indexed, "legacy NFC package activated"
+          assert all(p.get("name") != "packages_apps_Nfc" for p in projects)
+          assert indexed["packages/modules/Nfc"].get("name") == "platform/packages/modules/Nfc", "AOSP17 NFC module replaced"
+          assert indexed["prebuilts/module_sdk/Nfc"].get("name") == "platform/prebuilts/module_sdk/Nfc", "AOSP17 NFC SDK replaced"
+          assert indexed["hardware/nxp/nfc"].get("name") == "platform/hardware/nxp/nfc", "AOSP17 NXP HAL source replaced"
           assert indexed["build/make"].get("name") == "platform/build", "core Make is not AOSP17"
           for path in ("art", "bionic", "system/core"):
               project = indexed[path]
