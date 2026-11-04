@@ -249,6 +249,14 @@ jobs:
           assert indexed["system/tools/mkbootimg"].get("name") == "platform/system/tools/mkbootimg", "unreviewed legacy boot header or mkbootimg override"
           assert indexed["system/libufdt"].get("name") == "platform/system/libufdt", "official DTBO packaging tools replaced"
           assert all(p.get("name") != "system_tools_mkbootimg" for p in projects)
+          # The archived Pixel framework config.mk forcibly installs
+          # platform-signed privileged SettingsGoogle/SystemUIGoogle replacing
+          # Settings and SystemUI; its README warns decompiled APK recipes
+          # are unsafe. No such product override is approved in clean AOSP17.
+          assert "vendor/pixel-framework" not in indexed, "old Pixel framework privileged app override activated"
+          assert all(p.get("name") != "vendor_pixel-framework" for p in projects)
+          assert indexed["frameworks/base"].get("name") == "platform/frameworks/base", "official AOSP17 SystemUI source replaced"
+          assert indexed["packages/apps/Settings"].get("name") == "platform/packages/apps/Settings", "official AOSP17 Settings source replaced"
           assert indexed["system/libufdt"].get("name") == "platform/system/libufdt", "AOSP17 DTBO tool source missing or replaced"
           assert indexed["system/tools/mkbootimg"].get("name") == "platform/system/tools/mkbootimg", "AOSP17 boot image tools replaced"
           assert "vendor/lineage" not in indexed, "LineageOS product base incorrectly inherited"
