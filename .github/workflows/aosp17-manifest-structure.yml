@@ -217,6 +217,11 @@ jobs:
           assert indexed["system/libhidl"].get("name") == "platform/system/libhidl", "unreviewed legacy HIDL ABI override"
           assert indexed["system/libhwbinder"].get("name") == "platform/system/libhwbinder", "AOSP17 HIDL binder replaced"
           assert all(p.get("name") != "system_libhidl" for p in projects)
+          # Legacy PE reverted the post-start HwBinder threadpool shrink
+          # guard for unrelated kona/lahaina cameras. Keep the official
+          # Android17 IPC implementation and Parcel parent-index defenses.
+          assert indexed["system/libhwbinder"].get("name") == "platform/system/libhwbinder", "unreviewed old HwBinder threadpool override"
+          assert all(p.get("name") != "system_libhwbinder" for p in projects)
           assert "vendor/lineage" not in indexed, "LineageOS product base incorrectly inherited"
           assert "device/xiaomi/mondrian" not in indexed, "mondrian tree activated before native AOSP17 bring-up"
           assert "device/xiaomi/sm8450-common" not in indexed, "sm8450-common tree activated before native AOSP17 bring-up"
