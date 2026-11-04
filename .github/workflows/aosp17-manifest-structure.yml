@@ -202,6 +202,14 @@ jobs:
           assert indexed["system/netd"].get("name") == "platform/system/netd", "AOSP17 netd replaced"
           assert indexed["packages/modules/Connectivity"].get("name") == "platform/packages/modules/Connectivity", "AOSP17 Connectivity replaced"
           assert all(p.get("name") != "system_bpf" for p in projects)
+          # The archived Android14 system/extras includes old boot-image
+          # BootSignature heuristics and an optional host-only lpunpack_static.
+          # Never replace Android17 fscrypt/verity/dynamic-partition libraries
+          # just to obtain an extraction utility or old signing behavior.
+          assert indexed["system/extras"].get("name") == "platform/system/extras", "unreviewed system/extras or boot signing replacement"
+          assert indexed["system/core"].get("name") == "platform/system/core", "official fs_mgr/system core replaced"
+          assert indexed["system/vold"].get("name") == "platform/system/vold", "official vold replaced"
+          assert all(p.get("name") != "system_extras" for p in projects)
           assert "vendor/lineage" not in indexed, "LineageOS product base incorrectly inherited"
           assert "device/xiaomi/mondrian" not in indexed, "mondrian tree activated before native AOSP17 bring-up"
           assert "device/xiaomi/sm8450-common" not in indexed, "sm8450-common tree activated before native AOSP17 bring-up"
