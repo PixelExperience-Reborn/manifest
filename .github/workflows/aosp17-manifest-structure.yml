@@ -136,6 +136,12 @@ jobs:
           # Wi-Fi/USB/GNSS/fastboot may collide with device-specific HALs.
           assert "hardware/custom/interfaces" not in indexed, "unreviewed HAL project activated"
           assert all(p.get("name") != "hardware_custom_interfaces" for p in projects)
+          # Aperture is an optional, unported legacy app. Preserve the
+          # official AOSP17 Camera2 source until the CameraX/Soong graph,
+          # platform build and mondrian camera runtime have all been tested.
+          assert "packages/apps/Aperture" not in indexed, "unreviewed Aperture activated"
+          assert all(p.get("name") != "packages_apps_Aperture" for p in projects)
+          assert indexed["packages/apps/Camera2"].get("name") == "platform/packages/apps/Camera2", "unreviewed camera replacement"
           assert indexed["build/make"].get("name") == "platform/build", "core Make is not AOSP17"
           for path in ("art", "bionic", "system/core"):
               project = indexed[path]
