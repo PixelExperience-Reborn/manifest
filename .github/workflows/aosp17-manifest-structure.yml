@@ -186,6 +186,14 @@ jobs:
           # A new PE-Reborn device/common product must be authored separately.
           assert "packages/resources/devicesettings" not in indexed, "unreviewed PE device resources activated"
           assert all(p.get("name") != "packages_resources_devicesettings" for p in projects)
+          # Telecom is an Android17 modular service with a separate shim,
+          # TelecomUi and TelephonyCore integration. The 2024 PE legacy
+          # Telecom APK is not compatible with this Soong service graph.
+          assert indexed["packages/services/Telecomm"].get("name") == "platform/packages/services/Telecomm", "unreviewed Telecomm replacement"
+          assert indexed["packages/modules/Telecom"].get("name") == "platform/packages/modules/Telecom", "AOSP17 Telecom module replaced"
+          assert indexed["packages/modules/Telephony"].get("name") == "platform/packages/modules/Telephony", "AOSP17 Telephony module replaced"
+          assert indexed["packages/services/Telephony"].get("name") == "platform/packages/services/Telephony", "AOSP17 Telephony service replaced"
+          assert all(p.get("name") != "packages_services_Telecomm" for p in projects)
           assert "vendor/lineage" not in indexed, "LineageOS product base incorrectly inherited"
           assert "device/xiaomi/mondrian" not in indexed, "mondrian tree activated before native AOSP17 bring-up"
           assert "device/xiaomi/sm8450-common" not in indexed, "sm8450-common tree activated before native AOSP17 bring-up"
