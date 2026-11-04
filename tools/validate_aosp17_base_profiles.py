@@ -20,7 +20,7 @@ STAGES = [
         "build/soong": ("build_soong", "6215d41c790a463b7795ce81ac77204c238cbf48"),
     }),
     ("aosp17_pe_envsetup.xml", {
-        "vendor/aosp": ("vendor_aosp", "106bfdd86a6871fbd565370d8f2d34328679395e"),
+        "vendor/aosp": ("vendor_aosp", "07a2c6976375f971d05fa5f210bcd8e45d7723e0"),
     }),
     ("aosp17_pe_p0_native.xml", {
         "art": ("art", "b753cf97923c3695338d21466fa14c57b480a59a"),
@@ -83,6 +83,10 @@ STAGES = [
 OFFICIAL_PATHS = {
     "build/make": "platform/build",
     "external/avb": "platform/external/avb",
+    "external/cronet": "platform/external/cronet",
+    "external/dtc": "platform/external/dtc",
+    "external/e2fsprogs": "platform/external/e2fsprogs",
+    "external/gptfdisk": "platform/external/gptfdisk",
     "packages/apps/Settings": "platform/packages/apps/Settings",
     "packages/apps/Camera2": "platform/packages/apps/Camera2",
     "packages/modules/Nfc": "platform/packages/modules/Nfc",
@@ -106,6 +110,8 @@ FORBIDDEN_NAMES = {
     "vendor_pixel-framework", "device_custom_sepolicy",
     "device_qcom_sepolicy", "device_qcom_sepolicy_vndr_sm8450",
     "external_avb",
+    "external_cronet", "external_dtc", "external_e2fsprogs",
+    "external_gptfdisk", "external_connectivity",
 }
 
 
