@@ -77,6 +77,9 @@ STAGES = [
     ("aosp17_pe_p1_timezonepicker.xml", {
         "frameworks/opt/timezonepicker": ("frameworks_opt_timezonepicker", "7a5698b6c651db16f243fe8d3d28008e4243e04c"),
     }),
+    ("aosp17_pe_p2_tinycompress.xml", {
+        "external/tinycompress": ("external_tinycompress", "25951427f9de414c3d5e01cd92b98f21ad490372"),
+    }),
 ]
 
 # Explicit platform-only ownership remains until a reviewed new port exists.
@@ -91,6 +94,8 @@ OFFICIAL_PATHS = {
     "external/libcxx": "platform/external/libcxx",
     "external/libnl": "platform/external/libnl",
     "external/mksh": "platform/external/mksh",
+    "external/tinyxml2": "platform/external/tinyxml2",
+    "external/wpa_supplicant_8": "platform/external/wpa_supplicant_8",
     "packages/apps/Settings": "platform/packages/apps/Settings",
     "packages/apps/Camera2": "platform/packages/apps/Camera2",
     "packages/modules/Nfc": "platform/packages/modules/Nfc",
@@ -119,6 +124,7 @@ FORBIDDEN_NAMES = {
     "external_cronet", "external_dtc", "external_e2fsprogs",
     "external_gptfdisk", "external_connectivity",
     "external_icu", "external_json-c", "external_libcxx", "external_libnl", "external_mksh",
+    "external_tinyxml", "external_wpa_supplicant_8",
 }
 
 
@@ -193,7 +199,7 @@ def validate():
         expected_selected = 1068 + int(index >= 2)
         if len(projects) - notdefault != expected_selected:
             raise ValueError(f"{file}: default-selected count changed")
-        for legacy_path in ("external/json-c", "external/ntfs-3g"):
+        for legacy_path in ("external/json-c", "external/ntfs-3g", "external/tinyxml"):
             if legacy_path in projects:
                 raise ValueError(f"{file}: unreviewed historical PE external dependency {legacy_path}")
         if projects.get("external/avb") is None:
@@ -223,7 +229,7 @@ def validate():
                 raise ValueError(f"{file}: unexpected project {path}")
         print(f"PASS: {file}: {len(projects)} declared, {expected_selected} selected, "
               f"{len(expected_pins)} reviewed pins")
-    print("PASS: all 21 AOSP17 base profiles retain official AVB/Settings and no device trees")
+    print("PASS: all 22 AOSP17 staged profiles retain official AVB/Settings and no device trees")
     print("SOURCE/STRUCTURE ONLY: full repo sync, Soong/Make build and device boot NOT tested")
 
 
