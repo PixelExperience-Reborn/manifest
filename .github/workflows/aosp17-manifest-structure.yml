@@ -238,6 +238,13 @@ jobs:
           # in the independently authored mondrian product justify a change.
           assert indexed["system/media"].get("name") == "platform/system/media", "unreviewed Qualcomm audio config or media ABI override"
           assert all(p.get("name") != "system_media" for p in projects)
+          # Historical PE dtbToolLineage emits legacy Qualcomm QCDT
+          # images; modern DTBO/DTB partition tools are in AOSP17 libufdt.
+          # No device tree or BoardConfig is approved for this staging profile.
+          assert "system/tools/dtbtool" not in indexed, "legacy Qualcomm QCDT tool accidentally activated"
+          assert all(p.get("name") != "system_tools_dtbtool" for p in projects)
+          assert indexed["system/libufdt"].get("name") == "platform/system/libufdt", "AOSP17 DTBO tool source missing or replaced"
+          assert indexed["system/tools/mkbootimg"].get("name") == "platform/system/tools/mkbootimg", "AOSP17 boot image tools replaced"
           assert "vendor/lineage" not in indexed, "LineageOS product base incorrectly inherited"
           assert "device/xiaomi/mondrian" not in indexed, "mondrian tree activated before native AOSP17 bring-up"
           assert "device/xiaomi/sm8450-common" not in indexed, "sm8450-common tree activated before native AOSP17 bring-up"
