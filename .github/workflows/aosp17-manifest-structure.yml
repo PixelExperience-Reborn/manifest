@@ -243,6 +243,12 @@ jobs:
           # No device tree or BoardConfig is approved for this staging profile.
           assert "system/tools/dtbtool" not in indexed, "legacy Qualcomm QCDT tool accidentally activated"
           assert all(p.get("name") != "system_tools_dtbtool" for p in projects)
+          # The archived mkbootimg --dt patch writes legacy DT size
+          # into a boot header field, corrupting modern v3/v4 semantics.
+          # Keep Android17 mkbootimg, vendor_boot and libufdt sources.
+          assert indexed["system/tools/mkbootimg"].get("name") == "platform/system/tools/mkbootimg", "unreviewed legacy boot header or mkbootimg override"
+          assert indexed["system/libufdt"].get("name") == "platform/system/libufdt", "official DTBO packaging tools replaced"
+          assert all(p.get("name") != "system_tools_mkbootimg" for p in projects)
           assert indexed["system/libufdt"].get("name") == "platform/system/libufdt", "AOSP17 DTBO tool source missing or replaced"
           assert indexed["system/tools/mkbootimg"].get("name") == "platform/system/tools/mkbootimg", "AOSP17 boot image tools replaced"
           assert "vendor/lineage" not in indexed, "LineageOS product base incorrectly inherited"
