@@ -20,7 +20,7 @@ STAGES = [
         "build/soong": ("build_soong", "6215d41c790a463b7795ce81ac77204c238cbf48"),
     }),
     ("aosp17_pe_envsetup.xml", {
-        "vendor/aosp": ("vendor_aosp", "a044adac1f764ade01148cf7c09beda9df686d91"),
+        "vendor/aosp": ("vendor_aosp", "d7f0d44fe3c61d636a150ed777749c7a4e3dc697"),
     }),
     ("aosp17_pe_p0_native.xml", {
         "art": ("art", "b753cf97923c3695338d21466fa14c57b480a59a"),

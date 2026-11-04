@@ -6,7 +6,7 @@
   <project path="vendor/aosp"
            name="vendor_aosp"
            remote="reborn-vendor"
-           revision="a044adac1f764ade01148cf7c09beda9df686d91"
+           revision="d7f0d44fe3c61d636a150ed777749c7a4e3dc697"
            upstream="refs/heads/port/a17-vendor-envsetup-20261102" />
   <include name="aosp17_pe_bootstrap.xml" />
 </manifest>
