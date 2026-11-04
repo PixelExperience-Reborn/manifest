@@ -166,6 +166,12 @@ jobs:
           # A standalone app cannot satisfy the old Settings resource link.
           assert "packages/apps/TouchGestures" not in indexed, "unreviewed TouchGestures activated"
           assert all(p.get("name") != "packages_apps_TouchGestures" for p in projects)
+          # DownloadProvider owns the downloads URI authority, media
+          # shared UID and user-initiated job contracts. The 2024 PE source
+          # lacks modern AConfig and framework-stubs selections and must not
+          # replace this privileged Android17 provider without a full review.
+          assert indexed["packages/providers/DownloadProvider"].get("name") == "platform/packages/providers/DownloadProvider", "unreviewed DownloadProvider replacement"
+          assert all(p.get("name") != "packages_providers_DownloadProvider" for p in projects)
           assert indexed["build/make"].get("name") == "platform/build", "core Make is not AOSP17"
           for path in ("art", "bionic", "system/core"):
               project = indexed[path]
