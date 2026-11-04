@@ -260,6 +260,12 @@ jobs:
           # must use reviewed official tools and protected non-public keys.
           assert indexed["development"].get("name") == "platform/development", "unreviewed old PBEv1 signing tool imported"
           assert all(p.get("name") != "development" for p in projects)
+          # Archived Qualcomm generic sepolicy rewrites frozen API 30-32
+          # CIL at Make parse-time and grants untrusted apps DSP/QSPM HAL
+          # access. AOSP17 uses device-scoped vendor/product policy dirs.
+          assert indexed["system/sepolicy"].get("name") == "platform/system/sepolicy", "AOSP17 platform SELinux policy replaced"
+          assert "device/qcom/sepolicy" not in indexed, "unreviewed Qualcomm SELinux API snapshot mutation activated"
+          assert all(p.get("name") != "device_qcom_sepolicy" for p in projects)
           assert indexed["frameworks/base"].get("name") == "platform/frameworks/base", "official AOSP17 SystemUI source replaced"
           assert indexed["packages/apps/Settings"].get("name") == "platform/packages/apps/Settings", "official AOSP17 Settings source replaced"
           assert indexed["system/libufdt"].get("name") == "platform/system/libufdt", "AOSP17 DTBO tool source missing or replaced"
