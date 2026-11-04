@@ -7,6 +7,7 @@ on:
     paths:
       - 'aosp17_*.xml'
       - '.github/workflows/aosp17-manifest-structure.yml'
+      - 'tools/validate_aosp17_base_profiles.py'
   pull_request:
     paths:
       - aosp17_reference.xml
@@ -31,6 +32,7 @@ on:
       - aosp17_pe_p1_telephony.xml
       - aosp17_pe_p1_timezonepicker.xml
       - .github/workflows/aosp17-manifest-structure.yml
+      - tools/validate_aosp17_base_profiles.py
 
 permissions:
   contents: read
@@ -200,15 +202,12 @@ jobs:
           assert indexed["system/bpf"].get("name") == "platform/system/bpf", "unreviewed old BPF loader replacement"
           assert indexed["system/bpfprogs"].get("name") == "platform/system/bpfprogs", "AOSP17 BPF programs missing or replaced"
           assert indexed["system/netd"].get("name") == "platform/system/netd", "AOSP17 netd replaced"
-          assert indexed["packages/modules/Connectivity"].get("name") == "platform/packages/modules/Connectivity", "AOSP17 Connectivity replaced"
           assert all(p.get("name") != "system_bpf" for p in projects)
           # The archived Android14 system/extras includes old boot-image
           # BootSignature heuristics and an optional host-only lpunpack_static.
           # Never replace Android17 fscrypt/verity/dynamic-partition libraries
           # just to obtain an extraction utility or old signing behavior.
           assert indexed["system/extras"].get("name") == "platform/system/extras", "unreviewed system/extras or boot signing replacement"
-          assert indexed["system/core"].get("name") == "platform/system/core", "official fs_mgr/system core replaced"
-          assert indexed["system/vold"].get("name") == "platform/system/vold", "official vold replaced"
           assert all(p.get("name") != "system_extras" for p in projects)
           # The Android14 PE HIDL fork reintroduced deprecated
           # gBn/gBs constructor-map symbols for legacy proprietary blobs.
@@ -263,7 +262,6 @@ jobs:
           # Archived Qualcomm generic sepolicy rewrites frozen API 30-32
           # CIL at Make parse-time and grants untrusted apps DSP/QSPM HAL
           # access. AOSP17 uses device-scoped vendor/product policy dirs.
-          assert indexed["system/sepolicy"].get("name") == "platform/system/sepolicy", "AOSP17 platform SELinux policy replaced"
           assert "device/qcom/sepolicy" not in indexed, "unreviewed Qualcomm SELinux API snapshot mutation activated"
           assert all(p.get("name") != "device_qcom_sepolicy" for p in projects)
           # Qualcomm CAF QSSI14 sm8450 sepolicy depends on the archived,
@@ -272,8 +270,15 @@ jobs:
           # PE-Reborn mondrian policy must be assembled per actual service.
           assert "device/qcom/sepolicy_vndr/sm8450" not in indexed, "unreviewed old CAF sm8450 vendor SELinux policy activated"
           assert all(p.get("name") != "device_qcom_sepolicy_vndr_sm8450" for p in projects)
-          assert indexed["frameworks/base"].get("name") == "platform/frameworks/base", "official AOSP17 SystemUI source replaced"
+          # Reviewed P0/P1 Android17 source forks (frameworks/base, Connectivity,
+          # system/core, vold and sepolicy) are asserted with exact commit
+          # revisions by the per-profile checks below, not forced to AOSP
+          # repository names across all staged profiles.
           assert indexed["packages/apps/Settings"].get("name") == "platform/packages/apps/Settings", "official AOSP17 Settings source replaced"
+          # External AVB and ANT remain platform source / absent across all
+          # staged base-only profiles; signing and radio archives are unported.
+          assert indexed["external/avb"].get("name") == "platform/external/avb", "unreviewed AVB signing fork imported"
+          assert all(not path.startswith("external/ant-wireless/") for path in paths), "ANT archive activated in base"
           assert indexed["system/libufdt"].get("name") == "platform/system/libufdt", "AOSP17 DTBO tool source missing or replaced"
           assert indexed["system/tools/mkbootimg"].get("name") == "platform/system/tools/mkbootimg", "AOSP17 boot image tools replaced"
           assert "vendor/lineage" not in indexed, "LineageOS product base incorrectly inherited"
@@ -415,3 +420,11 @@ jobs:
                   assert "vendor/aosp" not in indexed
           print(f"PASS: {profile}: {len(paths)} projects, no duplicates, AOSP17 Make/ART/Bionic/core")
           PY
+
+  verify-native-base-profile-ownership:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate incremental AOSP17 base ownership offline
+        run: python3 tools/validate_aosp17_base_profiles.py
