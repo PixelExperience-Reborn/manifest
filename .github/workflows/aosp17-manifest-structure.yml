@@ -255,6 +255,11 @@ jobs:
           # are unsafe. No such product override is approved in clean AOSP17.
           assert "vendor/pixel-framework" not in indexed, "old Pixel framework privileged app override activated"
           assert all(p.get("name") != "vendor_pixel-framework" for p in projects)
+          # Archived PE development/tools/make_key forces PBE-SHA1-3DES
+          # due to obsolete Java interoperability. AOSP17 release signing
+          # must use reviewed official tools and protected non-public keys.
+          assert indexed["development"].get("name") == "platform/development", "unreviewed old PBEv1 signing tool imported"
+          assert all(p.get("name") != "development" for p in projects)
           assert indexed["frameworks/base"].get("name") == "platform/frameworks/base", "official AOSP17 SystemUI source replaced"
           assert indexed["packages/apps/Settings"].get("name") == "platform/packages/apps/Settings", "official AOSP17 Settings source replaced"
           assert indexed["system/libufdt"].get("name") == "platform/system/libufdt", "AOSP17 DTBO tool source missing or replaced"
