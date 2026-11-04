@@ -4,6 +4,15 @@
 
 The 135 PixelExperience-Reborn forks are kept as historical PE source references. Their default branches are named `seventeen`, but most contain Android 14 code. **Do not use the four PE override snippets as a ready-to-build AOSP 17 source graph.**
 
+## Platform-only checkpoint — 2026-11-04
+
+The **current objective is the independently owned Android17 PE-Reborn base**. Device/common trees and mondrian hardware adaptations are intentionally deferred until the platform graph, build integration, and a generic AOSP17 product/Soong test are established. Modern LineageOS sources may inform later selective solutions; they are not inherited by these build profiles.
+
+- [`vendor_aosp` native A17 product baseline](https://github.com/PixelExperience-Reborn/vendor_aosp/blob/port/a17-vendor-envsetup-20261102/config/a17_base.mk) is a **new opt-in Make product fragment** separate from archived `config/common.mk`; it includes PE branding, enforces privileged-permission policy and fails early on unlicensed/missing opt-in GMS. It deliberately adds no unreviewed app, overlay, Qualcomm HAL, device BoardConfig or signing bypass. **No real Android product inherits this fragment yet.**
+- [Vendor host CI #41856225815](https://github.com/PixelExperience-Reborn/vendor_aosp/actions/runs/41856225815) **PASS** on commit `d7f0d44fe3c61d636a150ed777749c7a4e3dc697`: official AOSP17 vendorsetup integration and Bash helpers, Make inheritance/GMS isolation, packaging, signing-preflight and release-metadata offline tests. These checks do **not** compile Android, nor prove GMS distribution rights.
+- `aosp17_pe_envsetup.xml` now pins that exact `vendor_aosp` source commit. The [21-profile offline ownership validator](../tools/validate_aosp17_base_profiles.py) and corrected [repo manifest structure workflow](../.github/workflows/aosp17-manifest-structure.yml) distinguish reviewed pinned AOSP17-source forks from unported legacy replacements. Their newly updated CI run is **not yet confirmed**; earlier parser passes predate this change.
+- The base still requires a full pinned checkout of the selected projects, Soong/Make bootstrap, a generic platform product build, library/APEX/CTS checks and finally a separately authored product/device integration. Historical `default.xml` is **not** the build entry point.
+
 ## Profiles in this manifest repository
 
 | Profile | Purpose | Active project graph (static) | Android 14 PE code |
