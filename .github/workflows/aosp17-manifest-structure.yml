@@ -172,6 +172,13 @@ jobs:
           # replace this privileged Android17 provider without a full review.
           assert indexed["packages/providers/DownloadProvider"].get("name") == "platform/packages/providers/DownloadProvider", "unreviewed DownloadProvider replacement"
           assert all(p.get("name") != "packages_providers_DownloadProvider" for p in projects)
+          # MediaProvider is a signed, updatable Mainline APEX hosting
+          # MediaStore, Photo Picker and FUSE. The archived Android14 fork
+          # has incompatible AConfig, JNI, legacy DB and PhotoPicker graph.
+          assert indexed["packages/providers/MediaProvider"].get("name") == "platform/packages/providers/MediaProvider", "unreviewed MediaProvider replacement"
+          assert indexed["prebuilts/module_sdk/MediaProvider"].get("name") == "platform/prebuilts/module_sdk/MediaProvider", "AOSP17 MediaProvider SDK replaced"
+          assert indexed["packages/modules/Media"].get("name") == "platform/packages/modules/Media", "AOSP17 Media module replaced"
+          assert all(p.get("name") != "packages_providers_MediaProvider" for p in projects)
           assert indexed["build/make"].get("name") == "platform/build", "core Make is not AOSP17"
           for path in ("art", "bionic", "system/core"):
               project = indexed[path]
