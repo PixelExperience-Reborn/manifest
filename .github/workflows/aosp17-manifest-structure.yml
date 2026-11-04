@@ -131,6 +131,11 @@ jobs:
           # and mondrian vendor API compatibility have been demonstrated.
           assert "device/custom/sepolicy" not in indexed, "unreviewed legacy policy activated"
           assert all(p.get("name") != "device_custom_sepolicy" for p in projects)
+          # Historical PE vendor.lineage AIDL/HIDL HAL implementations must
+          # not silently join the reviewed AOSP17 graph: old fingerprint,
+          # Wi-Fi/USB/GNSS/fastboot may collide with device-specific HALs.
+          assert "hardware/custom/interfaces" not in indexed, "unreviewed HAL project activated"
+          assert all(p.get("name") != "hardware_custom_interfaces" for p in projects)
           assert indexed["build/make"].get("name") == "platform/build", "core Make is not AOSP17"
           for path in ("art", "bionic", "system/core"):
               project = indexed[path]
