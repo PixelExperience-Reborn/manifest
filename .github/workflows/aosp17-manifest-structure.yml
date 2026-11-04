@@ -161,6 +161,11 @@ jobs:
           # per-feature device/security reviews have passed.
           assert indexed["packages/apps/Settings"].get("name") == "platform/packages/apps/Settings", "unreviewed Settings replacement"
           assert all(p.get("name") != "packages_apps_Settings" for p in projects)
+          # The legacy TouchGestures APK depends on obsolete framework
+          # DeviceKeyHandler APIs and has unverified proximity/keyguard paths.
+          # A standalone app cannot satisfy the old Settings resource link.
+          assert "packages/apps/TouchGestures" not in indexed, "unreviewed TouchGestures activated"
+          assert all(p.get("name") != "packages_apps_TouchGestures" for p in projects)
           assert indexed["build/make"].get("name") == "platform/build", "core Make is not AOSP17"
           for path in ("art", "bionic", "system/core"):
               project = indexed[path]
