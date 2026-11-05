@@ -1,0 +1,101 @@
+name: AOSP17 isolated P2 WLAN and RIL manifest validation
+
+on:
+  push:
+    branches:
+      - port/a17-aosp17-manifest-20261102
+    paths:
+      - '.github/workflows/a17-p2-hardware-profile-check.yml'
+      - 'aosp17_pe_p2_qcom_wlan.xml'
+      - 'aosp17_pe_p2_ril.xml'
+      - 'tools/validate_aosp17_base_profiles.py'
+  pull_request:
+    paths:
+      - '.github/workflows/a17-p2-hardware-profile-check.yml'
+      - 'aosp17_pe_p2_qcom_wlan.xml'
+      - 'aosp17_pe_p2_ril.xml'
+      - 'tools/validate_aosp17_base_profiles.py'
+
+permissions:
+  contents: read
+
+jobs:
+  validate-p2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        profile:
+          - aosp17_pe_p2_tinycompress.xml
+          - aosp17_pe_p2_qcom_wlan.xml
+          - aosp17_pe_p2_ril.xml
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate all 24 staged source ownership profiles offline
+        run: python3 tools/validate_aosp17_base_profiles.py
+
+      - name: Download official repo client
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location \
+            https://storage.googleapis.com/git-repo-downloads/repo \
+            -o "$RUNNER_TEMP/repo"
+          chmod +x "$RUNNER_TEMP/repo"
+
+      - name: Resolve actual manifest with official repo client
+        shell: bash
+        env:
+          PROFILE: ${{ matrix.profile }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/manifest-check"
+          cd "$RUNNER_TEMP/manifest-check"
+          "$RUNNER_TEMP/repo" init --quiet --no-clone-bundle \
+            -u https://github.com/PixelExperience-Reborn/manifest \
+            -b port/a17-aosp17-manifest-20261102 -m "$PROFILE"
+          "$RUNNER_TEMP/repo" manifest -o "$RUNNER_TEMP/resolved.xml"
+
+      - name: Verify no duplicate paths, exact pins, no early device sources
+        shell: bash
+        env:
+          PROFILE: ${{ matrix.profile }}
+        run: |
+          python3 - <<'PY'
+          import os
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+          root = ET.parse(Path(os.environ["RUNNER_TEMP"]) / "resolved.xml").getroot()
+          projects = root.findall("project")
+          profile = os.environ["PROFILE"]
+          items = {(p.get("path") or p.get("name")): p for p in projects}
+          paths = [(p.get("path") or p.get("name")) for p in projects]
+          assert len(paths) == len(set(paths)), "duplicate project path"
+          assert len(paths) == 1069, (profile, len(paths))
+          assert "hardware/qcom-caf/wlan" not in items
+          assert "vendor/lineage" not in items
+          assert not any(p.startswith("device/xiaomi/") for p in paths)
+          wlan = items["hardware/qcom/wlan"]
+          ril = items["hardware/ril"]
+          if profile == "aosp17_pe_p2_tinycompress.xml":
+              assert wlan.get("name") == "platform/hardware/qcom/wlan"
+              assert ril.get("name") == "platform/hardware/ril"
+          else:
+              assert wlan.get("name") == "hardware_qcom_wlan"
+              assert wlan.get("revision") == "667daa664e107f0de451b9046a12da74b99a0e6b"
+              assert wlan.get("groups") == "qcom_wlan,pdk-qcom"
+              if profile == "aosp17_pe_p2_ril.xml":
+                  assert ril.get("name") == "hardware_ril"
+                  assert ril.get("revision") == "29ea93bac3efe871c54f86b05713f894575dc6b8"
+                  assert ril.get("groups") == "pdk"
+              else:
+                  assert ril.get("name") == "platform/hardware/ril"
+          assert items["external/tinycompress"].get("name") == "external_tinycompress"
+          assert items["external/avb"].get("name") == "platform/external/avb"
+          assert items["packages/apps/Settings"].get("name") == "platform/packages/apps/Settings"
+          print("PASS: resolved official repo manifest", profile, len(paths))
+          PY
+
+      - name: Validation limits
+        run: |
+          echo "No full repo sync, Soong/Make build, device vendor service or physical tests."
