@@ -83,6 +83,9 @@ STAGES = [
     ("aosp17_pe_p2_qcom_wlan.xml", {
         "hardware/qcom/wlan": ("hardware_qcom_wlan", "667daa664e107f0de451b9046a12da74b99a0e6b"),
     }),
+    ("aosp17_pe_p2_ril.xml", {
+        "hardware/ril": ("hardware_ril", "29ea93bac3efe871c54f86b05713f894575dc6b8"),
+    }),
 ]
 
 # Explicit platform-only ownership remains until a reviewed new port exists.
@@ -237,7 +240,7 @@ def validate():
                 raise ValueError(f"{file}: unexpected project {path}")
         print(f"PASS: {file}: {len(projects)} declared, {expected_selected} selected, "
               f"{len(expected_pins)} reviewed pins")
-    print("PASS: all 23 AOSP17 staged profiles retain official AVB/Settings and no device trees")
+    print("PASS: all 24 AOSP17 staged profiles retain official AVB/Settings and no device trees")
     print("SOURCE/STRUCTURE ONLY: full repo sync, Soong/Make build and device boot NOT tested")
 
 
