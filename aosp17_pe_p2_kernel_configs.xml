@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+  <!-- P2 source-only kernel/configs owner. Exact AOSP17 r1 kernel-configs
+       source tree with preserved PE Git history and audited CI/docs.
+       No mondrian GKI/FCM/VTS/Soong/boot eligibility is asserted. -->
+  <include name="aosp17_pe_p2_ril.xml" />
+  <remove-project name="kernel/configs" />
+  <remote name="reborn-kconfigs" fetch="https://github.com/PixelExperience-Reborn" />
+  <project path="kernel/configs" name="kernel_configs"
+           remote="reborn-kconfigs" revision="d02620f1f46af9eef024fb41e6d911d935699492"
+           upstream="refs/heads/audit/a17-kernel-configs-source-20261105"
+           groups="vts,pdk" />
+</manifest>
