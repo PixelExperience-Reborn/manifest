@@ -80,6 +80,9 @@ STAGES = [
     ("aosp17_pe_p2_tinycompress.xml", {
         "external/tinycompress": ("external_tinycompress", "25951427f9de414c3d5e01cd92b98f21ad490372"),
     }),
+    ("aosp17_pe_p2_qcom_wlan.xml", {
+        "hardware/qcom/wlan": ("hardware_qcom_wlan", "667daa664e107f0de451b9046a12da74b99a0e6b"),
+    }),
 ]
 
 # Explicit platform-only ownership remains until a reviewed new port exists.
@@ -234,7 +237,7 @@ def validate():
                 raise ValueError(f"{file}: unexpected project {path}")
         print(f"PASS: {file}: {len(projects)} declared, {expected_selected} selected, "
               f"{len(expected_pins)} reviewed pins")
-    print("PASS: all 22 AOSP17 staged profiles retain official AVB/Settings and no device trees")
+    print("PASS: all 23 AOSP17 staged profiles retain official AVB/Settings and no device trees")
     print("SOURCE/STRUCTURE ONLY: full repo sync, Soong/Make build and device boot NOT tested")
 
 
