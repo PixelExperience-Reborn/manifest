@@ -206,6 +206,34 @@ class ManifestEntryPointTests(unittest.TestCase):
                 ValueError, "unreviewed legacy preference library activated"):
             self.check()
 
+    def test_unreviewed_legacy_nxp_hidl_cannot_enter_android17(self):
+        # Archived vendor/nxp/nfc forces PN81T and a second HIDL 1.2
+        # INfc/default provider. Mondrian uses an NXP AIDL HAL instead.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="vendor/nxp/nfc" '
+            'name="vendor_nxp_nfc" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "unreviewed legacy PN8x NXP NFC HAL activated"):
+            self.check()
+
+    def test_nxp_hidl_fork_cannot_replace_aosp17_hardware_nxp(self):
+        # Even reusing the official checkout path cannot replace its
+        # Android17 owner with the obsolete PE/HIDL repo.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <remove-project name="platform/hardware/nxp/nfc" />\n'
+            '  <project path="hardware/nxp/nfc" '
+            'name="vendor_nxp_nfc" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(ValueError, "replaced critical AOSP17 owner"):
+            self.check()
+
     def test_duplicate_source_owner_fails_closed(self):
         self.rewrite(
             "aosp17_pe_p2_qcom_wlan.xml",
