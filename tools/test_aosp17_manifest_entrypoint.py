@@ -118,6 +118,21 @@ class ManifestEntryPointTests(unittest.TestCase):
                 ValueError, "unreviewed host-only extract-tools activated"):
             self.check()
 
+    def test_legacy_kernel_build_tools_cannot_enter_android17(self):
+        # The 2022 kernel host-tool snapshot is not an AOSP17 ROM
+        # dependency. A future mondrian kernel build graph needs review
+        # separately, even when an old host binary shares a utility name.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="prebuilts/kernel-build-tools" '
+            'name="prebuilts_kernel-build-tools" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "legacy kernel host prebuilts activated"):
+            self.check()
+
     def test_duplicate_source_owner_fails_closed(self):
         self.rewrite(
             "aosp17_pe_p2_qcom_wlan.xml",
