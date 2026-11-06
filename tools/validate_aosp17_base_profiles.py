@@ -185,6 +185,7 @@ FORBIDDEN_NAMES = {
     "vendor_custom-preference", "vendor_nxp_nfc",
     "vendor_nxp_opensource_commonsys_external_libnfc-nci",
     "vendor_nxp_opensource_commonsys_frameworks",
+    "vendor_nxp_opensource_commonsys_packages_apps_Nfc",
     "hardware_broadcom_libbt", "hardware_custom_compat",
     "hardware_google_pixel", "hardware_libhardware",
 }
@@ -305,6 +306,10 @@ def validate():
         # Mainline/OMAPI consumer or independently reviewed PE interface.
         if "vendor/nxp/opensource/commonsys/frameworks" in projects:
             raise ValueError(f"{file}: unreviewed NXP NFC Java framework activated")
+        # Archived 2022 NQNfcNci is a separate privileged com.android.nfc
+        # app/JNI + QSSI/HIDL stack; Android17 uses a Mainline NFC owner.
+        if "vendor/nxp/opensource/commonsys/packages/apps/Nfc" in projects:
+            raise ValueError(f"{file}: legacy NXP NFC application activated")
         expected_count = 1071 + int(index >= 2)
         if len(projects) != expected_count:
             raise ValueError(f"{file}: {len(projects)} paths, expected {expected_count}")
