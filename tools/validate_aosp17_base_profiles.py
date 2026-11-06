@@ -155,6 +155,7 @@ OFFICIAL_PATHS = {
     "system/netd": "platform/system/netd",
     "system/libufdt": "platform/system/libufdt",
     "system/tools/mkbootimg": "platform/system/tools/mkbootimg",
+    "tools/metalava": "platform/tools/metalava",
 }
 FORBIDDEN_PATH_PREFIXES = (
     "external/json-c/",
@@ -177,7 +178,7 @@ FORBIDDEN_NAMES = {
     "platform_testing",
     "prebuilts_extract-tools", "prebuilts_kernel-build-tools",
     "prebuilts_tools-custom",
-    "tools_extract-utils",
+    "tools_extract-utils", "tools_metalava",
     "hardware_broadcom_libbt", "hardware_custom_compat",
     "hardware_google_pixel", "hardware_libhardware",
 }
