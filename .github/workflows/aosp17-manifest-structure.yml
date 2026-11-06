@@ -9,6 +9,7 @@ on:
       - 'default.xml'
       - '.github/workflows/aosp17-manifest-structure.yml'
       - 'tools/validate_aosp17_base_profiles.py'
+      - 'tools/test_aosp17_manifest_entrypoint.py'
   pull_request:
     paths:
       - aosp17_reference.xml
@@ -39,6 +40,7 @@ on:
       - aosp17_pe_p2_kernel_configs.xml
       - .github/workflows/aosp17-manifest-structure.yml
       - tools/validate_aosp17_base_profiles.py
+      - tools/test_aosp17_manifest_entrypoint.py
 
 permissions:
   contents: read
@@ -483,3 +485,5 @@ jobs:
       - uses: actions/checkout@v4
       - name: Validate incremental AOSP17 base ownership offline
         run: python3 tools/validate_aosp17_base_profiles.py
+      - name: Test manifest fail-closed regression scenarios
+        run: python3 tools/test_aosp17_manifest_entrypoint.py
