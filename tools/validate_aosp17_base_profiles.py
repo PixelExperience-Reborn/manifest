@@ -243,6 +243,26 @@ def validate():
                 raise ValueError(f"{file}: unexpected project {path}")
         print(f"PASS: {file}: {len(projects)} declared, {expected_selected} selected, "
               f"{len(expected_pins)} reviewed pins")
+    # The default source graph must be the final reviewed stage, never
+    # historical PE Android14 snippets or a second, untracked owner.
+    # Validate both the single-entrypoint contract and every resolved
+    # project attribute: path, remote, name, immutable SHA and groups.
+    entry = ET.parse(ROOT / "default.xml").getroot()
+    direct = list(entry)
+    if (entry.tag != "manifest" or len(direct) != 1 or
+            direct[0].tag != "include" or
+            direct[0].get("name") != STAGES[-1][0] or
+            len(direct[0].attrib) != 1):
+        raise ValueError("default.xml must include only the latest reviewed AOSP17 stage")
+    active = resolve("default.xml")
+    final = resolve(STAGES[-1][0])
+    if set(active) != set(final):
+        raise ValueError("default.xml checkout paths differ from last reviewed stage")
+    for path, project in final.items():
+        if active[path].attrib != project.attrib:
+            raise ValueError(f"default.xml unexpected owner/revision/groups: {path}")
+    print(f"PASS: safe default.xml resolves to {len(active)} reviewed project paths")
+
     print("PASS: all 25 AOSP17 staged profiles retain official AVB/Settings and no device trees")
     print("SOURCE/STRUCTURE ONLY: full repo sync, Soong/Make build and device boot NOT tested")
 
