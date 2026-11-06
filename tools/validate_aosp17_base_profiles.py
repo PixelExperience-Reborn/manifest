@@ -91,6 +91,40 @@ STAGES = [
     }),
 ]
 
+# P2 source graph owner integrity: SHA-only checks are not sufficient.
+# A changed fetch remote, upstream or group can resolve the correct hash in
+# the wrong trust domain or change what the official repo client selects.
+P2_PROJECT_ATTRIBUTES = {
+    "external/tinycompress": {
+        "remote": "reborn-tinycompress",
+        "upstream": "refs/heads/integrate/a17-tinycompress-20261105",
+        "groups": "pdk",
+    },
+    "hardware/qcom/wlan": {
+        "remote": "reborn-wlan",
+        "upstream": "refs/heads/integrate/a17-aosp17-qcom-wlan-20261105",
+        "groups": "qcom_wlan,pdk-qcom",
+    },
+    "hardware/ril": {
+        "remote": "reborn-ril",
+        "upstream": "refs/heads/integrate/a17-aosp17-ril-20261105",
+        "groups": "pdk",
+    },
+    "kernel/configs": {
+        "remote": "reborn-kconfigs",
+        "upstream": "refs/heads/audit/a17-kernel-configs-source-20261105",
+        "groups": "vts,pdk",
+    },
+}
+
+P2_STAGE_REMOTES = {
+    "aosp17_pe_p2_tinycompress.xml": "reborn-tinycompress",
+    "aosp17_pe_p2_qcom_wlan.xml": "reborn-wlan",
+    "aosp17_pe_p2_ril.xml": "reborn-ril",
+    "aosp17_pe_p2_kernel_configs.xml": "reborn-kconfigs",
+}
+
+
 # Explicit platform-only ownership remains until a reviewed new port exists.
 OFFICIAL_PATHS = {
     "build/make": "platform/build",
@@ -203,6 +237,16 @@ def validate():
             if path in expected_pins:
                 raise ValueError(f"duplicate ownership stage for {path}")
             expected_pins[path] = pinned
+        # An immutable revision still requires the intended organization
+        # remote. Reject any P2 stage that repoints its remote elsewhere.
+        if file in P2_STAGE_REMOTES:
+            stage = ET.parse(ROOT / file).getroot()
+            remotes = stage.findall("remote")
+            if (len(remotes) != 1 or
+                    remotes[0].get("name") != P2_STAGE_REMOTES[file] or
+                    remotes[0].get("fetch") !=
+                    "https://github.com/PixelExperience-Reborn"):
+                raise ValueError(f"{file}: unreviewed P2 fetch remote")
         projects = resolve(file)
         expected_count = 1071 + int(index >= 2)
         if len(projects) != expected_count:
@@ -236,6 +280,10 @@ def validate():
                 owner, sha = expected_pins[path]
                 if project.get("name") != owner or project.get("revision") != sha:
                     raise ValueError(f"{file}: bad revision/owner for {path}")
+                for key, value in P2_PROJECT_ATTRIBUTES.get(path, {}).items():
+                    if project.get(key) != value:
+                        raise ValueError(
+                            f"{file}: changed P2 {key} for {path}")
             elif path in baseline:
                 if project.get("name") != baseline[path].get("name"):
                     raise ValueError(f"{file}: unexpected override of {path}")
