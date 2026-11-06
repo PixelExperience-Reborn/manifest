@@ -1,6 +1,6 @@
 # Android 17 bring-up profiles — source selection and acceptance
 
-**State (2026-11-06): staged and unmerged. Selected earlier P0/P1 source sync checks passed on Linux CI, but the current manifest HEAD, full 1069-project sync, Soong bootstrap, Android compilation and boot are NOT yet validated. The `default.xml` entrypoint now selects the latest reviewed P2 source profile; this is still source-only.**
+**State (2026-11-07): staged and unmerged. Selected earlier P0/P1 source sync checks passed on Linux CI, but the current manifest HEAD, full 1069-project sync, Soong bootstrap, Android compilation and boot are NOT yet validated. The `default.xml` entrypoint now selects the latest reviewed P2 source profile; this is still source-only.**
 
 The 135 PixelExperience-Reborn forks are kept as historical PE source references. Their default branches are named `seventeen`, but most contain Android 14 code. **Do not use the four PE override snippets as a ready-to-build AOSP 17 source graph.**
 
@@ -14,6 +14,12 @@ The **current objective is the independently owned Android17 PE-Reborn base**. D
 - `aosp17_pe_envsetup.xml` now pins this exact `vendor_aosp` source revision. The [25-profile offline ownership validator](../tools/validate_aosp17_base_profiles.py) and [repo manifest structure workflow](../.github/workflows/aosp17-manifest-structure.yml) retain the original project counts and protective source guards; the newest manifest HEAD CI remains **unconfirmed**.
 
 - The base still requires a full pinned checkout of the selected projects, Soong/Make bootstrap, a generic platform product build, library/APEX/CTS checks and finally a separately authored product/device integration. Port-branch `default.xml` is now a **safe source-only entrypoint**, not a build-ready PE product.
+
+## Experimental modern NFC source candidate — 2026-11-07
+
+The **25 sequential approved AOSP17 profiles have not changed**. The source-only \`default.xml\` still resolves to \`aosp17_pe_p2_kernel_configs.xml\`. A separate allowlisted **non-default** manifest, [\`aosp17_pe_p2_nfc_security_candidate.xml\`](../aosp17_pe_p2_nfc_security_candidate.xml), uses official AOSP17 NFC \`android-security-17.0.0_r3\` commit \`6f3a074cf6c87a2dcc3970c03462a6970b06f9cd\` (tree \`ee6a57f5ccc30d113588f6cc5bffff94932bffb5\`) without introducing old NXP/QSSI sources. It is **not a new numbered active stage**.
+
+[Dedicated NFC audit CI #42308704146](https://github.com/PixelExperience-Reborn/vendor_nxp_opensource_commonsys_packages_apps_Nfc/actions/runs/42308704146) completed **SUCCESS**: 25/25 manifest regression tests, protected 25-stage source structure, official \`repo manifest\` with 1069 unique selected projects, and targeted official \`repo sync\` of the exact candidate NFC source/tree. No full 1069-project sync, Soong/APEX build or device validation was performed. The tag date does **not** prove November 2026 NFC permission-vulnerability fixes or a November security patch level; see [security candidate acceptance gates](ANDROID_17_NFC_SECURITY_CANDIDATE.md). Keep the current source-only default unchanged until a coherent Android17 security update is independently validated.
 
 ## Profiles in this manifest repository
 
