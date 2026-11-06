@@ -373,6 +373,34 @@ class ManifestEntryPointTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "replaced critical AOSP17 owner"):
             self.check()
 
+    def test_archived_pn5xx_hidl_hal_must_not_enter_android17(self):
+        # Old PN5xx HIDL 1.2, JCOP, eSE and PN81T board examples cannot
+        # enter a modern AOSP17 AIDL NFC source graph as an extra checkout.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="vendor/nxp/opensource/pn5xx/halimpl" '
+            'name="vendor_nxp_opensource_pn5xx_halimpl" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "archived PN5xx NXP HIDL HAL activated"):
+            self.check()
+
+    def test_archived_pn5xx_hidl_cannot_replace_aosp17_nxp_hal(self):
+        # Replacement of official NXP HAL with the legacy HAL is a
+        # source-ownership violation, not a legitimate new PE device port.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <remove-project name="platform/hardware/nxp/nfc" />\n'
+            '  <project path="hardware/nxp/nfc" '
+            'name="vendor_nxp_opensource_pn5xx_halimpl" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(ValueError, "replaced critical AOSP17 owner"):
+            self.check()
+
     def test_duplicate_source_owner_fails_closed(self):
         self.rewrite(
             "aosp17_pe_p2_qcom_wlan.xml",
