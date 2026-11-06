@@ -176,6 +176,21 @@ class ManifestEntryPointTests(unittest.TestCase):
                 ValueError, "replaced critical AOSP17 owner"):
             self.check()
 
+    def test_qualcomm_telephony_requires_mondrian_ims_abi_review(self):
+        # Direct Qualcomm Android17 source was imported only to an
+        # isolated PE branch. Do not enable it in the ROM without checking
+        # proprietary Xiaomi IMS/RIL Java and HIDL/AIDL dependencies.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="vendor/codeaurora/telephony" '
+            'name="vendor_codeaurora_telephony" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "unverified Qualcomm telephony source activated"):
+            self.check()
+
     def test_duplicate_source_owner_fails_closed(self):
         self.rewrite(
             "aosp17_pe_p2_qcom_wlan.xml",
