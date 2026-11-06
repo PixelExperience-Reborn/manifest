@@ -141,6 +141,7 @@ OFFICIAL_PATHS = {
     "external/wpa_supplicant_8": "platform/external/wpa_supplicant_8",
     "hardware/broadcom/libbt": "platform/hardware/broadcom/libbt",
     "hardware/libhardware": "platform/hardware/libhardware",
+    "platform_testing": "platform/platform_testing",
     "packages/apps/Settings": "platform/packages/apps/Settings",
     "packages/apps/Camera2": "platform/packages/apps/Camera2",
     "packages/modules/Nfc": "platform/packages/modules/Nfc",
@@ -170,6 +171,7 @@ FORBIDDEN_NAMES = {
     "external_gptfdisk", "external_connectivity",
     "external_icu", "external_json-c", "external_libcxx", "external_libnl", "external_mksh",
     "external_tinyxml", "external_wpa_supplicant_8",
+    "platform_testing",
     "hardware_broadcom_libbt", "hardware_custom_compat",
     "hardware_google_pixel", "hardware_libhardware",
 }
