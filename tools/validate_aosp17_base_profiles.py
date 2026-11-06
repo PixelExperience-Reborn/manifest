@@ -143,6 +143,7 @@ OFFICIAL_PATHS = {
     "hardware/libhardware": "platform/hardware/libhardware",
     "platform_testing": "platform/platform_testing",
     "prebuilts/build-tools": "platform/prebuilts/build-tools",
+    "prebuilts/clang/host/linux-x86": "platform/prebuilts/clang/host/linux-x86",
     "prebuilts/tools": "platform/prebuilts/tools",
     "packages/apps/Settings": "platform/packages/apps/Settings",
     "packages/apps/Camera2": "platform/packages/apps/Camera2",
@@ -174,7 +175,7 @@ FORBIDDEN_NAMES = {
     "external_icu", "external_json-c", "external_libcxx", "external_libnl", "external_mksh",
     "external_tinyxml", "external_wpa_supplicant_8",
     "platform_testing",
-    "prebuilts_extract-tools",
+    "prebuilts_extract-tools", "prebuilts_kernel-build-tools",
     "hardware_broadcom_libbt", "hardware_custom_compat",
     "hardware_google_pixel", "hardware_libhardware",
 }
@@ -257,6 +258,10 @@ def validate():
         # check, so this failure remains actionable and regression-testable.
         if "prebuilts/extract-tools" in projects:
             raise ValueError(f"{file}: unreviewed host-only extract-tools activated")
+        # Kernel build tools come from a separate, kernel-version-specific
+        # graph. Android17 platform does not own this 2022 binary bundle.
+        if "prebuilts/kernel-build-tools" in projects:
+            raise ValueError(f"{file}: legacy kernel host prebuilts activated")
         expected_count = 1071 + int(index >= 2)
         if len(projects) != expected_count:
             raise ValueError(f"{file}: {len(projects)} paths, expected {expected_count}")
