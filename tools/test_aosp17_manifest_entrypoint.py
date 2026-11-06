@@ -191,6 +191,21 @@ class ManifestEntryPointTests(unittest.TestCase):
                 ValueError, "unverified Qualcomm telephony source activated"):
             self.check()
 
+    def test_legacy_custom_preference_not_activated_without_android17_redesign(self):
+        # The 2022 library depends on LineageHardwareManager, an old
+        # privileged broadcast protocol and 2022-era Preference callbacks.
+        # Official AOSP17 Settings does not need this dependency.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="vendor/custom-preference" '
+            'name="vendor_custom-preference" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "unreviewed legacy preference library activated"):
+            self.check()
+
     def test_duplicate_source_owner_fails_closed(self):
         self.rewrite(
             "aosp17_pe_p2_qcom_wlan.xml",
