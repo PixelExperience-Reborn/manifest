@@ -23,6 +23,10 @@ class ManifestEntryPointTests(unittest.TestCase):
         for name, _ in profiles.STAGES:
             shutil.copyfile(self.original_root / name, self.root / name)
         shutil.copyfile(
+            self.original_root / "aosp17_pe_p2_nfc_security_candidate.xml",
+            self.root / "aosp17_pe_p2_nfc_security_candidate.xml",
+        )
+        shutil.copyfile(
             self.original_root / "default.xml", self.root / "default.xml"
         )
         profiles.ROOT = self.root
@@ -316,6 +320,29 @@ class ManifestEntryPointTests(unittest.TestCase):
             '  <remove-project name="kernel/configs" />',
         )
         with self.assertRaisesRegex(ValueError, "replaced critical AOSP17 owner"):
+            self.check()
+
+    def test_nfc_security_candidate_revision_is_strictly_pinned(self):
+        # Experiment must not silently advance to another tag/SHA or
+        # claim a security patch which has not been inspected.
+        self.rewrite(
+            "aosp17_pe_p2_nfc_security_candidate.xml",
+            "6f3a074cf6c87a2dcc3970c03462a6970b06f9cd",
+            "0000000000000000000000000000000000000000",
+        )
+        with self.assertRaisesRegex(
+                ValueError, "unreviewed NFC security candidate manifest shape or pin"):
+            self.check()
+
+    def test_nfc_security_candidate_must_not_switch_default_profile(self):
+        # Newer NFC source is test-only until security, APEX and
+        # actual device validation; the 25-stage default must remain safe.
+        self.rewrite(
+            "default.xml",
+            'name="aosp17_pe_p2_kernel_configs.xml"',
+            'name="aosp17_pe_p2_nfc_security_candidate.xml"',
+        )
+        with self.assertRaisesRegex(ValueError, "default.xml must include"):
             self.check()
 
     def test_duplicate_source_owner_fails_closed(self):
