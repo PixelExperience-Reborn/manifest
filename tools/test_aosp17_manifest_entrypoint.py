@@ -104,6 +104,20 @@ class ManifestEntryPointTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "replaced critical AOSP17 owner"):
             self.check()
 
+    def test_legacy_extract_tools_cannot_enter_android17(self):
+        # Old prebuilts contain Android14-era unverified host binaries.
+        # Blob extraction is separate from compiling an AOSP17 ROM.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="prebuilts/extract-tools" '
+            'name="prebuilts_extract-tools" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "unreviewed host-only extract-tools activated"):
+            self.check()
+
     def test_duplicate_source_owner_fails_closed(self):
         self.rewrite(
             "aosp17_pe_p2_qcom_wlan.xml",
