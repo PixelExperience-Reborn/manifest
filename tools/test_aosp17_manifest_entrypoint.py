@@ -133,6 +133,20 @@ class ManifestEntryPointTests(unittest.TestCase):
                 ValueError, "legacy kernel host prebuilts activated"):
             self.check()
 
+    def test_legacy_custom_host_tools_cannot_enter_android17(self):
+        # Archived custom cpio/Perl/dtc/lz4c belong to old host scripts,
+        # not to an approved Android17 source or mondrian build graph.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="prebuilts/tools-custom" '
+            'name="prebuilts_tools-custom" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "legacy custom host tools activated"):
+            self.check()
+
     def test_duplicate_source_owner_fails_closed(self):
         self.rewrite(
             "aosp17_pe_p2_qcom_wlan.xml",
