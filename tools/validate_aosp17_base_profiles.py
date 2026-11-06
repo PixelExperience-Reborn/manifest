@@ -231,7 +231,9 @@ def resolve(filename: str, stack=()):
 
 
 def validate():
+    # An isolated source-only experiment is not an active STAGES entry.
     expected_files = {name for name, _ in STAGES}
+    expected_files.add("aosp17_pe_p2_nfc_security_candidate.xml")
     actual_files = {p.name for p in ROOT.glob("aosp17_*.xml")}
     if actual_files != expected_files:
         raise ValueError(f"stage list drift: missing={expected_files - actual_files}, extra={actual_files - expected_files}")
@@ -371,6 +373,34 @@ def validate():
     for path, project in final.items():
         if active[path].attrib != project.attrib:
             raise ValueError(f"default.xml unexpected owner/revision/groups: {path}")
+    # Strict review of the experimental candidate; default must stay on r1.
+    candidate_name = "aosp17_pe_p2_nfc_security_candidate.xml"
+    candidate_root = ET.parse(ROOT / candidate_name).getroot()
+    candidate_nodes = list(candidate_root)
+    expected_nfc = {
+        "path": "packages/modules/Nfc",
+        "name": "platform/packages/modules/Nfc",
+        "remote": "aosp",
+        "revision": "6f3a074cf6c87a2dcc3970c03462a6970b06f9cd",
+        "upstream": "refs/tags/android-security-17.0.0_r3",
+        "groups": "pdk-cw-fs,pdk-fs",
+    }
+    if (candidate_root.tag != "manifest" or len(candidate_nodes) != 3 or
+            [n.tag for n in candidate_nodes] !=
+            ["include", "remove-project", "project"] or
+            candidate_nodes[0].attrib != {"name": STAGES[-1][0]} or
+            candidate_nodes[1].attrib !=
+            {"name": "platform/packages/modules/Nfc"} or
+            candidate_nodes[2].attrib != expected_nfc):
+        raise ValueError("unreviewed NFC security candidate manifest shape or pin")
+    candidate = resolve(candidate_name)
+    if set(candidate) != set(final):
+        raise ValueError("NFC security candidate changed source checkout paths")
+    for candidate_path, source in final.items():
+        expected = expected_nfc if candidate_path == "packages/modules/Nfc" else source.attrib
+        if candidate[candidate_path].attrib != expected:
+            raise ValueError(f"NFC candidate changed unexpected source: {candidate_path}")
+    print("PASS: experimental newer NFC source strictly isolated and pinned")
     print(f"PASS: safe default.xml resolves to {len(active)} reviewed project paths")
 
     print("PASS: all 25 AOSP17 staged profiles retain official AVB/Settings and no device trees")
