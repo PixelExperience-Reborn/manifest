@@ -187,6 +187,7 @@ FORBIDDEN_NAMES = {
     "vendor_nxp_opensource_commonsys_frameworks",
     "vendor_nxp_opensource_commonsys_packages_apps_Nfc",
     "vendor_nxp_opensource_interfaces_nfc",
+    "vendor_nxp_opensource_pn5xx_halimpl",
     "hardware_broadcom_libbt", "hardware_custom_compat",
     "hardware_google_pixel", "hardware_libhardware",
 }
@@ -317,6 +318,11 @@ def validate():
         # provide modern NFC AIDL V2 or vendor.nxp.nxpnfc_aidl V1.
         if "vendor/nxp/opensource/interfaces/nfc" in projects:
             raise ValueError(f"{file}: archived NXP NFC HIDL interfaces activated")
+        # Archived PN5xx 2021 HAL ships HIDL NFC 1.2, vendor extension
+        # services and unverified example PN81T/eSE configuration.
+        # Official AOSP17 already owns the compatible NXP AIDL HAL.
+        if "vendor/nxp/opensource/pn5xx/halimpl" in projects:
+            raise ValueError(f"{file}: archived PN5xx NXP HIDL HAL activated")
         expected_count = 1071 + int(index >= 2)
         if len(projects) != expected_count:
             raise ValueError(f"{file}: {len(projects)} paths, expected {expected_count}")
