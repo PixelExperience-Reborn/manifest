@@ -6,6 +6,17 @@
 
 The existing LF52406 LineageOS 24.0 device/common trees are a **valuable, maintained hardware integration reference and source of potentially reusable solutions**. PixelExperience-Reborn will have its own AOSP17-derived platform, product identity, build integration and device tree ownership. Being originally written for LineageOS is **not a reason to reject a useful implementation**. Conversely, availability in a booting LineageOS device tree is **not proof** that the code builds or behaves correctly in PE-Reborn/AOSP17.
 
+### Source-selection hierarchy (clarified for independent PE-Reborn)
+
+**Do not make LF52406/LineageOS device trees the source of truth or default implementation for a new AOSP17 ROM.** They are derived from a different platform and are a *last-resort comparison source* when a concrete missing hardware capability, verifiable configuration detail, or useful fix cannot be satisfied by an Android17-native solution. Even a proven LineageOS device feature must pass an independent port review before it can be adopted.
+
+1. **First:** reviewed official `android-17.0.0_r1` or later explicitly pinned Android17 AOSP releases, preserving correct upstream subsystem ownership (APEX, HAL, framework, SELinux).
+2. **Second:** verified newer hardware-vendor/Qualcomm/NXP releases, recent open-source fixes and Android17-compatible implementations. Evaluate licensing, API/ABI, security and device applicability; version number alone does not establish superiority.
+3. **Third:** historical PixelExperience features. Port the smallest useful functionality only when a working AOSP17 equivalent is unavailable and the behavioural/API delta is understood.
+4. **Conditional exception:** examine ROM-specific hardware patterns (including LF52406 LineageOS trees) solely as read-only evidence for a named device issue, verify hardware, licences and correctness independently, then write/review an **own** PE-Reborn device/module implementation. Never copy its inherited product structure wholesale.
+
+For each proposed technology use a recorded decision `retain AOSP17 / evaluate upstream candidate / targeted optional port / reject`. An adoption needs evidence of real value to **mondrian SM8475**, Soong/APEX integration, security and performance/power impact, maintenance owner, rollback, and staged build/host/device validation. No speculative feature flags, fake hardware support or unsupported benefit claims.
+
 ### Pinned references, not automatically inherited build inputs
 
 - [mondrian device tree](https://github.com/LF52406/mondrian_android_device_xiaomi_mondrian/tree/lineage-24.0), `lineage-24.0`. Device product definition, partition/device overlays, display, haptics and device-specific integration.
