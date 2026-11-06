@@ -188,6 +188,7 @@ FORBIDDEN_NAMES = {
     "vendor_nxp_opensource_commonsys_packages_apps_Nfc",
     "vendor_nxp_opensource_interfaces_nfc",
     "vendor_nxp_opensource_pn5xx_halimpl",
+    "vendor_nxp_opensource_pn5xx_hidlimpl",
     "hardware_broadcom_libbt", "hardware_custom_compat",
     "hardware_google_pixel", "hardware_libhardware",
 }
@@ -323,6 +324,11 @@ def validate():
         # Official AOSP17 already owns the compatible NXP AIDL HAL.
         if "vendor/nxp/opensource/pn5xx/halimpl" in projects:
             raise ValueError(f"{file}: archived PN5xx NXP HIDL HAL activated")
+        # 2020 PN5xx HIDL service wrappers register system INfc 1.2 and
+        # vendor HIDL, require archived nfc_nci.nqx.default.hw (row 170).
+        # Never allow them to replace Android17 NFC AIDL HAL ownership.
+        if "vendor/nxp/opensource/pn5xx/hidlimpl" in projects:
+            raise ValueError(f"{file}: archived PN5xx NFC HIDL service activated")
         expected_count = 1071 + int(index >= 2)
         if len(projects) != expected_count:
             raise ValueError(f"{file}: {len(projects)} paths, expected {expected_count}")
