@@ -290,6 +290,34 @@ class ManifestEntryPointTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "replaced critical AOSP17 owner"):
             self.check()
 
+    def test_legacy_nxp_nfc_apk_cannot_enter_android17(self):
+        # Archived NQNfcNci carries its own com.android.nfc service, JNI
+        # and HIDL dependencies; never install next to AOSP17 NFC Mainline.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="vendor/nxp/opensource/commonsys/packages/apps/Nfc" '
+            'name="vendor_nxp_opensource_commonsys_packages_apps_Nfc" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "legacy NXP NFC application activated"):
+            self.check()
+
+    def test_legacy_nxp_nfc_apk_cannot_replace_mainline(self):
+        # Re-owning packages/modules/Nfc by archived QSSI implementation
+        # must be rejected even if the manifest path count stays constant.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <remove-project name="platform/packages/modules/Nfc" />\n'
+            '  <project path="packages/modules/Nfc" '
+            'name="vendor_nxp_opensource_commonsys_packages_apps_Nfc" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(ValueError, "replaced critical AOSP17 owner"):
+            self.check()
+
     def test_duplicate_source_owner_fails_closed(self):
         self.rewrite(
             "aosp17_pe_p2_qcom_wlan.xml",
