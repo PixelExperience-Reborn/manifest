@@ -176,6 +176,7 @@ FORBIDDEN_NAMES = {
     "external_tinyxml", "external_wpa_supplicant_8",
     "platform_testing",
     "prebuilts_extract-tools", "prebuilts_kernel-build-tools",
+    "prebuilts_tools-custom",
     "hardware_broadcom_libbt", "hardware_custom_compat",
     "hardware_google_pixel", "hardware_libhardware",
 }
@@ -262,6 +263,10 @@ def validate():
         # graph. Android17 platform does not own this 2022 binary bundle.
         if "prebuilts/kernel-build-tools" in projects:
             raise ValueError(f"{file}: legacy kernel host prebuilts activated")
+        # Older host-only cpio/lz4c/Perl/dtc binaries are not a reviewed
+        # platform module or standalone AOSP17 source dependency.
+        if "prebuilts/tools-custom" in projects:
+            raise ValueError(f"{file}: legacy custom host tools activated")
         expected_count = 1071 + int(index >= 2)
         if len(projects) != expected_count:
             raise ValueError(f"{file}: {len(projects)} paths, expected {expected_count}")
