@@ -401,6 +401,34 @@ class ManifestEntryPointTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "replaced critical AOSP17 owner"):
             self.check()
 
+    def test_archived_pn5xx_hidl_service_cannot_enter_android17(self):
+        # 2020 HIDL NFC 1.2 + NXP/legacy service wrappers and old native
+        # HAL shall not become a second NFC HAL source in AOSP17.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="vendor/nxp/opensource/pn5xx/hidlimpl" '
+            'name="vendor_nxp_opensource_pn5xx_hidlimpl" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "archived PN5xx NFC HIDL service activated"):
+            self.check()
+
+    def test_archived_pn5xx_hidl_service_cannot_replace_aosp17_hal(self):
+        # A HIDL implementation cannot silently take the official
+        # Android17 AIDL hardware/nxp/nfc source owner.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <remove-project name="platform/hardware/nxp/nfc" />\n'
+            '  <project path="hardware/nxp/nfc" '
+            'name="vendor_nxp_opensource_pn5xx_hidlimpl" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(ValueError, "replaced critical AOSP17 owner"):
+            self.check()
+
     def test_duplicate_source_owner_fails_closed(self):
         self.rewrite(
             "aosp17_pe_p2_qcom_wlan.xml",
