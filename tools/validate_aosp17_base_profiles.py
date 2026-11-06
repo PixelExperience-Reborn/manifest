@@ -142,6 +142,8 @@ OFFICIAL_PATHS = {
     "hardware/broadcom/libbt": "platform/hardware/broadcom/libbt",
     "hardware/libhardware": "platform/hardware/libhardware",
     "platform_testing": "platform/platform_testing",
+    "prebuilts/build-tools": "platform/prebuilts/build-tools",
+    "prebuilts/tools": "platform/prebuilts/tools",
     "packages/apps/Settings": "platform/packages/apps/Settings",
     "packages/apps/Camera2": "platform/packages/apps/Camera2",
     "packages/modules/Nfc": "platform/packages/modules/Nfc",
@@ -172,6 +174,7 @@ FORBIDDEN_NAMES = {
     "external_icu", "external_json-c", "external_libcxx", "external_libnl", "external_mksh",
     "external_tinyxml", "external_wpa_supplicant_8",
     "platform_testing",
+    "prebuilts_extract-tools",
     "hardware_broadcom_libbt", "hardware_custom_compat",
     "hardware_google_pixel", "hardware_libhardware",
 }
@@ -258,6 +261,10 @@ def validate():
         expected_selected = 1068 + int(index >= 2)
         if len(projects) - notdefault != expected_selected:
             raise ValueError(f"{file}: default-selected count changed")
+        # Host-only archived PE binaries are not a reviewed Android17 source
+        # project. Keep offline blob extraction separate from the ROM graph.
+        if "prebuilts/extract-tools" in projects:
+            raise ValueError(f"{file}: unreviewed host-only extract-tools activated")
         for legacy_path in ("external/json-c", "external/ntfs-3g", "external/tinyxml",
                             "hardware/custom/compat", "hardware/google/pixel"):
             if legacy_path in projects:
