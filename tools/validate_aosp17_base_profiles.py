@@ -179,6 +179,7 @@ FORBIDDEN_NAMES = {
     "prebuilts_extract-tools", "prebuilts_kernel-build-tools",
     "prebuilts_tools-custom",
     "tools_extract-utils", "tools_metalava",
+    "vendor_codeaurora_telephony",
     "hardware_broadcom_libbt", "hardware_custom_compat",
     "hardware_google_pixel", "hardware_libhardware",
 }
@@ -274,6 +275,11 @@ def validate():
         # helper into the ROM until its device/kernel/vendor graph is reviewed.
         if "tools/extract-utils" in projects:
             raise ValueError(f"{file}: unreviewed vendor extractor host source activated")
+        # Preserve the reviewed Qualcomm source in an isolated PE branch
+        # until vendor IMS/ExtPhone ABI, radio Java libraries and Soong build
+        # have been validated against a real new mondrian product graph.
+        if "vendor/codeaurora/telephony" in projects:
+            raise ValueError(f"{file}: unverified Qualcomm telephony source activated")
         expected_count = 1071 + int(index >= 2)
         if len(projects) != expected_count:
             raise ValueError(f"{file}: {len(projects)} paths, expected {expected_count}")
