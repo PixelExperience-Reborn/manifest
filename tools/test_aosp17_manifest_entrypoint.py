@@ -147,6 +147,20 @@ class ManifestEntryPointTests(unittest.TestCase):
                 ValueError, "legacy custom host tools activated"):
             self.check()
 
+    def test_unreviewed_vendor_extractor_cannot_enter_android17(self):
+        # Neither the obsolete PE shell fork nor incomplete modern Python
+        # host tooling belongs to the ROM graph before vendor device work.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="tools/extract-utils" '
+            'name="tools_extract-utils" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "unreviewed vendor extractor host source activated"):
+            self.check()
+
     def test_duplicate_source_owner_fails_closed(self):
         self.rewrite(
             "aosp17_pe_p2_qcom_wlan.xml",
