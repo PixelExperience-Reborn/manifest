@@ -149,6 +149,7 @@ OFFICIAL_PATHS = {
     "packages/apps/Settings": "platform/packages/apps/Settings",
     "packages/apps/Camera2": "platform/packages/apps/Camera2",
     "packages/modules/Nfc": "platform/packages/modules/Nfc",
+    "system/secure_element": "platform/system/secure_element",
     "packages/providers/MediaProvider": "platform/packages/providers/MediaProvider",
     "packages/providers/DownloadProvider": "platform/packages/providers/DownloadProvider",
     "system/bpf": "platform/system/bpf",
@@ -183,6 +184,7 @@ FORBIDDEN_NAMES = {
     "vendor_codeaurora_telephony",
     "vendor_custom-preference", "vendor_nxp_nfc",
     "vendor_nxp_opensource_commonsys_external_libnfc-nci",
+    "vendor_nxp_opensource_commonsys_frameworks",
     "hardware_broadcom_libbt", "hardware_custom_compat",
     "hardware_google_pixel", "hardware_libhardware",
 }
@@ -298,6 +300,11 @@ def validate():
         # Do not add a second unreviewed controller-to-framework stack.
         if "vendor/nxp/opensource/commonsys/external/libnfc-nci" in projects:
             raise ValueError(f"{file}: legacy NXP libnfc-nci stack activated")
+        # The old NXP framework exposes hidden Java Binder NFC extensions,
+        # proprietary SEMS APIs and WLC calls; none is a validated AOSP17
+        # Mainline/OMAPI consumer or independently reviewed PE interface.
+        if "vendor/nxp/opensource/commonsys/frameworks" in projects:
+            raise ValueError(f"{file}: unreviewed NXP NFC Java framework activated")
         expected_count = 1071 + int(index >= 2)
         if len(projects) != expected_count:
             raise ValueError(f"{file}: {len(projects)} paths, expected {expected_count}")
