@@ -1,5 +1,8 @@
 # Android 17 AOSP manifest graph audit
 
+> **Historical 2026-11-02 design snapshot, not the currently active source graph.** This audit describes the initial 135-fork routing proposal. On the 2026-11-06 A17 port branch, the `default.xml` entrypoint no longer imports all old PE snippets: it includes the final independently reviewed AOSP17 stage. See [current manifest entrypoint audit](ANDROID_17_MANIFEST_ENTRYPOINT_AUDIT.md), [25 staged profiles](ANDROID_17_BOOTSTRAP_PROFILES.md), and [current 135-repository port matrix](ANDROID_17_135_REPOSITORY_PORT_MATRIX.md). The old source inventories remain valuable for porting but must not be treated as an enabled Android17 product.
+
+
 **STAGED ONLY — NOT BUILD-READY.** This document records an independently reviewed manifest proposal, not a working ROM.
 
 - Upstream: official AOSP immutable `android-17.0.0_r1`.
