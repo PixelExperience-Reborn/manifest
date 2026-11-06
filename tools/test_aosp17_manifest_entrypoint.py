@@ -90,6 +90,20 @@ class ManifestEntryPointTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "changed P2 groups"):
             self.check()
 
+    def test_legacy_platform_testing_owner_cannot_be_activated(self):
+        # The archived PE fork differs from its Android14 AOSP parent by
+        # two obsolete Make test-list deletions. Never substitute it for
+        # the official Android17 platform/platform_testing source graph.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <remove-project name="platform/platform_testing" />\n'
+            '  <project path="platform_testing" name="platform_testing" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(ValueError, "replaced critical AOSP17 owner"):
+            self.check()
+
     def test_duplicate_source_owner_fails_closed(self):
         self.rewrite(
             "aosp17_pe_p2_qcom_wlan.xml",
