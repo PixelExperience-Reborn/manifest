@@ -161,6 +161,21 @@ class ManifestEntryPointTests(unittest.TestCase):
                 ValueError, "unreviewed vendor extractor host source activated"):
             self.check()
 
+    def test_android14_metalava_fork_cannot_replace_android17(self):
+        # The archived PE branch is the unmodified Android14 source tree.
+        # Its monolithic Metalava cannot replace the modular Android17
+        # Soong host tool without breaking API/stub generation.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <remove-project name="platform/tools/metalava" />\n'
+            '  <project path="tools/metalava" name="tools_metalava" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "replaced critical AOSP17 owner"):
+            self.check()
+
     def test_duplicate_source_owner_fails_closed(self):
         self.rewrite(
             "aosp17_pe_p2_qcom_wlan.xml",
