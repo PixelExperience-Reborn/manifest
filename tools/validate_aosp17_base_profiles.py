@@ -180,6 +180,7 @@ FORBIDDEN_NAMES = {
     "prebuilts_tools-custom",
     "tools_extract-utils", "tools_metalava",
     "vendor_codeaurora_telephony",
+    "vendor_custom-preference",
     "hardware_broadcom_libbt", "hardware_custom_compat",
     "hardware_google_pixel", "hardware_libhardware",
 }
@@ -280,6 +281,11 @@ def validate():
         # have been validated against a real new mondrian product graph.
         if "vendor/codeaurora/telephony" in projects:
             raise ValueError(f"{file}: unverified Qualcomm telephony source activated")
+        # Old custom-preference has LineageHardwareManager and a privileged
+        # cross-process remote broadcast protocol. Android17 Settings has no
+        # such source dependency; gate a future independent PE redesign.
+        if "vendor/custom-preference" in projects:
+            raise ValueError(f"{file}: unreviewed legacy preference library activated")
         expected_count = 1071 + int(index >= 2)
         if len(projects) != expected_count:
             raise ValueError(f"{file}: {len(projects)} paths, expected {expected_count}")
