@@ -234,6 +234,34 @@ class ManifestEntryPointTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "replaced critical AOSP17 owner"):
             self.check()
 
+    def test_nxp_legacy_libnfc_nci_cannot_enter_android17(self):
+        # The 2022 NXP SN100x HIDL library is not a proven drop-in
+        # replacement for AOSP17's NFC Mainline native/APEX stack.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="vendor/nxp/opensource/commonsys/external/libnfc-nci" '
+            'name="vendor_nxp_opensource_commonsys_external_libnfc-nci" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "legacy NXP libnfc-nci stack activated"):
+            self.check()
+
+    def test_nxp_legacy_libnfc_nci_must_not_reown_mainline_nfc(self):
+        # Replacing the official package path with old NFC source must
+        # fail ownership validation even when the path count is unchanged.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <remove-project name="platform/packages/modules/Nfc" />\n'
+            '  <project path="packages/modules/Nfc" '
+            'name="vendor_nxp_opensource_commonsys_external_libnfc-nci" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(ValueError, "replaced critical AOSP17 owner"):
+            self.check()
+
     def test_duplicate_source_owner_fails_closed(self):
         self.rewrite(
             "aosp17_pe_p2_qcom_wlan.xml",
