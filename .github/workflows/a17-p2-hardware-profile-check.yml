@@ -1,4 +1,4 @@
-name: AOSP17 isolated P2 WLAN and RIL manifest validation
+name: AOSP17 P2 manifest and safe default ownership
 
 on:
   push:
@@ -9,6 +9,7 @@ on:
       - 'aosp17_pe_p2_qcom_wlan.xml'
       - 'aosp17_pe_p2_ril.xml'
       - 'aosp17_pe_p2_kernel_configs.xml'
+      - 'default.xml'
       - 'tools/validate_aosp17_base_profiles.py'
   pull_request:
     paths:
@@ -16,6 +17,7 @@ on:
       - 'aosp17_pe_p2_qcom_wlan.xml'
       - 'aosp17_pe_p2_ril.xml'
       - 'aosp17_pe_p2_kernel_configs.xml'
+      - 'default.xml'
       - 'tools/validate_aosp17_base_profiles.py'
 
 permissions:
@@ -33,9 +35,10 @@ jobs:
           - aosp17_pe_p2_qcom_wlan.xml
           - aosp17_pe_p2_ril.xml
           - aosp17_pe_p2_kernel_configs.xml
+          - default.xml
     steps:
       - uses: actions/checkout@v4
-      - name: Validate all 24 staged source ownership profiles offline
+      - name: Validate all 25 staged profiles and safe default offline
         run: python3 tools/validate_aosp17_base_profiles.py
 
       - name: Download official repo client
@@ -81,7 +84,7 @@ jobs:
           wlan = items["hardware/qcom/wlan"]
           ril = items["hardware/ril"]
           kcfg = items["kernel/configs"]
-          if profile == "aosp17_pe_p2_kernel_configs.xml":
+          if profile in ("aosp17_pe_p2_kernel_configs.xml", "default.xml"):
               assert kcfg.get("name") == "kernel_configs"
               assert kcfg.get("revision") == "d02620f1f46af9eef024fb41e6d911d935699492"
               assert kcfg.get("groups") == "vts,pdk"
@@ -94,7 +97,7 @@ jobs:
               assert wlan.get("name") == "hardware_qcom_wlan"
               assert wlan.get("revision") == "667daa664e107f0de451b9046a12da74b99a0e6b"
               assert wlan.get("groups") == "qcom_wlan,pdk-qcom"
-              if profile in ("aosp17_pe_p2_ril.xml", "aosp17_pe_p2_kernel_configs.xml"):
+              if profile in ("aosp17_pe_p2_ril.xml", "aosp17_pe_p2_kernel_configs.xml", "default.xml"):
                   assert ril.get("name") == "hardware_ril"
                   assert ril.get("revision") == "29ea93bac3efe871c54f86b05713f894575dc6b8"
                   assert ril.get("groups") == "pdk"
