@@ -177,6 +177,7 @@ FORBIDDEN_NAMES = {
     "platform_testing",
     "prebuilts_extract-tools", "prebuilts_kernel-build-tools",
     "prebuilts_tools-custom",
+    "tools_extract-utils",
     "hardware_broadcom_libbt", "hardware_custom_compat",
     "hardware_google_pixel", "hardware_libhardware",
 }
@@ -267,6 +268,11 @@ def validate():
         # platform module or standalone AOSP17 source dependency.
         if "prebuilts/tools-custom" in projects:
             raise ValueError(f"{file}: legacy custom host tools activated")
+        # Python extractor is host source and requires vetted external tools.
+        # Never import the legacy PE Bash fork or a partially ported Python
+        # helper into the ROM until its device/kernel/vendor graph is reviewed.
+        if "tools/extract-utils" in projects:
+            raise ValueError(f"{file}: unreviewed vendor extractor host source activated")
         expected_count = 1071 + int(index >= 2)
         if len(projects) != expected_count:
             raise ValueError(f"{file}: {len(projects)} paths, expected {expected_count}")
