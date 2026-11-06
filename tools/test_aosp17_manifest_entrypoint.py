@@ -262,6 +262,34 @@ class ManifestEntryPointTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "replaced critical AOSP17 owner"):
             self.check()
 
+    def test_legacy_nxp_java_nfc_framework_cannot_enter_android17(self):
+        # Archived NXP service extensions contain device-specific Binder
+        # routing, SEMS and WLC APIs with no proven AOSP17 consumer.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="vendor/nxp/opensource/commonsys/frameworks" '
+            'name="vendor_nxp_opensource_commonsys_frameworks" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "unreviewed NXP NFC Java framework activated"):
+            self.check()
+
+    def test_nxp_java_framework_must_not_replace_aosp17_secure_element(self):
+        # Enabling old proprietary Java/SEMS wrappers may not silently
+        # take ownership of the modern native OMAPI implementation.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <remove-project name="platform/system/secure_element" />\n'
+            '  <project path="system/secure_element" '
+            'name="vendor_nxp_opensource_commonsys_frameworks" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(ValueError, "replaced critical AOSP17 owner"):
+            self.check()
+
     def test_duplicate_source_owner_fails_closed(self):
         self.rewrite(
             "aosp17_pe_p2_qcom_wlan.xml",
