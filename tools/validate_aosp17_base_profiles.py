@@ -253,6 +253,10 @@ def validate():
                     "https://github.com/PixelExperience-Reborn"):
                 raise ValueError(f"{file}: unreviewed P2 fetch remote")
         projects = resolve(file)
+        # Report a forbidden legacy binary import before the generic count
+        # check, so this failure remains actionable and regression-testable.
+        if "prebuilts/extract-tools" in projects:
+            raise ValueError(f"{file}: unreviewed host-only extract-tools activated")
         expected_count = 1071 + int(index >= 2)
         if len(projects) != expected_count:
             raise ValueError(f"{file}: {len(projects)} paths, expected {expected_count}")
@@ -261,10 +265,6 @@ def validate():
         expected_selected = 1068 + int(index >= 2)
         if len(projects) - notdefault != expected_selected:
             raise ValueError(f"{file}: default-selected count changed")
-        # Host-only archived PE binaries are not a reviewed Android17 source
-        # project. Keep offline blob extraction separate from the ROM graph.
-        if "prebuilts/extract-tools" in projects:
-            raise ValueError(f"{file}: unreviewed host-only extract-tools activated")
         for legacy_path in ("external/json-c", "external/ntfs-3g", "external/tinyxml",
                             "hardware/custom/compat", "hardware/google/pixel"):
             if legacy_path in projects:
