@@ -1,11 +1,13 @@
 # PixelExperience-Reborn — Android 17 port
 
+> **Historical planning checkpoint (2026-11-02).** The port branch now has a safe source-only `default.xml` that includes the latest reviewed Android17 profile. For the current entrypoint, exact source pins and still-open checks see [2026-11-06 manifest audit](ANDROID_17_MANIFEST_ENTRYPOINT_AUDIT.md). Do not use the initial statements below as current GitHub build status.
+
 **State: preparation only. This is NOT an Android 17 build-ready source tree.**
 
 ## Verified baseline (2026-11-02)
 
 - 135 organization repositories, all with `seventeen` as the default branch; initially they contain Android 14-era PE sources.
-- The root `default.xml` still targets AOSP `android-14.0.0_r22`. Its project set and `snippets/remove.xml` are Android 14-era.
+- At this initial 2026-11-02 checkpoint, the old root `default.xml` targeted AOSP `android-14.0.0_r22`. This has since been changed in the **isolated A17 port branch** to include a reviewed AOSP17-only staged profile; historical snippets remain for reference.
 - The PE snippets list 185 projects. The 135 mirrored GitHub repositories are redirected by this stage to Reborn `refs/heads/seventeen`.
 - The other 50 are left on their historical remotes until examined: 48 old/other-SoC/irrelevant repos and the GitLab-only `external_faceunlock` and `vendor_gms`.
 
@@ -34,4 +36,4 @@ Do **not** merely change the Android 14 tag string. The list of projects, rename
 
 ## Important
 
-This first change only repoints **existing** GitHub forks to Reborn; it does not upgrade their code, change the root AOSP 14 manifest, or perform a ROM build.
+This paragraph described only the first 2026-11-02 change. Later staged commits imported reviewed AOSP17 source history and replaced the port branch's default entrypoint; **no full ROM build or mondrian boot has been verified**.
