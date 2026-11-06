@@ -1,0 +1,120 @@
+name: AOSP17 isolated NFC source security candidate
+
+on:
+  push:
+    branches:
+      - port/a17-aosp17-manifest-20261102
+    paths:
+      - 'aosp17_pe_p2_nfc_security_candidate.xml'
+      - 'docs/ANDROID_17_NFC_SECURITY_CANDIDATE.md'
+      - '.github/workflows/aosp17-p2-nfc-security-candidate.yml'
+  pull_request:
+    paths:
+      - 'aosp17_pe_p2_nfc_security_candidate.xml'
+      - 'docs/ANDROID_17_NFC_SECURITY_CANDIDATE.md'
+      - '.github/workflows/aosp17-p2-nfc-security-candidate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  exact-upstream-nfc-candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    steps:
+      - name: Fetch official repo launcher
+        run: |
+          set -euo pipefail
+          curl -fLsS --retry 4 https://storage.googleapis.com/git-repo-downloads/repo \
+            -o "$RUNNER_TEMP/repo"
+          chmod +x "$RUNNER_TEMP/repo"
+
+      - name: Resolve experimental AOSP17 NFC manifest (without changing default)
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/aosp17-nfc-candidate"
+          cd "$RUNNER_TEMP/aosp17-nfc-candidate"
+          "$RUNNER_TEMP/repo" init -q --no-clone-bundle \
+            --partial-clone --clone-filter=blob:none \
+            -u https://github.com/PixelExperience-Reborn/manifest.git \
+            -b port/a17-aosp17-manifest-20261102 \
+            -m aosp17_pe_p2_nfc_security_candidate.xml
+          "$RUNNER_TEMP/repo" manifest -o "$RUNNER_TEMP/nfc-candidate-resolved.xml"
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          import xml.etree.ElementTree as ET
+          root = ET.parse(Path(os.environ["RUNNER_TEMP"])/"nfc-candidate-resolved.xml").getroot()
+          items = root.findall(".//project")
+          by_path = {p.get("path") or p.get("name"): p for p in items}
+          assert len(items) == len(by_path) == 1069, ("wrong/duplicate source graph", len(items), len(by_path))
+          nfc = by_path["packages/modules/Nfc"]
+          assert nfc.get("name") == "platform/packages/modules/Nfc"
+          assert nfc.get("revision") == "6f3a074cf6c87a2dcc3970c03462a6970b06f9cd"
+          assert nfc.get("remote") == "aosp"
+          assert nfc.get("groups") == "pdk-cw-fs,pdk-fs"
+          assert by_path["hardware/nxp/nfc"].get("name") == "platform/hardware/nxp/nfc"
+          assert by_path["system/secure_element"].get("name") == "platform/system/secure_element"
+          assert by_path["prebuilts/module_sdk/Nfc"].get("name") == "platform/prebuilts/module_sdk/Nfc"
+          denied = {
+              "vendor/nxp/nfc",
+              "vendor/nxp/opensource/commonsys/frameworks",
+              "vendor/nxp/opensource/commonsys/external/libnfc-nci",
+              "vendor/nxp/opensource/commonsys/packages/apps/Nfc",
+              "packages/apps/Nfc",
+          }
+          assert not any(p in by_path for p in denied), "archived NFC source has entered candidate"
+          print("PASS: 1069 unique selected repos; only one official NFC Mainline source at pinned security SHA")
+          print("PASS: NXP HAL, Secure Element, NFC module SDK remain independently owned")
+          PY
+
+      - name: Sync only latest reviewed official NFC candidate
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/aosp17-nfc-candidate"
+          "$RUNNER_TEMP/repo" sync -c -j2 --no-tags --fail-fast packages/modules/Nfc
+
+      - name: Verify exact upstream security tag, modern NFC features and source delta
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/aosp17-nfc-candidate/packages/modules/Nfc"
+          test "$(git rev-parse HEAD)" = "6f3a074cf6c87a2dcc3970c03462a6970b06f9cd"
+          test "$(git rev-parse 'HEAD^{tree}')" = "ee6a57f5ccc30d113588f6cc5bffff94932bffb5"
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          bp=Path("NfcNci/Android.bp").read_text()
+          apex=Path("apex/Android.bp").read_text()
+          service=Path("NfcNci/src/com/android/nfc/NfcService.java").read_text()
+          assert 'name: "NfcNci"' in bp and 'name: "NfcNciApex"' in bp
+          assert '"com.android.nfcservices"' in bp
+          assert 'name: "com.android.nfcservices"' in apex
+          assert 'apps: ["NfcNciApex"]' in apex
+          assert Path("NfcNci/src/com/android/nfc/wlc/NfcCharging.java").is_file()
+          assert "NfcOemExtension" in service and "RoutingOptionManager" in service
+          root=ET.parse("NfcNci/AndroidManifest.xml").getroot()
+          assert root.get("package")=="com.android.nfc"
+          print("PASS: official source tree has one NFC package, modern WLC/OEM/routing and NFC APEX")
+          print("NOT TESTED: whether latest November 2026 NFC permission fixes are present")
+          PY
+          git fetch -q --no-tags --filter=blob:none --depth=1 \
+            https://android.googlesource.com/platform/packages/modules/Nfc \
+            refs/tags/android-17.0.0_r1
+          test "$(git rev-parse FETCH_HEAD)" = "940212c440f57032a19cf0f90c7faa8eca48d546"
+          git diff --name-only FETCH_HEAD HEAD > "$RUNNER_TEMP/nfc-source-diff.txt"
+          python3 - <<'PY'
+          from pathlib import Path
+          changed=Path(__import__("os").environ["RUNNER_TEMP"] + "/nfc-source-diff.txt").read_text().splitlines()
+          assert "NfcNci/src/com/android/nfc/NfcService.java" in changed
+          assert len(changed)>0
+          print(f"PASS: official NFC security candidate differs from baseline in {len(changed)} paths")
+          print("OPEN: CVE-2026-58994 authorization fix, full security rebase and ROM build")
+          PY
+
+      - name: State precise outcome
+        run: |
+          echo "PASS means: source ownership, immutable NFC revision and structural checks only."
+          echo "NOT A COMPLETE SECURITY FIX: no AOSP November SPL claim or updated ROM product."
+          echo "NOT TESTED: APEX signing/Soong, module_sdk ABI, SELinux/VINTF, CTS/VTS,"
+          echo "NFC/HCE/eSE, Xiaomi vendor firmware or physical mondrian."
