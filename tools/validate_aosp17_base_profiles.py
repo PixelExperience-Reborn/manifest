@@ -182,6 +182,7 @@ FORBIDDEN_NAMES = {
     "tools_extract-utils", "tools_metalava",
     "vendor_codeaurora_telephony",
     "vendor_custom-preference", "vendor_nxp_nfc",
+    "vendor_nxp_opensource_commonsys_external_libnfc-nci",
     "hardware_broadcom_libbt", "hardware_custom_compat",
     "hardware_google_pixel", "hardware_libhardware",
 }
@@ -292,6 +293,11 @@ def validate():
         # Block both legacy checkout path and its archived repo name.
         if "vendor/nxp/nfc" in projects:
             raise ValueError(f"{file}: unreviewed legacy PN8x NXP NFC HAL activated")
+        # Archived 2022 NXP SN100x libnfc-nci binds legacy HIDL/commonsys.
+        # Android17 Mainline already owns the NFC stack, JNI/APEX and utils.
+        # Do not add a second unreviewed controller-to-framework stack.
+        if "vendor/nxp/opensource/commonsys/external/libnfc-nci" in projects:
+            raise ValueError(f"{file}: legacy NXP libnfc-nci stack activated")
         expected_count = 1071 + int(index >= 2)
         if len(projects) != expected_count:
             raise ValueError(f"{file}: {len(projects)} paths, expected {expected_count}")
