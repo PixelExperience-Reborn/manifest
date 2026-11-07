@@ -241,6 +241,7 @@ def validate():
     # An isolated source-only experiment is not an active STAGES entry.
     expected_files = {name for name, _ in STAGES}
     expected_files.add("aosp17_pe_p2_nfc_security_candidate.xml")
+    expected_files.add("aosp17_pe_p2_se_security_candidate.xml")
     actual_files = {p.name for p in ROOT.glob("aosp17_*.xml")}
     if actual_files != expected_files:
         raise ValueError(f"stage list drift: missing={expected_files - actual_files}, extra={actual_files - expected_files}")
@@ -433,6 +434,37 @@ def validate():
         expected = expected_nfc if candidate_path == "packages/modules/Nfc" else source.attrib
         if candidate[candidate_path].attrib != expected:
             raise ValueError(f"NFC candidate changed unexpected source: {candidate_path}")
+    # Newer official NXP Secure Element AIDL channel-index fix source
+    # experiment. Exactly one repo checkout changes; never the default.
+    se_candidate_name = "aosp17_pe_p2_se_security_candidate.xml"
+    se_root = ET.parse(ROOT / se_candidate_name).getroot()
+    se_nodes = list(se_root)
+    expected_se = {
+        "path": "hardware/nxp/secure_element",
+        "name": "platform/hardware/nxp/secure_element",
+        "remote": "aosp",
+        "revision": "8aec22fde8121bf3f74006730ce42e9ac0366b62",
+        "upstream": "refs/tags/android-security-17.0.0_r3",
+        "groups": "pdk",
+    }
+    if (se_root.tag != "manifest" or len(se_nodes) != 3 or
+            [n.tag for n in se_nodes] !=
+            ["include", "remove-project", "project"] or
+            se_nodes[0].attrib != {"name": STAGES[-1][0]} or
+            se_nodes[1].attrib !=
+            {"name": "platform/hardware/nxp/secure_element"} or
+            se_nodes[2].attrib != expected_se):
+        raise ValueError("unreviewed NXP SE security candidate manifest shape or pin")
+    se_candidate = resolve(se_candidate_name)
+    if set(se_candidate) != set(final):
+        raise ValueError("NXP SE security candidate changed source checkout paths")
+    for candidate_path, source in final.items():
+        expected = (expected_se if candidate_path == "hardware/nxp/secure_element"
+                    else source.attrib)
+        if se_candidate[candidate_path].attrib != expected:
+            raise ValueError(
+                f"NXP SE candidate changed unexpected source: {candidate_path}")
+    print("PASS: experimental official NXP SE channel-bounds security source pinned")
     print("PASS: experimental newer NFC source strictly isolated and pinned")
     print(f"PASS: safe default.xml resolves to {len(active)} reviewed project paths")
 
