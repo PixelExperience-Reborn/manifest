@@ -1,0 +1,83 @@
+name: AOSP17 Qualcomm Health AIDL V5 source-only candidate
+
+on:
+  push:
+    branches:
+      - port/a17-aosp17-manifest-20261102
+    paths:
+      - 'aosp17_pe_p2_qcom_health_aidl_candidate.xml'
+      - 'tools/validate_aosp17_base_profiles.py'
+      - 'tools/test_aosp17_manifest_entrypoint.py'
+      - '.github/workflows/aosp17-p2-qcom-health-aidl-candidate.yml'
+      - 'default.xml'
+  pull_request:
+    paths:
+      - 'aosp17_pe_p2_qcom_health_aidl_candidate.xml'
+      - 'tools/validate_aosp17_base_profiles.py'
+      - '.github/workflows/aosp17-p2-qcom-health-aidl-candidate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  health-aidl-v5-source-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout PE-Reborn manifest source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Validate AOSP17 profile invariants and negative tests
+        run: |
+          python3 tools/validate_aosp17_base_profiles.py
+          python3 -m unittest discover -s tools -p test_aosp17_manifest_entrypoint.py -v
+          python3 tools/validate_135_repository_matrix.py
+      - name: Resolve nondefault Qualcomm Health source through official repo
+        run: |
+          set -euo pipefail
+          curl -fLsS --retry 4 https://storage.googleapis.com/git-repo-downloads/repo \
+            -o "$RUNNER_TEMP/repo"
+          chmod +x "$RUNNER_TEMP/repo"
+          mkdir -p "$RUNNER_TEMP/qcom-health"
+          cd "$RUNNER_TEMP/qcom-health"
+          "$RUNNER_TEMP/repo" init -q --no-clone-bundle \
+            --partial-clone --clone-filter=blob:none \
+            -u https://github.com/PixelExperience-Reborn/manifest.git \
+            -b port/a17-aosp17-manifest-20261102 \
+            -m aosp17_pe_p2_qcom_health_aidl_candidate.xml
+          "$RUNNER_TEMP/repo" manifest -o "$RUNNER_TEMP/qcom-health-flat.xml"
+          python3 - <<'PY'
+          import os
+          import xml.etree.ElementTree as ET
+          root = ET.parse(os.path.join(os.environ["RUNNER_TEMP"], "qcom-health-flat.xml")).getroot()
+          items = root.findall(".//project")
+          projects = {p.get("path") or p.get("name"): p for p in items}
+          assert len(items) == len(projects) == 1070, (len(items), len(projects))
+          health = projects["vendor/qcom/opensource/healthd-ext"]
+          assert health.get("name") == "vendor_qcom_opensource_healthd-ext"
+          assert health.get("revision") == "cfb2ea5aafeaf2ac177453c95ffd628cfa023742"
+          assert health.get("groups") == "device"
+          assert projects["hardware/interfaces"].get("name") == "hardware_interfaces"
+          assert projects["hardware/interfaces"].get("revision") == "735e364cbdd00b0d6e4dc33ea0866dbb6d971a11"
+          assert "vendor/qcom/opensource/fm-commonsys" not in projects
+          assert "vendor/qcom/opensource/libfmjni" not in projects
+          assert all(not p.startswith("device/xiaomi/") for p in projects)
+          print("PASS: 1070 selected paths; pinned Health V5 source only, no FM or device tree")
+          PY
+      - name: Sync only reviewed QTI health implementation
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/qcom-health"
+          "$RUNNER_TEMP/repo" sync -c -j2 --no-tags --fail-fast vendor/qcom/opensource/healthd-ext
+          cd vendor/qcom/opensource/healthd-ext
+          test "$(git rev-parse HEAD)" = "cfb2ea5aafeaf2ac177453c95ffd628cfa023742"
+          test "$(git rev-parse 'HEAD^{tree}')" = "75c2cd23725b86e9e863b4f085d2d5be9ab1da73"
+          python3 tests/check_android17_health_aidl.py
+          echo "PASS: exact PE-Reborn Health AIDL V5 wrapper source and structural checks"
+      - name: State source-only limitations
+        run: |
+          echo "SOURCE ONLY. NOT A COMPILED OR BOOT-TESTED ANDROID17 HEALTH HAL."
+          echo "BLOCKERS: full AOSP17 Soong/link, vendor/charger sysfs, SELinux, VINTF,"
+          echo "recovery charging UI, device boot, battery behaviour and CTS/VTS."
