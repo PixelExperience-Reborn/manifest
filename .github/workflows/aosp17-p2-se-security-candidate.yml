@@ -53,7 +53,9 @@ jobs:
           se=by_path["hardware/nxp/secure_element"]
           assert se.get("name")=="platform/hardware/nxp/secure_element"
           assert se.get("revision")=="8aec22fde8121bf3f74006730ce42e9ac0366b62"
-          assert se.get("remote")=="aosp" and se.get("groups")=="pdk"
+          # The canonical repo manifest may omit an inherited aosp remote;
+          # exact input XML remote="aosp" is checked in the source validator.
+          assert se.get("groups")=="pdk"
           assert by_path["hardware/nxp/nfc"].get("name")=="platform/hardware/nxp/nfc"
           assert by_path["packages/modules/Nfc"].get("name")=="platform/packages/modules/Nfc"
           assert by_path["system/secure_element"].get("name")=="platform/system/secure_element"
