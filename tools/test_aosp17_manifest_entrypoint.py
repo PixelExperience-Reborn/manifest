@@ -714,7 +714,7 @@ class ManifestEntryPointTests(unittest.TestCase):
             'name="vendor_qcom_opensource_display" />\n'
             '  <remove-project name="kernel/configs" />',
         )
-        with self.assertRaisesRegex(ValueError, "bad revision/owner for hardware/interfaces"):
+        with self.assertRaisesRegex(ValueError, "unexpected historical repo"):
             self.check()
 
     def test_qualcomm_hwc3_candidate_requires_exact_git_commit(self):
