@@ -709,12 +709,12 @@ class ManifestEntryPointTests(unittest.TestCase):
         self.rewrite(
             "aosp17_pe_p2_kernel_configs.xml",
             '  <remove-project name="kernel/configs" />',
-            '  <remove-project name="platform/hardware/interfaces" />\n'
+            '  <remove-project name="hardware_interfaces" />\n'
             '  <project path="hardware/interfaces" '
             'name="vendor_qcom_opensource_display" />\n'
             '  <remove-project name="kernel/configs" />',
         )
-        with self.assertRaisesRegex(ValueError, "replaced critical AOSP17 owner"):
+        with self.assertRaisesRegex(ValueError, "bad revision/owner for hardware/interfaces"):
             self.check()
 
     def test_qualcomm_hwc3_candidate_requires_exact_git_commit(self):
