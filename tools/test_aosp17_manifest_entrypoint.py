@@ -780,6 +780,41 @@ class ManifestEntryPointTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "FM broadcast source excluded"):
             self.check()
 
+    def test_archived_qcom_interfaces_cannot_enter_active_source(self):
+        # The historical mixed HIDL repository also contains FM@1.0.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="vendor/qcom/opensource/interfaces" '
+            'name="vendor_qcom_opensource_interfaces" />\\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(ValueError, "archived Qualcomm interfaces source excluded"):
+            self.check()
+
+    def test_archived_qcom_interfaces_alias_cannot_enter_active_source(self):
+        # Catch historical repository aliases even at nonstandard paths.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="vendor/external/qti-interfaces" '
+            'name="android_vendor_qcom_opensource_interfaces" />\\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(ValueError, "archived Qualcomm interfaces source excluded"):
+            self.check()
+
+    def test_mondrian_fm_jni_canonical_path_cannot_enter_source(self):
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="vendor/qcom/opensource/libfmjni" '
+            'name="vendor_qcom_opensource_libfmjni" />\\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(ValueError, "FM broadcast source excluded"):
+            self.check()
+
     def test_qualcomm_health_aidl_v5_pin_cannot_drift(self):
         self.rewrite(
             "aosp17_pe_p2_qcom_health_aidl_candidate.xml",
