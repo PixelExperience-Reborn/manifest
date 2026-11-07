@@ -304,6 +304,27 @@ def reject_unreviewed_qcom_usb(profile, projects):
                 f"{profile}: old Qualcomm HIDL USB source excluded for AOSP17 mondrian: {path}")
 
 
+# The archived QTI Vibrator AIDL V2 is hardware/Soong-version dependent:
+# don't import until EV_FF driver, AIDL/FCM and haptic effects are verified.
+# The official Android17 platform remains the sole Vibrator AIDL owner.
+UNREVIEWED_QCOM_VIBRATOR_PATHS = {
+    "vendor/qcom/opensource/vibrator",
+}
+UNREVIEWED_QCOM_VIBRATOR_NAMES = {
+    "vendor_qcom_opensource_vibrator",
+    "vendor-qcom-opensource-vibrator",
+    "android_vendor_qcom_opensource_vibrator",
+}
+
+
+def reject_unreviewed_qcom_vibrator(profile, projects):
+    for path, project in projects.items():
+        if (path in UNREVIEWED_QCOM_VIBRATOR_PATHS or
+                project.get("name") in UNREVIEWED_QCOM_VIBRATOR_NAMES):
+            raise ValueError(
+                f"{profile}: unverified QTI Vibrator AIDL V2 source excluded: {path}")
+
+
 def reject_mondrian_fm_source(profile, projects):
     for path, project in projects.items():
         if path in FM_SOURCE_PATHS or project.get("name") in FM_SOURCE_NAMES:
@@ -368,6 +389,7 @@ def validate():
     reject_archived_qcom_power("aosp17_reference.xml", baseline)
     reject_unreviewed_qcom_thermal_header("aosp17_reference.xml", baseline)
     reject_unreviewed_qcom_usb("aosp17_reference.xml", baseline)
+    reject_unreviewed_qcom_vibrator("aosp17_reference.xml", baseline)
     if len(baseline) != 1071:
         raise ValueError(f"unexpected base path count {len(baseline)}, expected 1071")
     if "vendor/aosp" in baseline:
@@ -400,6 +422,7 @@ def validate():
         reject_archived_qcom_power(file, projects)
         reject_unreviewed_qcom_thermal_header(file, projects)
         reject_unreviewed_qcom_usb(file, projects)
+        reject_unreviewed_qcom_vibrator(file, projects)
         # Report a forbidden legacy binary import before the generic count
         # check, so this failure remains actionable and regression-testable.
         if "prebuilts/extract-tools" in projects:
@@ -753,11 +776,13 @@ def validate():
         reject_archived_qcom_power(name, graph)
         reject_unreviewed_qcom_thermal_header(name, graph)
         reject_unreviewed_qcom_usb(name, graph)
+        reject_unreviewed_qcom_vibrator(name, graph)
     print("PASS: FM broadcast source excluded from mondrian AOSP17 profiles")
     print("PASS: archived mixed Qualcomm HIDL interfaces excluded from AOSP17 profiles")
     print("PASS: obsolete QTI Power AIDL V3 and fake ADPF excluded from AOSP17 profiles")
     print("PASS: unverified Qualcomm thermal client header excluded; real Thermal HAL untouched")
     print("PASS: archive USB HIDL services excluded; official AOSP17 USB AIDL owner preserved")
+    print("PASS: unverified QTI Vibrator AIDL V2 excluded; official AOSP17 haptics API preserved")
     print("PASS: Qualcomm Health AIDL V5 source candidate isolated/pinned")
     print("PASS: experimental Qualcomm HWC3 AIDL display candidate isolated/pinned")
     print("PASS: modern Qualcomm-derived AIDL six-source stack isolated/pinned")
