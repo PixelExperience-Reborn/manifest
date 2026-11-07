@@ -34,8 +34,8 @@ def main():
             continue
         # Markdown allows escaped pipes inside code/text cells. Do not split
         # e.g. an Android permission protectionLevel: signature\\|privileged.
-        cells = [v.strip().replace(r"\\|", "|") for v in
-                 re.split(r"(?<!\\\\)\\|", line.strip().strip("|"))]
+        cells = [v.strip().replace(r"\|", "|") for v in
+                 re.split(r"(?<!\\)\|", line.strip().strip("|"))]
         assert len(cells) == 6, (line_number, "wrong column count")
         priority, path, link, classification, action, status = cells
         assert path.startswith("`") and path.endswith("`"), (line_number, path)
