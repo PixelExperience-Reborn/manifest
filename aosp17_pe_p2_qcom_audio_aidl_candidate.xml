@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+  <!-- EXPERIMENTAL 2026 SONY-HOSTED QUALCOMM AUDIOREACH SOURCE SNAPSHOT.
+       Qualcomm-derived AUDIO.LA.10.0.r1, NOT Qualcomm CodeLinaro
+       authenticity attestation, not a ready-made mondrian device tree.
+       SOURCE-ONLY candidate; NOT included by default.xml or 25 stages.
+       AOSP17 already exposes frozen soundtrigger3 AIDL V1..V4.
+       Modern Sony-hosted Qualcomm ST service is AIDL V1 and requires
+       a compatible primary AIDL audio service, PAL/AGM, DSP graph
+       services and AudioReach configuration. No duplicate legacy
+       sound_trigger.primary.* HAL; no unverified VINTF, vendor firmware
+       or audio policy enabled by this manifest. Taro platform configs
+       exist upstream, but taro product ABI and SM8475 hardware tests
+       remain unverified. Requires proper independent PE-Reborn product
+       plus complete Android17 Soong/NDK/VINTF/SELinux/CTS/VTS. -->
+  <include name="aosp17_pe_p2_kernel_configs.xml" />
+  <remote name="sony-qcom-audio-review" fetch="https://github.com/sonyxperiadev" />
+  <project path="vendor/qcom/opensource/audio-hal/st-hal-ar"
+           name="vendor-qcom-opensource-audio-hal-st-hal-ar"
+           remote="sony-qcom-audio-review"
+           revision="1dcb1275256b3f43b78d342d623870324a831720"
+           upstream="refs/heads/aosp/AUDIO.LA.10.0.r1"
+           groups="device" />
+  <project path="vendor/qcom/opensource/audio-hal/primary-hal-ar"
+           name="vendor-qcom-opensource-audio-hal-primary-hal-ar"
+           remote="sony-qcom-audio-review"
+           revision="b071e74ead44a7aecee69969003b902632cd4ab3"
+           upstream="refs/heads/aosp/AUDIO.LA.10.0.r1"
+           groups="device" />
+  <project path="vendor/qcom/opensource/pal"
+           name="vendor-qcom-opensource-arpal-lx"
+           remote="sony-qcom-audio-review"
+           revision="44e6ad74fd34c390b053bbe19811502c132f007e"
+           upstream="refs/heads/aosp/AUDIO.LA.10.0.r1"
+           groups="device" />
+  <project path="vendor/qcom/opensource/agm"
+           name="vendor-qcom-opensource-agm"
+           remote="sony-qcom-audio-review"
+           revision="7ad4167f2241beefd2a48b9e87453c3a80c5811b"
+           upstream="refs/heads/aosp/AUDIO.LA.10.0.r1"
+           groups="device" />
+  <project path="vendor/qcom/opensource/audioreach-graphservices"
+           name="vendor-qcom-opensource-audioreach-graphservices"
+           remote="sony-qcom-audio-review"
+           revision="d38796b5d74ff727a5fbd9f10ecbc7f5c0335ff5"
+           upstream="refs/heads/aosp/AUDIO.LA.10.0.r1"
+           groups="device" />
+  <project path="vendor/qcom/opensource/audioreach-conf"
+           name="vendor-qcom-opensource-audioreach-conf"
+           remote="sony-qcom-audio-review"
+           revision="5e90f9e4d6bb790fca0a092d57fdee8572d5b990"
+           upstream="refs/heads/aosp/AUDIO.LA.10.0.r1"
+           groups="device" />
+</manifest>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+  <!-- P1: exact official AOSP17 frameworks/opt/telephony tree.
+       No old PE IMS incoming-call threading, CDMA-SMS or legacy
+       SubscriptionController compatibility workarounds carried.
+       Radio/IMS integration and mondrian tests are not yet done. -->
+  <include name="aosp17_pe_p1_vold.xml" />
+  <remove-project name="platform/frameworks/opt/telephony" />
+  <remote name="reborn-telephony" fetch="https://github.com/PixelExperience-Reborn" />
+  <project path="frameworks/opt/telephony" name="frameworks_opt_telephony"
+           remote="reborn-telephony" revision="548270c2e6ab41b036c670339fa0d4b04ca1ed59"
+           upstream="refs/heads/port/a17-telephony-aosp17-base-20261104"
+           groups="pdk,sysui-studio" />
+</manifest>

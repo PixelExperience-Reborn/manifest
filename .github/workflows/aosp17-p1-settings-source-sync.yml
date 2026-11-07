@@ -1,0 +1,89 @@
+name: AOSP17 P1 Settings exact source boundary
+
+on:
+  push:
+    branches:
+      - port/a17-aosp17-manifest-20261102
+    paths:
+      - aosp17_reference.xml
+      - aosp17_pe_p1_timezonepicker.xml
+      - .github/workflows/aosp17-p1-settings-source-sync.yml
+  pull_request:
+    paths:
+      - aosp17_reference.xml
+      - aosp17_pe_p1_timezonepicker.xml
+      - .github/workflows/aosp17-p1-settings-source-sync.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Install repo
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fLsS --retry 4 https://storage.googleapis.com/git-repo-downloads/repo -o "$RUNNER_TEMP/repo"
+          chmod +x "$RUNNER_TEMP/repo"
+      - name: Init reviewed AOSP17 P1 graph
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/aosp"
+          cd "$RUNNER_TEMP/aosp"
+          "$RUNNER_TEMP/repo" init -q --no-clone-bundle --partial-clone --clone-filter=blob:none \
+            -u https://github.com/PixelExperience-Reborn/manifest \
+            -b port/a17-aosp17-manifest-20261102 -m aosp17_pe_p1_timezonepicker.xml
+          "$RUNNER_TEMP/repo" manifest -o "$RUNNER_TEMP/effective-manifest.xml"
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          import xml.etree.ElementTree as ET
+
+          root = ET.parse(Path(os.environ['RUNNER_TEMP']) / 'effective-manifest.xml').getroot()
+          projects = {p.get('path') or p.get('name'): p.get('name') for p in root.findall('project')}
+          assert projects['packages/apps/Settings'] == 'platform/packages/apps/Settings'
+          assert 'packages_apps_Settings' not in projects.values()
+          assert 'packages/apps/FaceUnlockService' not in projects
+          assert 'packages_apps_FaceUnlockService' not in projects.values()
+          assert 'packages/apps/TouchGestures' not in projects
+          print('PASS: official Settings, old face unlock/touch helper not enabled')
+          PY
+      - name: Sync official Android 17 Settings only
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/aosp"
+          "$RUNNER_TEMP/repo" sync -c -j2 --no-tags --fail-fast packages/apps/Settings
+      - name: Check immutable source provenance and Soong graph
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/aosp/packages/apps/Settings"
+          test "$(git rev-parse HEAD)" = "213829fb67f5e070029e0513a088f31bc8f5c1ed"
+          test "$(git rev-parse 'HEAD^{tree}')" = "f41bf360ab496bb4c018a33f93b74858b8ed223c"
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          import xml.etree.ElementTree as ET
+
+          bp = Path('Android.bp').read_text(encoding='utf-8')
+          assert re.search(r'android_library\s*\{\s*name:\s*"Settings-core"', bp)
+          assert re.search(r'android_app\s*\{\s*name:\s*"Settings"', bp)
+          for token in ('"SettingsLibMetadata-processor"', '"Spa-search"',
+                        '"SettingsInterfaceLib"', '"aconfig_settings_flags_lib"'):
+              assert token in bp, token
+          assert 'faceunlock_framework' not in bp
+          assert 'vendor.lineage.fastcharge-V1.0-java' not in bp
+          assert 'SettingsLibDefaults' not in bp
+          for name in ('settings-api-registry', 'aconfig', 'res', 'src', 'tests'):
+              assert Path(name).is_dir(), name
+          root = ET.parse('AndroidManifest.xml').getroot()
+          assert root.get('package') == 'com.android.settings'
+          print('PASS: exact upstream AOSP17 Settings tree and modern module invariants')
+          print('NOT TESTED: m Settings / runtime UI / device HALs / locale / GMS / FBE / mondrian')
+          PY

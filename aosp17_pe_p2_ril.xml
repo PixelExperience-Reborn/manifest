@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+  <!-- P2 isolated source graph: official Android17 RIL r1 Git history
+       merged with original PixelExperience and the reviewed Make->Soong
+       libril ownership conflict. Source-only pin; not an Android17
+       radio/IMS, Soong build or mondrian runtime certification. -->
+  <include name="aosp17_pe_p2_qcom_wlan.xml" />
+  <remove-project name="platform/hardware/ril" />
+  <remote name="reborn-ril" fetch="https://github.com/PixelExperience-Reborn" />
+  <project path="hardware/ril" name="hardware_ril"
+           remote="reborn-ril" revision="29ea93bac3efe871c54f86b05713f894575dc6b8"
+           upstream="refs/heads/integrate/a17-aosp17-ril-20261105"
+           groups="pdk" />
+</manifest>

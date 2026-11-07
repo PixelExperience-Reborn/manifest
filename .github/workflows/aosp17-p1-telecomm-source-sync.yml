@@ -1,0 +1,96 @@
+name: AOSP17 P1 Telecomm exact-source and modular graph
+
+on:
+  push:
+    branches:
+      - port/a17-aosp17-manifest-20261102
+    paths:
+      - aosp17_reference.xml
+      - aosp17_pe_p1_timezonepicker.xml
+      - .github/workflows/aosp17-p1-telecomm-source-sync.yml
+  pull_request:
+    paths:
+      - aosp17_reference.xml
+      - aosp17_pe_p1_timezonepicker.xml
+      - .github/workflows/aosp17-p1-telecomm-source-sync.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  official-telecomm-source-sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Install repo
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fLsS --retry 4 https://storage.googleapis.com/git-repo-downloads/repo -o "$RUNNER_TEMP/repo"
+          chmod +x "$RUNNER_TEMP/repo"
+      - name: Resolve official AOSP17 Telecom and Telephony dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/aosp"
+          cd "$RUNNER_TEMP/aosp"
+          "$RUNNER_TEMP/repo" init -q --no-clone-bundle --partial-clone --clone-filter=blob:none \
+            -u https://github.com/PixelExperience-Reborn/manifest \
+            -b port/a17-aosp17-manifest-20261102 -m aosp17_pe_p1_timezonepicker.xml
+          "$RUNNER_TEMP/repo" manifest -o "$RUNNER_TEMP/effective.xml"
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          import os
+          projects = {p.get("path") or p.get("name"): p.get("name") for p in
+                      ET.parse(Path(os.environ["RUNNER_TEMP"]) / "effective.xml").getroot().findall("project")}
+          expected = {
+              "packages/services/Telecomm": "platform/packages/services/Telecomm",
+              "packages/modules/Telecom": "platform/packages/modules/Telecom",
+              "packages/modules/Telephony": "platform/packages/modules/Telephony",
+              "packages/services/Telephony": "platform/packages/services/Telephony",
+              "packages/providers/TelephonyProvider": "platform/packages/providers/TelephonyProvider",
+          }
+          for path, name in expected.items():
+              assert projects.get(path) == name, (path, projects.get(path))
+          assert "packages_services_Telecomm" not in projects.values()
+          print("PASS: official Telecomm, Telecom Mainline and Telephony source boundaries")
+          PY
+      - name: Sync only official Android17 Telecomm
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/aosp"
+          "$RUNNER_TEMP/repo" sync -c -j2 --no-tags --fail-fast packages/services/Telecomm
+      - name: Verify exact upstream tree and Soong modular resources
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/aosp/packages/services/Telecomm"
+          test "$(git rev-parse HEAD)" = "2353977dc28ff88d3cdc1ec636fa9c3251d2ff86"
+          test "$(git rev-parse 'HEAD^{tree}')" = "a89bb989bed58e9a0fcb43c1e52d950c20e849e5"
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+
+          bp = Path("Android.bp").read_text()
+          for module in ('name: "TelecomLib"', 'name: "Telecom"',
+                         'name: "TelecomShim"', 'name: "TelecomUi"',
+                         'name: "TelecomServiceResources"',
+                         '"telecom_module_bugfix_flags-java"',
+                         '"telecom_am_mainline_deps_srcs"',
+                         '"com.android.telephonycore"',
+                         'release_flag("RELEASE_TELECOM_MAINLINE_MODULE")'):
+              assert module in bp, module
+          for root in ("legacy-src", "shim", "TelecomUi", "flags"):
+              assert Path(root).is_dir(), root
+          manifest = ET.parse("AndroidManifest.xml").getroot()
+          assert manifest.get("package") == "com.android.server.telecom"
+          assert manifest.get("{http://schemas.android.com/apk/res/android}sharedUserId") == "android.uid.system"
+          assert Path("TelecomUi/AndroidManifest.xml").is_file()
+          assert Path("shim/AndroidManifest.xml").is_file()
+          assert Path("AndroidManifestServiceResources.xml").is_file()
+          print("PASS: pinned AOSP17 Telecomm source with TelecomLib/Shim/UI/Mainline paths")
+          print("NOT TESTED: actual AOSP17 Soong build, chosen RELEASE_TELECOM_MAINLINE_MODULE value, CTS or mondrian calls")
+          PY

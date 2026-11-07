@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+  <!-- P1: original AOSP17 vold exact-tree snapshot. No PixelExperience
+       Qualcomm QSSI11 wrapped-key/FBE_ICE or external-volume mount patches.
+       Full build, existing /data encryption and mondrian tests are pending. -->
+  <include name="aosp17_pe_p0_update_engine.xml" />
+  <remove-project name="platform/system/vold" />
+  <remote name="reborn-vold" fetch="https://github.com/PixelExperience-Reborn" />
+  <project path="system/vold" name="system_vold"
+           remote="reborn-vold" revision="76516faf8c3bd5e0eb330611a40793cd137f1f8a"
+           upstream="refs/heads/port/a17-vold-aosp17-base-20261104"
+           groups="pdk" />
+</manifest>

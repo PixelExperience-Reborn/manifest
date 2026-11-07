@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+  <!-- AOSP 17 P0 bring-up: pin identical official upstream history mirrored
+       into our ART and Bionic repositories for controlled future PE ports.
+       These branches contain NO Android14 PE patches. -->
+  <include name="aosp17_pe_envsetup.xml" />
+  <remove-project name="platform/art" />
+  <remove-project name="platform/bionic" />
+  <remote name="reborn-p0" fetch="https://github.com/PixelExperience-Reborn" />
+  <project path="art" name="art" remote="reborn-p0"
+           revision="b753cf97923c3695338d21466fa14c57b480a59a"
+           upstream="refs/heads/port/a17-art-aosp17-base-20261103"
+           groups="pdk" />
+  <project path="bionic" name="bionic" remote="reborn-p0"
+           revision="06356e41c5ed7b12220b24c05ba4fdb873b126a7"
+           upstream="refs/heads/port/a17-bionic-aosp17-base-20261103"
+           groups="pdk" />
+</manifest>

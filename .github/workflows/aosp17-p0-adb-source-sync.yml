@@ -1,0 +1,62 @@
+name: AOSP17 P0 adb exact-source sync
+
+on:
+  push:
+    branches:
+      - port/a17-aosp17-manifest-20261102
+    paths:
+      - aosp17_pe_p0_adb.xml
+      - .github/workflows/aosp17-p0-adb-source-sync.yml
+  pull_request:
+    paths:
+      - aosp17_pe_p0_adb.xml
+      - .github/workflows/aosp17-p0-adb-source-sync.yml
+
+permissions:
+  contents: read
+
+jobs:
+  source-sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - name: Fetch official Android repo launcher
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fLsS --retry 4 https://storage.googleapis.com/git-repo-downloads/repo \
+            -o "$RUNNER_TEMP/repo"
+          chmod +x "$RUNNER_TEMP/repo"
+      - name: Initialize isolated ADB Android17 P0 source profile
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/aosp"
+          cd "$RUNNER_TEMP/aosp"
+          "$RUNNER_TEMP/repo" init -q --no-clone-bundle --partial-clone \
+            --clone-filter=blob:none \
+            -u https://github.com/PixelExperience-Reborn/manifest \
+            -b port/a17-aosp17-manifest-20261102 -m aosp17_pe_p0_adb.xml
+      - name: Fetch only adb module at immutable revision
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/aosp"
+          "$RUNNER_TEMP/repo" sync -c -j2 --no-tags --fail-fast packages/modules/adb
+      - name: Compare exact AOSP17 Git tree and unchanged adbd auth behavior
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/aosp/packages/modules/adb"
+          test "$(git rev-parse HEAD)" = "6daac89c0d6e395f9ff2a032206a21e04421dc5f"
+          test "$(git rev-parse 'HEAD^{tree}')" = "db70f52edb597631efbba79c00276bb68cb06831"
+          python3 - <<'PY'
+          from pathlib import Path
+          src = Path("daemon/main.cpp").read_text()
+          assert 'GetProperty("ro.boot.verifiedbootstate", "") == "orange"' in src
+          assert 'auth_required = android::base::GetBoolProperty("ro.adb.secure", false);' in src
+          assert 'auth_required = false;  // Bypass authorization' in src
+          assert "ro.adb.secure.recovery" not in src
+          print("PASS: exact AOSP17 adbd auth source; no legacy PE override")
+          PY
+          echo "PASS: Android17 adb source HEAD/tree pinned and checked"

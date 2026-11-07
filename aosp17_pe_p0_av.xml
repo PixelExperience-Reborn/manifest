@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+  <!-- P0: reviewed AOSP17 frameworks/av with selected PE Codec2 release
+       guard, layered on the prior verified AOSP17 platform source graph.
+       No Android14 CameraService permission bypass or WFD HAL hacks. -->
+  <include name="aosp17_pe_p0_recovery.xml" />
+  <remove-project name="platform/frameworks/av" />
+  <remote name="reborn-av" fetch="https://github.com/PixelExperience-Reborn" />
+  <project path="frameworks/av" name="frameworks_av" remote="reborn-av"
+           revision="5db9a6151f33cacb810a8fe7615be8c23d3fa858"
+           upstream="refs/heads/port/a17-frameworks-av-pe-20261103"
+           groups="pdk,sysui-studio" />
+</manifest>

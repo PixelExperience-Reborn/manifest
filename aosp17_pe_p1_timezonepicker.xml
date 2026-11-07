@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+  <!-- P1: exact official AOSP17 timezonepicker library.
+       The old PE AndroidX DialogFragment migration changes consumer APIs.
+       No untested fragment or UI-theme change is carried here. -->
+  <include name="aosp17_pe_p1_telephony.xml" />
+  <remove-project name="platform/frameworks/opt/timezonepicker" />
+  <remote name="reborn-timezonepicker" fetch="https://github.com/PixelExperience-Reborn" />
+  <project path="frameworks/opt/timezonepicker" name="frameworks_opt_timezonepicker"
+           remote="reborn-timezonepicker" revision="7a5698b6c651db16f243fe8d3d28008e4243e04c"
+           upstream="refs/heads/port/a17-timezonepicker-aosp17-base-20261104"
+           groups="pdk-cw-fs,pdk-fs" />
+</manifest>

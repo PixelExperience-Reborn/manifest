@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+  <!-- AOSP17 P0: Build/Make, PE Soong, vendor, ART, Bionic, system/core,
+       and frameworks/native from individually verified Android17 sources.
+       No unreviewed historical PixelExperience framework modifications. -->
+  <include name="aosp17_pe_p0_core.xml" />
+  <remove-project name="platform/frameworks/native" />
+  <remote name="reborn-frameworks" fetch="https://github.com/PixelExperience-Reborn" />
+  <project path="frameworks/native" name="frameworks_native"
+           remote="reborn-frameworks"
+           revision="ae266dcb706d083868578cfedce381ef44488a07"
+           upstream="refs/heads/port/a17-frameworks-native-aosp17-base-20261103"
+           groups="pdk,sysui-studio" />
+</manifest>

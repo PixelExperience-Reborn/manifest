@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+  <!-- P0: exact official AOSP17 update_engine source tree. No old PE
+       signature/downgrade bypasses. ROM OTA and AVB tests not yet run. -->
+  <include name="aosp17_pe_p0_sepolicy.xml" />
+  <remove-project name="platform/system/update_engine" />
+  <remote name="reborn-update" fetch="https://github.com/PixelExperience-Reborn" />
+  <project path="system/update_engine" name="system_update_engine"
+           remote="reborn-update" revision="c0309b604010b9b2e2c58d684e86b6090b74ad77"
+           upstream="refs/heads/port/a17-update-engine-aosp17-base-20261103"
+           groups="pdk" />
+</manifest>

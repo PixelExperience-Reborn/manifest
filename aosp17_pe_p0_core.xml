@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+  <!-- P0 Android 17 source graph: AOSP + PE Soong/vendor + pinned
+       official AOSP17 ART, Bionic and exact-tree system/core snapshot.
+       The system/core commit has a new SHA because GitHub cannot accept
+       a >100 MB blob in the ancient official upstream history. -->
+  <include name="aosp17_pe_p0_native.xml" />
+  <remove-project name="platform/system/core" />
+  <remote name="reborn-core" fetch="https://github.com/PixelExperience-Reborn" />
+  <project path="system/core" name="system_core" remote="reborn-core"
+           revision="8e0f22aaac0ee4114a83646e2c96d07578145bfa"
+           upstream="refs/heads/port/a17-system-core-aosp17-base-20261103"
+           groups="pdk" />
+</manifest>

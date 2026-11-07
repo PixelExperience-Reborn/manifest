@@ -1,0 +1,70 @@
+name: AOSP17 P1 timezonepicker exact source sync
+
+on:
+  push:
+    branches:
+      - port/a17-aosp17-manifest-20261102
+    paths:
+      - aosp17_pe_p1_timezonepicker.xml
+      - .github/workflows/aosp17-p1-timezonepicker-source-sync.yml
+  pull_request:
+    paths:
+      - aosp17_pe_p1_timezonepicker.xml
+      - .github/workflows/aosp17-p1-timezonepicker-source-sync.yml
+
+permissions:
+  contents: read
+
+jobs:
+  source-sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - name: Fetch official Android repo tool
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fLsS --retry 4 https://storage.googleapis.com/git-repo-downloads/repo \
+            -o "$RUNNER_TEMP/repo"
+          chmod +x "$RUNNER_TEMP/repo"
+      - name: Initialize staged AOSP17 timezonepicker manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/aosp"
+          cd "$RUNNER_TEMP/aosp"
+          "$RUNNER_TEMP/repo" init -q --no-clone-bundle --partial-clone \
+            --clone-filter=blob:none \
+            -u https://github.com/PixelExperience-Reborn/manifest \
+            -b port/a17-aosp17-manifest-20261102 \
+            -m aosp17_pe_p1_timezonepicker.xml
+      - name: Sync exactly the pinned timezonepicker source
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/aosp"
+          "$RUNNER_TEMP/repo" sync -c -j2 --no-tags --fail-fast frameworks/opt/timezonepicker
+      - name: Verify source SHA/tree, Android API contract, and XML syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/aosp/frameworks/opt/timezonepicker"
+          test "$(git rev-parse HEAD)" = "7a5698b6c651db16f243fe8d3d28008e4243e04c"
+          test "$(git rev-parse 'HEAD^{tree}')" = "5561969c791e41a211ae706fa40f82fca83cc3c0"
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+
+          bp = Path("Android.bp").read_text()
+          assert 'name: "android-opt-timezonepicker"' in bp
+          assert 'sdk_version: "17"' in bp
+          assert 'androidx.fragment_fragment' not in bp
+          dialog = Path("src/com/android/timezonepicker/TimeZonePickerDialog.java").read_text()
+          assert "import android.app.DialogFragment;" in dialog
+          assert "import androidx.fragment.app.DialogFragment;" not in dialog
+          layout = Path("res/layout/time_zone_item.xml")
+          root = ET.parse(layout).getroot()
+          ns = "{http://schemas.android.com/apk/res/android}"
+          assert root.get(ns+"background") == "?android:attr/selectableItemBackground"
+          print("PASS: unchanged AOSP17 TimeZonePicker Android SDK/Fragment API and XML")
+          PY

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+  <!-- P0: exact AOSP17 Wi-Fi source snapshot. No PE Miracast scan suppression
+       or country-code backports are carried. Device & APEX validation pending. -->
+  <include name="aosp17_pe_p0_permission.xml" />
+  <remove-project name="platform/packages/modules/Wifi" />
+  <remote name="reborn-wifi" fetch="https://github.com/PixelExperience-Reborn" />
+  <project path="packages/modules/Wifi" name="packages_modules_Wifi"
+           remote="reborn-wifi" revision="f228be88b2f0b8ed7a39ca1c4db94bc5aaaecbce"
+           upstream="refs/heads/port/a17-wifi-aosp17-base-20261103"
+           groups="pdk-cw-fs,pdk-fs,sysui-studio" />
+</manifest>

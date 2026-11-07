@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+  <!-- P2 source-graph integration: old PE tinycompress history merged with
+       official AOSP17 r1. Source pin only, not a completed Soong/ROM build. -->
+  <include name="aosp17_pe_p1_timezonepicker.xml" />
+  <remove-project name="platform/external/tinycompress" />
+  <remote name="reborn-tinycompress" fetch="https://github.com/PixelExperience-Reborn" />
+  <project path="external/tinycompress" name="external_tinycompress"
+           remote="reborn-tinycompress" revision="25951427f9de414c3d5e01cd92b98f21ad490372"
+           upstream="refs/heads/integrate/a17-tinycompress-20261105"
+           groups="pdk" />
+</manifest>

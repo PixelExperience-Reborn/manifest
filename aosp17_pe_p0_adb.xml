@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+  <!-- P0: official Android17 adb source tree, zero legacy PE auth changes.
+       Preserve official recovery/fastbootd rescue behavior until device-specific
+       threat model, CTS/VTS and recovery test results are available. -->
+  <include name="aosp17_pe_p0_wifi.xml" />
+  <remove-project name="platform/packages/modules/adb" />
+  <remote name="reborn-adb" fetch="https://github.com/PixelExperience-Reborn" />
+  <project path="packages/modules/adb" name="packages_modules_adb"
+           remote="reborn-adb" revision="6daac89c0d6e395f9ff2a032206a21e04421dc5f"
+           upstream="refs/heads/port/a17-adb-aosp17-base-20261103"
+           groups="pdk" />
+</manifest>

@@ -1,0 +1,97 @@
+name: AOSP17 P1 MediaProvider APEX source boundary
+
+on:
+  push:
+    branches:
+      - port/a17-aosp17-manifest-20261102
+    paths:
+      - aosp17_reference.xml
+      - aosp17_pe_p1_timezonepicker.xml
+      - .github/workflows/aosp17-p1-mediaprovider-source-sync.yml
+  pull_request:
+    paths:
+      - aosp17_reference.xml
+      - aosp17_pe_p1_timezonepicker.xml
+      - .github/workflows/aosp17-p1-mediaprovider-source-sync.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  official-source-sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Install official Android repo
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fLsS --retry 4 https://storage.googleapis.com/git-repo-downloads/repo -o "$RUNNER_TEMP/repo"
+          chmod +x "$RUNNER_TEMP/repo"
+      - name: Resolve staged AOSP17 source profile
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/aosp"
+          cd "$RUNNER_TEMP/aosp"
+          "$RUNNER_TEMP/repo" init -q --no-clone-bundle --partial-clone --clone-filter=blob:none \
+            -u https://github.com/PixelExperience-Reborn/manifest \
+            -b port/a17-aosp17-manifest-20261102 -m aosp17_pe_p1_timezonepicker.xml
+          "$RUNNER_TEMP/repo" manifest -o "$RUNNER_TEMP/effective.xml"
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          root = ET.parse(Path(os.environ["RUNNER_TEMP"]) / "effective.xml").getroot()
+          projects = {p.get("path") or p.get("name"): p.get("name") for p in root.findall("project")}
+          expected = {
+              "packages/providers/MediaProvider": "platform/packages/providers/MediaProvider",
+              "prebuilts/module_sdk/MediaProvider": "platform/prebuilts/module_sdk/MediaProvider",
+              "packages/modules/Media": "platform/packages/modules/Media",
+              "packages/providers/DownloadProvider": "platform/packages/providers/DownloadProvider",
+          }
+          for path, name in expected.items():
+              assert projects.get(path) == name, (path, projects.get(path))
+          assert "packages_providers_MediaProvider" not in projects.values()
+          assert "packages_providers_DownloadProvider" not in projects.values()
+          print("PASS: official Android17 MediaProvider, DownloadProvider, Media and module SDK")
+          PY
+      - name: Sync exact official MediaProvider source
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/aosp"
+          "$RUNNER_TEMP/repo" sync -c -j2 --no-tags --fail-fast packages/providers/MediaProvider
+      - name: Verify upstream tree, Mainline APEX, PhotoPicker and FUSE/JNI contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/aosp/packages/providers/MediaProvider"
+          test "$(git rev-parse HEAD)" = "773ea53100eeb1e97c223826ca59054a58cd74ff"
+          test "$(git rev-parse 'HEAD^{tree}')" = "ff9cbc25addab66597be2bbf394a3b107b465260"
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+
+          bp = Path("Android.bp").read_text()
+          apex = Path("apex/Android.bp").read_text()
+          assert 'name: "MediaProvider"' in bp
+          assert 'sdk_version: "module_current"' in bp
+          assert '"mediaprovider_flags_java_lib"' in bp
+          assert 'name: "mediaprovider_flags"' in bp
+          assert '"photopicker/res"' in bp
+          assert '"libleveldb_jni"' in bp and '"libfuse_jni"' in bp
+          assert 'updatable: true' in bp
+          assert '"framework-mediaprovider.impl"' in bp
+          assert 'name: "com.android.mediaprovider"' in apex
+          for module in ('"MediaProvider"', '"Photopicker"', '"framework-photopicker"',
+                         '"framework-pdf"', '"framework-pdf-v"', '"libpdfclient"'):
+              assert module in apex, module
+          root = ET.parse("AndroidManifest.xml").getroot()
+          assert root.get("package") == "com.android.providers.media.module"
+          for name in ("mediaprovider_flags.aconfig", "preinstalled-packages-com.android.providers.media.module.xml"):
+              assert Path(name).is_file(), name
+          print("PASS: exact AOSP17 MediaProvider APEX/PhotoPicker/FUSE source integrity")
+          print("NOT TESTED: m MediaProvider, APEX target-files/signature, CTS, OTA DB migration or mondrian")
+          PY

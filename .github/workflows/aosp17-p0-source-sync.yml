@@ -1,0 +1,269 @@
+name: AOSP17 P0 and P1 reviewed selected source sync
+
+on:
+  push:
+    branches:
+      - port/a17-aosp17-manifest-20261102
+    paths:
+      - 'aosp17_*.xml'
+      - '.github/workflows/aosp17-p0-source-sync.yml'
+  pull_request:
+    paths:
+      - 'aosp17_*.xml'
+      - '.github/workflows/aosp17-p0-source-sync.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  selected-source-sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Install official Android repo client
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location \
+            https://storage.googleapis.com/git-repo-downloads/repo \
+            --output "$RUNNER_TEMP/repo"
+          chmod +x "$RUNNER_TEMP/repo"
+
+      - name: Initialize the reviewed AOSP17 manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/checkout"
+          cd "$RUNNER_TEMP/checkout"
+          "$RUNNER_TEMP/repo" init -q --no-clone-bundle \
+            -u https://github.com/PixelExperience-Reborn/manifest \
+            -b port/a17-aosp17-manifest-20261102 \
+            -m aosp17_pe_p1_timezonepicker.xml
+
+      - name: Fetch twenty-two pinned P0/P1 AOSP17 and PE projects
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/checkout"
+          "$RUNNER_TEMP/repo" sync --no-tags -c -j4 --fail-fast \
+            build/make build/soong vendor/aosp art bionic system/core \
+            frameworks/native bootable/recovery frameworks/av \
+            frameworks/base hardware/interfaces \
+            packages/modules/Bluetooth packages/modules/Connectivity \
+            packages/modules/Permission packages/modules/Wifi packages/modules/adb \
+            system/security system/sepolicy system/update_engine \
+            system/vold frameworks/opt/telephony \
+            frameworks/opt/timezonepicker
+
+      - name: Prepare Java 17 for Bluetooth OPP source regression
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Confirm every checked-out source matches the pinned commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/checkout"
+          python3 - <<'PY'
+          import subprocess
+          from pathlib import Path
+
+          expected = {
+              "build/make": "5ce6f787337d0223710bf7d4a16dbe6d2a35f777",
+              "build/soong": "6215d41c790a463b7795ce81ac77204c238cbf48",
+              "vendor/aosp": "a044adac1f764ade01148cf7c09beda9df686d91",
+              "art": "b753cf97923c3695338d21466fa14c57b480a59a",
+              "bionic": "06356e41c5ed7b12220b24c05ba4fdb873b126a7",
+              "system/core": "8e0f22aaac0ee4114a83646e2c96d07578145bfa",
+              "frameworks/native": "ae266dcb706d083868578cfedce381ef44488a07",
+              "bootable/recovery": "0ed8dc4f93020555afdfc19141263ca40629ef74",
+              "frameworks/av": "5db9a6151f33cacb810a8fe7615be8c23d3fa858",
+              "frameworks/base": "382d5c9c0b20bbdb67b70176bce02c7e64767b0c",
+              "hardware/interfaces": "735e364cbdd00b0d6e4dc33ea0866dbb6d971a11",
+              "packages/modules/Bluetooth": "e7c2f47e3c73c4f2b83f03145441e419f45124b3",
+              "packages/modules/Connectivity": "701882b51546230c6c32c9654a3f7b9814429e13",
+              "packages/modules/Permission": "f6e6e14b5c4d6e094c205683940a1328384338d9",
+              "packages/modules/Wifi": "f228be88b2f0b8ed7a39ca1c4db94bc5aaaecbce",
+              "packages/modules/adb": "6daac89c0d6e395f9ff2a032206a21e04421dc5f",
+              "system/security": "a939bea3461e668355b1df87230f9308a8d50837",
+              "system/sepolicy": "f12e84e0ba4fe3d1cc093af15c41ceb8dba8cc69",
+              "system/update_engine": "c0309b604010b9b2e2c58d684e86b6090b74ad77",
+              "system/vold": "76516faf8c3bd5e0eb330611a40793cd137f1f8a",
+              "frameworks/opt/telephony": "548270c2e6ab41b036c670339fa0d4b04ca1ed59",
+              "frameworks/opt/timezonepicker": "7a5698b6c651db16f243fe8d3d28008e4243e04c",
+          }
+          for project, sha in expected.items():
+              assert Path(project).is_dir(), f"Missing checkout: {project}"
+              current = subprocess.check_output(
+                  ["git", "-C", project, "rev-parse", "HEAD"], text=True
+              ).strip()
+              assert current == sha, f"{project}: {current} != {sha}"
+              print(f"PASS {project}: {current[:12]}")
+          # Source checkout and C++ host tests are separate from a real Android build.
+          subprocess.run(
+              ["python3", "-m", "unittest", "discover", "-s",
+               "frameworks/base/tests/host", "-p", "test_pe_*.py", "-v"],
+              check=True,
+          )
+          subprocess.run(
+              ["python3", "-m", "unittest", "discover", "-s",
+               "hardware/interfaces/tests/host", "-p", "test_*.py", "-v"],
+              check=True,
+          )
+          subprocess.run(
+              ["python3", "-m", "unittest", "discover", "-s",
+               "packages/modules/Bluetooth/tests/host", "-p", "test_*.py", "-v"],
+              check=True,
+          )
+          # Connectivity is currently a zero-delta AOSP17 source mirror.
+          # Guard against accidental reintroduction of deprecated A14 PE patches.
+          traffic = Path("packages/modules/Connectivity/framework-t/src/android/net/TrafficStats.java").read_text()
+          assert "LOGD = Log.isLoggable(TAG, Log.DEBUG)" in traffic, "AOSP17 debug policy regressed"
+          tethering = Path(
+              "packages/modules/Connectivity/Tethering/src/"
+              "com/android/networkstack/tethering/TetheringConfiguration.java"
+          ).read_text()
+          check = tethering.split("public static boolean checkDunRequired(Context ctx)", 1)[1]
+          check = check.split("public int getOffloadPollInterval()", 1)[0]
+          assert "tm.isTetheringApnRequired()" in check, "AOSP17 carrier DUN check missing"
+          # In AOSP17 these roles were moved to API-versioned packages;
+          # preserve the managed-profile notification access protection.
+          role_files = (
+              "PermissionController/role-controller/java/com/android/role/controller/"
+              "behavior/v31/CompanionDeviceWatchRoleBehavior.java",
+              "PermissionController/role-controller/java/com/android/role/controller/"
+              "behavior/v33/CompanionDeviceComputerRoleBehavior.java",
+              "PermissionController/role-controller/java/com/android/role/controller/"
+              "behavior/v33/CompanionDeviceAppStreamingRoleBehavior.java",
+              "PermissionController/role-controller/java/com/android/role/controller/"
+              "behavior/v34/CompanionDeviceGlassesRoleBehavior.java",
+          )
+          permission_root = Path("packages/modules/Permission")
+          for role in role_files:
+              source = (permission_root / role).read_text()
+              assert "UserUtils.isManagedProfile(user, context)" in source, role
+              assert "grantNotificationAccessForPackageAsUser" in source, role
+          # AOSP17 WiFi is a zero-delta exact source mirror. Check the official
+          # tree, default regulatory notifications, and permission gate.
+          wifi_root = Path("packages/modules/Wifi")
+          wifi_tree = subprocess.check_output(
+              ["git", "-C", str(wifi_root), "rev-parse", "HEAD^{tree}"],
+              text=True,
+          ).strip()
+          assert wifi_tree == "9d1062a94a9d7c7c4f4ef86a834154e2001f8114", wifi_tree
+          cc = (wifi_root / "service/java/com/android/server/wifi/WifiCountryCode.java").read_text()
+          method = cc.split("private void handleCountryCodeChanged(String country)", 1)[1]
+          method = method.split("\n    }", 1)[0]
+          assert "mDriverCountryCode = country;" in method
+          assert "notifyListener(country);" in method
+          p2p = (wifi_root / "service/java/com/android/server/wifi/p2p/WifiP2pServiceImpl.java").read_text()
+          miracast = p2p.split("public void setMiracastMode(int mode)", 1)[1]
+          miracast = miracast.split("\n    }", 1)[0]
+          assert "checkConfigureWifiDisplayPermission()" in miracast
+          # adbd is an exact, zero-delta AOSP17 snapshot. Verify identity and
+          # explicitly retain the upstream recovery/fastbootd rescue behavior.
+          adb_root = Path("packages/modules/adb")
+          adb_tree = subprocess.check_output(
+              ["git", "-C", str(adb_root), "rev-parse", "HEAD^{tree}"],
+              text=True,
+          ).strip()
+          assert adb_tree == "db70f52edb597631efbba79c00276bb68cb06831", adb_tree
+          adb_main = (adb_root / "daemon/main.cpp").read_text()
+          assert 'GetProperty("ro.boot.verifiedbootstate", "") == "orange"' in adb_main
+          assert 'auth_required = android::base::GetBoolProperty("ro.adb.secure", false);' in adb_main
+          assert "auth_required = false;  // Bypass authorization" in adb_main
+          assert 'ro.adb.secure.recovery' not in adb_main, "Unexpected legacy PE auth patch"
+          # Exact upstream security snapshot: do not silently introduce
+          # historical custom QSSI12 FBE_ICE handling to legacy Keymaster.
+          sec_root = Path("system/security")
+          sec_tree = subprocess.check_output(
+              ["git", "-C", str(sec_root), "rev-parse", "HEAD^{tree}"],
+              text=True,
+          ).strip()
+          assert sec_tree == "dcea0071b9c34f1542c576b3f46fc14d1fb14823", sec_tree
+          km = (sec_root / "keystore2/src/km_compat/km_compat.cpp").read_text()
+          assert "KeyMintDevice::generateKey(" in km
+          assert "convertKeyParametersToLegacy(extractGenerationParams(inKeyParams))" in km
+          assert "mDevice->generateKey(" in km
+          assert "KM_TAG_FBE_ICE" not in km, "Unexpected unreviewed Keymaster FBE_ICE backport"
+          # Preserve official AOSP17 SELinux neverallow and encryption-key rules.
+          policy = Path("system/sepolicy")
+          policy_tree = subprocess.check_output(
+              ["git", "-C", str(policy), "rev-parse", "HEAD^{tree}"], text=True
+          ).strip()
+          assert policy_tree == "f0e857a84958d5472dee9187c54f7b4f191a415a", policy_tree
+          vold_policy = (policy / "private/vold.te").read_text()
+          assert "FS_IOC_ADD_ENCRYPTION_KEY" in vold_policy
+          assert "FS_IOC_REMOVE_ENCRYPTION_KEY" in vold_policy
+          wifi_props = (policy / "private/property_contexts").read_text()
+          assert "wifi.interface.           u:object_r:wifi_hal_prop:s0 prefix string" in wifi_props
+          # Preserve official OTA signature verification, metadata
+          # authentication and explicit debug-only downgrade permission.
+          ota_root = Path("system/update_engine")
+          ota_tree = subprocess.check_output(
+              ["git", "-C", str(ota_root), "rev-parse", "HEAD^{tree}"], text=True
+          ).strip()
+          assert ota_tree == "9eb8e796382bcd0b4366526766ccd08d15503ab2", ota_tree
+          hardware = (ota_root / "aosp/hardware_android.cc").read_text()
+          assert 'GetBoolProperty("ro.ota.allow_downgrade", false) &&' in hardware
+          assert 'GetBoolProperty("ro.debuggable", false);' in hardware
+          verifier = (ota_root / "payload_consumer/payload_verifier.cc").read_text()
+          assert "TEST_AND_RETURN_FALSE(!public_keys_.empty());" in verifier
+          assert "Payload signature verification skipped" not in verifier
+          delta = (ota_root / "payload_consumer/delta_performer.cc").read_text()
+          assert "ValidateMetadataSignature(" in delta
+          assert "payload_verifier->VerifySignature(" in delta
+          # P1 system/vold is a zero-delta AOSP17 snapshot. Retain
+          # upstream encryption flows and refuse old CAF FBE_ICE injections.
+          vold_root = Path("system/vold")
+          vold_tree = subprocess.check_output(
+              ["git", "-C", str(vold_root), "rev-parse", "HEAD^{tree}"],
+              text=True,
+          ).strip()
+          assert vold_tree == "8a39be56cc76830d199878b5ea854022a71d3af2", vold_tree
+          crypt = (vold_root / "FsCrypt.cpp").read_text()
+          assert "get_volume_file_encryption_options(" in crypt
+          assert "KM_TAG_FBE_ICE" not in crypt
+          storage = (vold_root / "KeyStorage.cpp").read_text()
+          assert "KM_TAG_FBE_ICE" not in storage
+          metadata = (vold_root / "MetadataCrypt.cpp").read_text()
+          assert "fscrypt_mount_metadata_encrypted(" in metadata
+          assert "is_metadata_wrapped_key_supported(" not in metadata
+          maintenance = (vold_root / "IdleMaint.cpp").read_text()
+          assert "int RunIdleMaint(" in maintenance
+          assert "void Trim(" in maintenance
+          # AOSP17 telephony is an exact zero-delta source snapshot.
+          # Old A14 IMS/SubscriptionController workarounds have NOT been ported.
+          tel = Path("frameworks/opt/telephony")
+          tel_tree = subprocess.check_output(
+              ["git", "-C", str(tel), "rev-parse", "HEAD^{tree}"], text=True
+          ).strip()
+          assert tel_tree == "84cdeedb201966bab5b28548a92b5e5e814c34bf", tel_tree
+          radio = (tel / "src/java/com/android/internal/telephony/RadioMessagingProxy.java").read_text()
+          assert "public void sendImsSms(" in radio
+          assert "cdmaPdu != null" in radio
+          ims = (tel / "src/java/com/android/internal/telephony/imsphone/ImsPhoneCallTracker.java").read_text()
+          assert "executeAndWaitForReturn(()-> processIncomingCall(c, callId, extras))" in ims
+          assert "ro.telephony.block_binder_thread_on_incoming_calls" not in ims
+          assert not (tel / "src/java/com/android/internal/telephony/SubscriptionController.java").exists()
+          assert (tel / "src/java/com/android/internal/telephony/subscription/SubscriptionManagerService.java").exists()
+          # Keep the official AOSP17 library API intact; older PE changes
+          # to Fragment/AndroidX and UI styling require independent review.
+          picker_root = Path("frameworks/opt/timezonepicker")
+          picker_tree = subprocess.check_output(
+              ["git", "-C", str(picker_root), "rev-parse", "HEAD^{tree}"], text=True
+          ).strip()
+          assert picker_tree == "5561969c791e41a211ae706fa40f82fca83cc3c0", picker_tree
+          picker_bp = (picker_root / "Android.bp").read_text()
+          assert 'name: "android-opt-timezonepicker"' in picker_bp
+          assert 'sdk_version: "17"' in picker_bp
+          assert 'androidx.fragment_fragment' not in picker_bp
+          dialog = (picker_root / "src/com/android/timezonepicker/TimeZonePickerDialog.java").read_text()
+          assert "import android.app.DialogFragment;" in dialog
+          assert "import androidx.fragment.app.DialogFragment;" not in dialog
+          picker_layout = (picker_root / "res/layout/time_zone_item.xml").read_text()
+          assert 'android:background="?android:attr/selectableItemBackground"' in picker_layout
+          print("PASS: twenty-two selected P0/P1 projects synced and pinned")
+          PY

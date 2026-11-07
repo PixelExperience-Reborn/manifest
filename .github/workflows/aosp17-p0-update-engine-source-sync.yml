@@ -1,0 +1,67 @@
+name: AOSP17 P0 update_engine exact-source integrity sync
+
+on:
+  push:
+    branches:
+      - port/a17-aosp17-manifest-20261102
+    paths:
+      - aosp17_pe_p0_update_engine.xml
+      - .github/workflows/aosp17-p0-update-engine-source-sync.yml
+  pull_request:
+    paths:
+      - aosp17_pe_p0_update_engine.xml
+      - .github/workflows/aosp17-p0-update-engine-source-sync.yml
+
+permissions:
+  contents: read
+
+jobs:
+  source-sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 80
+    steps:
+      - name: Download official Android repo launcher
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fLsS --retry 4 \
+            https://storage.googleapis.com/git-repo-downloads/repo \
+            -o "$RUNNER_TEMP/repo"
+          chmod +x "$RUNNER_TEMP/repo"
+      - name: Initialize exact source OTA profile
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/aosp"
+          cd "$RUNNER_TEMP/aosp"
+          "$RUNNER_TEMP/repo" init -q --no-clone-bundle --partial-clone \
+            --clone-filter=blob:none \
+            -u https://github.com/PixelExperience-Reborn/manifest \
+            -b port/a17-aosp17-manifest-20261102 -m aosp17_pe_p0_update_engine.xml
+      - name: Sync exactly update_engine from pinned Android17 snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/aosp"
+          "$RUNNER_TEMP/repo" sync -c -j2 --no-tags --fail-fast system/update_engine
+      - name: Confirm official source tree and unchanged signature/downgrade rules
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/aosp/system/update_engine"
+          test "$(git rev-parse HEAD)" = "c0309b604010b9b2e2c58d684e86b6090b74ad77"
+          test "$(git rev-parse 'HEAD^{tree}')" = "9eb8e796382bcd0b4366526766ccd08d15503ab2"
+          python3 - <<'PY'
+          from pathlib import Path
+          hardware = Path("aosp/hardware_android.cc").read_text()
+          assert 'GetBoolProperty("ro.ota.allow_downgrade", false) &&' in hardware
+          assert 'GetBoolProperty("ro.debuggable", false);' in hardware
+          verifier = Path("payload_consumer/payload_verifier.cc").read_text()
+          assert "TEST_AND_RETURN_FALSE(!public_keys_.empty());" in verifier
+          assert "Payload signature verification skipped" not in verifier
+          delta = Path("payload_consumer/delta_performer.cc").read_text()
+          assert "ValidateMetadataSignature(" in delta
+          assert "payload_verifier->VerifySignature(" in delta
+          print("PASS: original AOSP17 OTA metadata/payload signature verification and downgrade gating")
+          PY
+          echo "PASS: Android17 update_engine source HEAD and tree pinned"
