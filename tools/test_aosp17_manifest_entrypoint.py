@@ -429,6 +429,34 @@ class ManifestEntryPointTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "replaced critical AOSP17 owner"):
             self.check()
 
+    def test_archived_sn100x_hal_cannot_enter_android17(self):
+        # Archive uses NFC HIDL1.2, eSE/JCOP clients, unverified NFCC
+        # defaults and old NXP HAL modules. Never import into AOSP17.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="vendor/nxp/opensource/sn100x/halimpl" '
+            'name="vendor_nxp_opensource_sn100x_halimpl" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "archived SN100x NXP NFC HAL activated"):
+            self.check()
+
+    def test_archived_sn100x_hal_cannot_replace_official_aosp17_hal(self):
+        # A legacy HIDL HAL and boot-time SE loader must not become owner
+        # of the verified official Android17 native NXP NFC AIDL source.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <remove-project name="platform/hardware/nxp/nfc" />\n'
+            '  <project path="hardware/nxp/nfc" '
+            'name="vendor_nxp_opensource_sn100x_halimpl" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(ValueError, "replaced critical AOSP17 owner"):
+            self.check()
+
     def test_duplicate_source_owner_fails_closed(self):
         self.rewrite(
             "aosp17_pe_p2_qcom_wlan.xml",
