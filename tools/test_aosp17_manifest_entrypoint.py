@@ -889,6 +889,32 @@ class ManifestEntryPointTests(unittest.TestCase):
                 ValueError, "old Qualcomm HIDL USB source excluded"):
             self.check()
 
+    def test_unverified_qti_vibrator_aidl_v2_not_imported_into_mondrian(self):
+        # AIDL V2 is real, but the 2024 vendor implementation is not
+        # independently verified against mondrian hardware or Android17 FCM.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="vendor/qcom/opensource/vibrator" '
+            'name="vendor_qcom_opensource_vibrator" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "unverified QTI Vibrator AIDL V2 source excluded"):
+            self.check()
+
+    def test_unverified_qti_vibrator_alias_not_a_manifest_bypass(self):
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="vendor/external/haptics" '
+            'name="android_vendor_qcom_opensource_vibrator" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "unverified QTI Vibrator AIDL V2 source excluded"):
+            self.check()
+
     def test_qualcomm_health_aidl_v5_pin_cannot_drift(self):
         self.rewrite(
             "aosp17_pe_p2_qcom_health_aidl_candidate.xml",
