@@ -202,6 +202,31 @@ FORBIDDEN_NAMES = {
 }
 
 
+# FM broadcasting is intentionally not part of the PE-Reborn mondrian product.
+# Protect source ownership by exact path and by legacy repository aliases.
+# This does not replace later PRODUCT_PACKAGES / installed-file checks.
+FM_SOURCE_PATHS = {
+    "vendor/qcom/opensource/fm-commonsys",
+    "vendor/qcom/opensource/libfmjni",
+    "vendor/qcom/opensource/commonsys/fm",
+}
+FM_SOURCE_NAMES = {
+    "vendor_qcom_opensource_fm-commonsys",
+    "vendor_qcom_opensource_libfmjni",
+    "vendor-qcom-opensource-fm-commonsys",
+    "vendor-qcom-opensource-libfmjni",
+    "android_vendor_qcom_opensource_fm-commonsys",
+    "android_vendor_qcom_opensource_libfmjni",
+}
+
+
+def reject_mondrian_fm_source(profile, projects):
+    for path, project in projects.items():
+        if path in FM_SOURCE_PATHS or project.get("name") in FM_SOURCE_NAMES:
+            raise ValueError(
+                f"{profile}: optional FM broadcast source excluded for mondrian: {path}")
+
+
 def resolve(filename: str, stack=()):
     """Resolve checked-in project/remove/include commands in XML order.
 
@@ -253,6 +278,7 @@ def validate():
         raise ValueError(f"stage list drift: missing={expected_files - actual_files}, extra={actual_files - expected_files}")
 
     baseline = resolve("aosp17_reference.xml")
+    reject_mondrian_fm_source("aosp17_reference.xml", baseline)
     if len(baseline) != 1071:
         raise ValueError(f"unexpected base path count {len(baseline)}, expected 1071")
     if "vendor/aosp" in baseline:
@@ -280,6 +306,7 @@ def validate():
                     "https://github.com/PixelExperience-Reborn"):
                 raise ValueError(f"{file}: unreviewed P2 fetch remote")
         projects = resolve(file)
+        reject_mondrian_fm_source(file, projects)
         # Report a forbidden legacy binary import before the generic count
         # check, so this failure remains actionable and regression-testable.
         if "prebuilts/extract-tools" in projects:
@@ -425,6 +452,7 @@ def validate():
         raise ValueError("default.xml must include only the latest reviewed AOSP17 stage")
     active = resolve("default.xml")
     final = resolve(STAGES[-1][0])
+    reject_mondrian_fm_source("default.xml", active)
     if set(active) != set(final):
         raise ValueError("default.xml checkout paths differ from last reviewed stage")
     for path, project in final.items():
@@ -586,6 +614,16 @@ def validate():
         raise ValueError("Qualcomm display candidate has different source checkout")
     if "vendor/qcom/opensource/display" in display_graph:
         raise ValueError("Qualcomm display candidate imported old HIDL helpers")
+    # FM must stay absent even when nondefault experimental source profiles
+    # are resolved, so later bring-up cannot silently import the old FM app.
+    for name, graph in (
+        (candidate_name, candidate),
+        (se_candidate_name, se_candidate),
+        (qcom_name, qcom_graph),
+        (display_name, display_graph),
+    ):
+        reject_mondrian_fm_source(name, graph)
+    print("PASS: FM broadcast source excluded from mondrian AOSP17 profiles")
     print("PASS: experimental Qualcomm HWC3 AIDL display candidate isolated/pinned")
     print("PASS: modern Qualcomm-derived AIDL six-source stack isolated/pinned")
     print("PASS: experimental official NXP SE channel-bounds security source pinned")
