@@ -220,6 +220,27 @@ FM_SOURCE_NAMES = {
 }
 
 
+# The 2023 QTI umbrella interface tree contains FM HIDL and older HIDL
+# graphics contracts. Do not load it wholesale into the AOSP17 graph.
+# Revisit only after a separately pinned, vendor-ABI-verified source review.
+UNREVIEWED_QCOM_INTERFACES_PATHS = {
+    "vendor/qcom/opensource/interfaces",
+}
+UNREVIEWED_QCOM_INTERFACES_NAMES = {
+    "vendor_qcom_opensource_interfaces",
+    "vendor-qcom-opensource-interfaces",
+    "android_vendor_qcom_opensource_interfaces",
+}
+
+
+def reject_unreviewed_qcom_interfaces(profile, projects):
+    for path, project in projects.items():
+        if (path in UNREVIEWED_QCOM_INTERFACES_PATHS or
+                project.get("name") in UNREVIEWED_QCOM_INTERFACES_NAMES):
+            raise ValueError(
+                f"{profile}: archived Qualcomm interfaces source excluded: {path}")
+
+
 def reject_mondrian_fm_source(profile, projects):
     for path, project in projects.items():
         if path in FM_SOURCE_PATHS or project.get("name") in FM_SOURCE_NAMES:
@@ -280,6 +301,7 @@ def validate():
 
     baseline = resolve("aosp17_reference.xml")
     reject_mondrian_fm_source("aosp17_reference.xml", baseline)
+    reject_unreviewed_qcom_interfaces("aosp17_reference.xml", baseline)
     if len(baseline) != 1071:
         raise ValueError(f"unexpected base path count {len(baseline)}, expected 1071")
     if "vendor/aosp" in baseline:
@@ -308,6 +330,7 @@ def validate():
                 raise ValueError(f"{file}: unreviewed P2 fetch remote")
         projects = resolve(file)
         reject_mondrian_fm_source(file, projects)
+        reject_unreviewed_qcom_interfaces(file, projects)
         # Report a forbidden legacy binary import before the generic count
         # check, so this failure remains actionable and regression-testable.
         if "prebuilts/extract-tools" in projects:
@@ -657,7 +680,9 @@ def validate():
         (health_name, health_graph),
     ):
         reject_mondrian_fm_source(name, graph)
+        reject_unreviewed_qcom_interfaces(name, graph)
     print("PASS: FM broadcast source excluded from mondrian AOSP17 profiles")
+    print("PASS: archived mixed Qualcomm HIDL interfaces excluded from AOSP17 profiles")
     print("PASS: Qualcomm Health AIDL V5 source candidate isolated/pinned")
     print("PASS: experimental Qualcomm HWC3 AIDL display candidate isolated/pinned")
     print("PASS: modern Qualcomm-derived AIDL six-source stack isolated/pinned")
