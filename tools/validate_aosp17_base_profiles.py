@@ -273,6 +273,7 @@ def validate():
     expected_files.add("aosp17_pe_p2_se_security_candidate.xml")
     expected_files.add("aosp17_pe_p2_qcom_audio_aidl_candidate.xml")
     expected_files.add("aosp17_pe_p2_qcom_display_aidl_candidate.xml")
+    expected_files.add("aosp17_pe_p2_qcom_health_aidl_candidate.xml")
     actual_files = {p.name for p in ROOT.glob("aosp17_*.xml")}
     if actual_files != expected_files:
         raise ValueError(f"stage list drift: missing={expected_files - actual_files}, extra={actual_files - expected_files}")
@@ -614,6 +615,38 @@ def validate():
         raise ValueError("Qualcomm display candidate has different source checkout")
     if "vendor/qcom/opensource/display" in display_graph:
         raise ValueError("Qualcomm display candidate imported old HIDL helpers")
+    # Qualcomm Health AIDL V5 wrapper: isolated source-only candidate.
+    # Android17 hardware/interfaces remains the sole platform Health API owner;
+    # no additional health HAL or charger service is activated by default.
+    health_name = "aosp17_pe_p2_qcom_health_aidl_candidate.xml"
+    health_root = ET.parse(ROOT / health_name).getroot()
+    health_nodes = list(health_root)
+    health_expected = {
+        "path": "vendor/qcom/opensource/healthd-ext",
+        "name": "vendor_qcom_opensource_healthd-ext",
+        "remote": "reborn-qcom-health-review",
+        "revision": "cfb2ea5aafeaf2ac177453c95ffd628cfa023742",
+        "upstream": "refs/heads/port/a17-health-aidl-v5-mondrian-20261107",
+        "groups": "device",
+    }
+    if (health_root.tag != "manifest" or len(health_nodes) != 3 or
+            [n.tag for n in health_nodes] !=
+            ["include", "remote", "project"] or
+            health_nodes[0].attrib != {"name": STAGES[-1][0]} or
+            health_nodes[1].attrib != {
+                "name": "reborn-qcom-health-review",
+                "fetch": "https://github.com/PixelExperience-Reborn",
+            } or health_nodes[2].attrib != health_expected):
+        raise ValueError("unreviewed Qualcomm Health AIDL V5 candidate shape/pin")
+    health_graph = resolve(health_name)
+    if set(health_graph) != set(final) | {"vendor/qcom/opensource/healthd-ext"}:
+        raise ValueError("Qualcomm Health candidate altered source path set")
+    for path, original in final.items():
+        if health_graph[path].attrib != original.attrib:
+            raise ValueError("Qualcomm Health candidate altered AOSP17 owner: " + path)
+    if health_graph["vendor/qcom/opensource/healthd-ext"].attrib != health_expected:
+        raise ValueError("Qualcomm Health candidate changed source checkout")
+
     # FM must stay absent even when nondefault experimental source profiles
     # are resolved, so later bring-up cannot silently import the old FM app.
     for name, graph in (
@@ -621,9 +654,11 @@ def validate():
         (se_candidate_name, se_candidate),
         (qcom_name, qcom_graph),
         (display_name, display_graph),
+        (health_name, health_graph),
     ):
         reject_mondrian_fm_source(name, graph)
     print("PASS: FM broadcast source excluded from mondrian AOSP17 profiles")
+    print("PASS: Qualcomm Health AIDL V5 source candidate isolated/pinned")
     print("PASS: experimental Qualcomm HWC3 AIDL display candidate isolated/pinned")
     print("PASS: modern Qualcomm-derived AIDL six-source stack isolated/pinned")
     print("PASS: experimental official NXP SE channel-bounds security source pinned")
