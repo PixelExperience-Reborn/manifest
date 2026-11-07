@@ -864,6 +864,31 @@ class ManifestEntryPointTests(unittest.TestCase):
                 ValueError, "unverified Qualcomm thermal client header excluded"):
             self.check()
 
+    def test_archived_hidl_usb_source_not_activated_for_aosp17(self):
+        # HIDL USB 1.3 and Gadget 1.2 conflict with an unreviewed AIDL port.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="vendor/qcom/opensource/usb" '
+            'name="vendor_qcom_opensource_usb" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "old Qualcomm HIDL USB source excluded"):
+            self.check()
+
+    def test_archived_hidl_usb_repo_alias_cannot_bypass_guard(self):
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="vendor/unreviewed/qti-usb" '
+            'name="android_vendor_qcom_opensource_usb" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "old Qualcomm HIDL USB source excluded"):
+            self.check()
+
     def test_qualcomm_health_aidl_v5_pin_cannot_drift(self):
         self.rewrite(
             "aosp17_pe_p2_qcom_health_aidl_candidate.xml",
