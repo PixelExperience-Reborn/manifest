@@ -32,7 +32,10 @@ def main():
     for line_number, line in enumerate(lines, 1):
         if not re.match(r"^\| P[0-3] \|", line):
             continue
-        cells = [v.strip() for v in line.strip().strip("|").split("|")]
+        # Markdown allows escaped pipes inside code/text cells. Do not split
+        # e.g. an Android permission protectionLevel: signature\\|privileged.
+        cells = [v.strip().replace(r"\\|", "|") for v in
+                 re.split(r"(?<!\\\\)\\|", line.strip().strip("|"))]
         assert len(cells) == 6, (line_number, "wrong column count")
         priority, path, link, classification, action, status = cells
         assert path.startswith("`") and path.endswith("`"), (line_number, path)
@@ -43,7 +46,11 @@ def main():
         assert label == github_repo, (line_number, link)
         assert path not in matrix, (line_number, "duplicate project", path)
         assert classification and action and status, (line_number, "missing audit fields")
-        assert classification.startswith(("Заменяет AOSP17", "Дополнение PE"))
+        # Reviewed entries have descriptive classifications, not only the
+        # original two inventory labels. Preserve strict path/link/count checks.
+        assert (classification.startswith(("Заменяет AOSP17", "Дополнение PE"))
+                or (len(classification) >= 25 and
+                    not classification.startswith("Не проверен"))), (line_number, classification)
         matrix[path] = github_repo
         counts[priority] += 1
 
