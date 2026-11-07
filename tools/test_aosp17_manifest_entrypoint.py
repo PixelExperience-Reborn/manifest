@@ -35,6 +35,10 @@ class ManifestEntryPointTests(unittest.TestCase):
             self.root / "aosp17_pe_p2_qcom_audio_aidl_candidate.xml",
         )
         shutil.copyfile(
+            self.original_root / "aosp17_pe_p2_qcom_display_aidl_candidate.xml",
+            self.root / "aosp17_pe_p2_qcom_display_aidl_candidate.xml",
+        )
+        shutil.copyfile(
             self.original_root / "default.xml", self.root / "default.xml"
         )
         profiles.ROOT = self.root
@@ -683,6 +687,67 @@ class ManifestEntryPointTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(
                 ValueError, "unreviewed Qualcomm AudioReach candidate SHA/pin"):
+            self.check()
+
+    def test_archived_qualcomm_hidl_display_helpers_not_active(self):
+        # Old 2021 mapper@4 and vendor.display.config@2 client shims
+        # must never be installed as new AOSP17 HWC3/gralloc HALs.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="vendor/qcom/opensource/display" '
+            'name="vendor_qcom_opensource_display" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "archived Qualcomm HIDL display helpers activated"):
+            self.check()
+
+    def test_archived_qualcomm_display_cannot_replace_aosp17_graphics(self):
+        # Old vendor gralloc metadata code cannot own frozen official
+        # AOSP17 Composer3 V5 / Allocator V3 graphics interface source.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <remove-project name="platform/hardware/interfaces" />\n'
+            '  <project path="hardware/interfaces" '
+            'name="vendor_qcom_opensource_display" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(ValueError, "replaced critical AOSP17 owner"):
+            self.check()
+
+    def test_qualcomm_hwc3_candidate_requires_exact_git_commit(self):
+        self.rewrite(
+            "aosp17_pe_p2_qcom_display_aidl_candidate.xml",
+            "baf61f736e2109522e3f72754ee7cfacbfa2dc6c",
+            "0000000000000000000000000000000000000000",
+        )
+        with self.assertRaisesRegex(
+                ValueError, "unreviewed Qualcomm HWC3 display candidate shape/pin"):
+            self.check()
+
+    def test_qualcomm_hwc3_candidate_cannot_become_default(self):
+        # A source tree without verified SDM modules, vendor blobs,
+        # VINTF and physical panel cannot become an active product.
+        self.rewrite(
+            "default.xml",
+            'name="aosp17_pe_p2_kernel_configs.xml"',
+            'name="aosp17_pe_p2_qcom_display_aidl_candidate.xml"',
+        )
+        with self.assertRaisesRegex(ValueError, "default.xml must include"):
+            self.check()
+
+    def test_qualcomm_hwc3_candidate_cannot_add_vendor_display(self):
+        # A source-only HWC3 preview must not silently include the
+        # old HIDL vendor display namespace with duplicate libraries.
+        self.rewrite(
+            "aosp17_pe_p2_qcom_display_aidl_candidate.xml",
+            '  <project path="hardware/qcom/display"',
+            '  <project path="vendor/qcom/opensource/display"',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "unreviewed Qualcomm HWC3 display candidate shape/pin"):
             self.check()
 
     def test_duplicate_source_owner_fails_closed(self):
