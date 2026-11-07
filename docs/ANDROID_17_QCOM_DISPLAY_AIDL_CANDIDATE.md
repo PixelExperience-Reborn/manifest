@@ -14,6 +14,14 @@ A newer Qualcomm-derived public source candidate is `sonyxperiadev/hardware-qcom
 
 **Critical incomplete-source blocker:** the Sony-hosted Git tree includes `composer/`, `gralloc/`, `libqservice/`, etc. but **no `sdm/libs/` or `sde-drm/` source**. Its build graph references `libsdmcore`, `libsdmclient`, `libsdmutils`, `libdrm` and QTI vendor display AIDL, which require matched sources or ABI-compatible libraries and headers. Do not assert it is a self-contained, buildable device HAL. The historical PE SM8450 SDM source is not necessarily ABI-compatible.
 
+## Explicit 2026 SM8450 source comparison — not a drop-in SDM dependency
+
+The Sony Open Devices `qcom-sm8450.xml` separately points to **`sonyxperiadev/vendor-qcom-opensource-display`**, branch `aosp/DISPLAY.LA.2.0.r1`. Its newer **2026-02-23** source commit `4744d4a2ee7c6c0a53fac76b54766b6eb23531d4`, tree `c97b019a8cfad9f90aa53690b4683d3b54d2ff4e`, has **376 files**, including `sdm/libs/core/Android.bp` and `sde-drm/Android.bp`. This is useful hardware-family **read-only evidence** for SM8450.
+
+**But this source is still HIDL:** `composer/Android.bp` links `android.hardware.graphics.composer@2.1`–`@2.4` and `vendor.qti.hardware.display.composer@3.1`; VINTF declares **`android.hardware.graphics.composer@2.4/IComposer`**, and Gralloc uses HIDL Mapper4. Do **not** put it in the AOSP17 HWC3 candidate or simply combine its SDM with the new AIDL composer: compatible SDM headers, ELF symbols and vendor binaries have not been established. A later Git date is not automatically a newer HAL architecture.
+
+[Source CI #42329757843](https://github.com/PixelExperience-Reborn/vendor_qcom_opensource_display/actions/runs/42329757843) verified both modern AIDL and SM8450 HIDL source identities. The historical Sony device tree, proprietary firmware and panel configuration are **not** PE-Reborn foundations.
+
 ## Nondefault source profile
 
 `aosp17_pe_p2_qcom_display_aidl_candidate.xml`:
@@ -23,6 +31,12 @@ A newer Qualcomm-derived public source candidate is `sonyxperiadev/hardware-qcom
 - Is **not** a 26th active phase. The 25 reviewed source-only stages remain exactly as selected.
 
 The Python validator rejects changes to the candidate's path, remote, owner, SHA, upstream, groups, other original project ownership and default profile. Negative regression tests reject historical HIDL activation and graphics owner takeover. A GitHub Actions workflow in the isolated archive tests immutable source trees, real `repo manifest`, and real **targeted `repo sync` of the new display checkout** (not a whole ROM sync or build).
+
+## Completed source-reproduction verification
+
+[GitHub Actions #42329757843](https://github.com/PixelExperience-Reborn/vendor_qcom_opensource_display/actions/runs/42329757843) **SUCCESS** pinned five source commit/tree pairs: archived HIDL vendor display helpers, 2023 SM8450 HIDL Composer/SDM, February 2026 SM8450 HIDL SDM read-only reference, modern Sony-hosted **HWC3 AIDL V2/V3 with Allocator V2 and Native Stable-C Mapper V5**, and the actual selected PE AOSP17 **Composer3 V5 / Allocator V3** interface tree.
+
+**All 25** active source profiles and **55/55** regression tests passed. Official `repo manifest` resolved the HWC3 candidate to **1070 unique selected projects**, preserving `hardware_interfaces` and `frameworks_av` ownership. A targeted `repo sync` verified exact `hardware/qcom/display` commit `baf61f736e2109522e3f72754ee7cfacbfa2dc6c` and tree `f35e03e1904a346fad8257321233a32650b4ee77`. This is **source verification only**; matching SDM/DRM dependency closure, Soong, vendor ABI, SELinux, VINTF and actual panel remain unresolved.
 
 ## Hard hardware constraints for mondrian / SM8475
 
