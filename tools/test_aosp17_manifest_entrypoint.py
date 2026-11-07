@@ -565,6 +565,46 @@ class ManifestEntryPointTests(unittest.TestCase):
                 ValueError, "unreviewed NXP SE security candidate manifest shape or pin"):
             self.check()
 
+    def test_old_nxp_jcop_ese_client_cannot_enter_aosp17(self):
+        # 2022 old ese_client controls JCOP update scripts and eSE state.
+        # Source-only AOSP17 must not install it as a HAL dependency.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="vendor/nxp/secure_element_extns" '
+            'name="vendor_nxp_secure_element_extns" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "archived NXP JCOP eSE client activated"):
+            self.check()
+
+    def test_old_nxp_jcop_client_cannot_replace_official_se_aidl(self):
+        # The standalone JCOP updater is not the secure element AIDL V1 HAL.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <remove-project name="platform/hardware/nxp/secure_element" />\n'
+            '  <project path="hardware/nxp/secure_element" '
+            'name="vendor_nxp_secure_element_extns" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(ValueError, "replaced critical AOSP17 owner"):
+            self.check()
+
+    def test_old_nxp_jcop_client_cannot_replace_system_omapi(self):
+        # System OMAPI/SE access policy must keep its official AOSP17 owner.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <remove-project name="platform/system/secure_element" />\n'
+            '  <project path="system/secure_element" '
+            'name="vendor_nxp_secure_element_extns" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(ValueError, "replaced critical AOSP17 owner"):
+            self.check()
+
     def test_duplicate_source_owner_fails_closed(self):
         self.rewrite(
             "aosp17_pe_p2_qcom_wlan.xml",
