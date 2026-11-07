@@ -190,6 +190,7 @@ FORBIDDEN_NAMES = {
     "vendor_nxp_opensource_pn5xx_halimpl",
     "vendor_nxp_opensource_pn5xx_hidlimpl",
     "vendor_nxp_opensource_sn100x_halimpl",
+    "vendor_nxp_opensource_sn100x_hidlimpl",
     "hardware_broadcom_libbt", "hardware_custom_compat",
     "hardware_google_pixel", "hardware_libhardware",
 }
@@ -334,6 +335,10 @@ def validate():
         # shadow the official Android17 NXP AIDL HAL and secure element.
         if "vendor/nxp/opensource/sn100x/halimpl" in projects:
             raise ValueError(f"{file}: archived SN100x NXP NFC HAL activated")
+        # 2020 SN100x HAL wrappers link the archived HIDL NFC1.2/NXP
+        # service and eSE extension stack, not stable Android17 NFC AIDL.
+        if "vendor/nxp/opensource/sn100x/hidlimpl" in projects:
+            raise ValueError(f"{file}: archived SN100x NFC HIDL services activated")
         expected_count = 1071 + int(index >= 2)
         if len(projects) != expected_count:
             raise ValueError(f"{file}: {len(projects)} paths, expected {expected_count}")
