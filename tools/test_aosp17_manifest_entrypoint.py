@@ -31,6 +31,10 @@ class ManifestEntryPointTests(unittest.TestCase):
             self.root / "aosp17_pe_p2_se_security_candidate.xml",
         )
         shutil.copyfile(
+            self.original_root / "aosp17_pe_p2_qcom_audio_aidl_candidate.xml",
+            self.root / "aosp17_pe_p2_qcom_audio_aidl_candidate.xml",
+        )
+        shutil.copyfile(
             self.original_root / "default.xml", self.root / "default.xml"
         )
         profiles.ROOT = self.root
@@ -603,6 +607,55 @@ class ManifestEntryPointTests(unittest.TestCase):
             '  <remove-project name="kernel/configs" />',
         )
         with self.assertRaisesRegex(ValueError, "replaced critical AOSP17 owner"):
+            self.check()
+
+    def test_old_qualcomm_legacy_sthal_not_enabled_in_android17(self):
+        # Legacy C LSM/GCS sound_trigger.primary.* is not the frozen
+        # Android17 SoundTrigger3 AIDL service, and requires old kernel ABI.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="vendor/qcom/opensource/audio-hal/st-hal" '
+            'name="vendor_qcom_opensource_audio-hal_st-hal" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "archived Qualcomm legacy Sound Trigger HAL activated"):
+            self.check()
+
+    def test_qualcomm_modern_six_repo_candidate_sha_is_immutable(self):
+        # A mutable Qualcomm-derived branch alone is insufficient for a
+        # stable, auditable six-repository AudioReach base.
+        self.rewrite(
+            "aosp17_pe_p2_qcom_audio_aidl_candidate.xml",
+            "1dcb1275256b3f43b78d342d623870324a831720",
+            "0000000000000000000000000000000000000000",
+        )
+        with self.assertRaisesRegex(
+                ValueError, "unreviewed Qualcomm AudioReach candidate SHA/pin"):
+            self.check()
+
+    def test_qualcomm_modern_candidate_requires_complete_source_set(self):
+        # The AIDL SoundTrigger factory cannot be treated as working
+        # without PAL, AGM, DSP graph service, configuration and primary.
+        self.rewrite(
+            "aosp17_pe_p2_qcom_audio_aidl_candidate.xml",
+            '  <project path="vendor/qcom/opensource/pal"',
+            '  <project path="vendor/qcom/opensource/pal-missing"',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "unreviewed Qualcomm AudioReach candidate source set"):
+            self.check()
+
+    def test_qualcomm_modern_candidate_cannot_replace_safe_default(self):
+        # Six unbuilt device-facing sources may not silently become an
+        # installed ROM without Soong/VINTF/SELinux and SM8475 vendor ABI.
+        self.rewrite(
+            "default.xml",
+            'name="aosp17_pe_p2_kernel_configs.xml"',
+            'name="aosp17_pe_p2_qcom_audio_aidl_candidate.xml"',
+        )
+        with self.assertRaisesRegex(ValueError, "default.xml must include"):
             self.check()
 
     def test_duplicate_source_owner_fails_closed(self):
