@@ -39,6 +39,10 @@ class ManifestEntryPointTests(unittest.TestCase):
             self.root / "aosp17_pe_p2_qcom_display_aidl_candidate.xml",
         )
         shutil.copyfile(
+            self.original_root / "aosp17_pe_p2_qcom_health_aidl_candidate.xml",
+            self.root / "aosp17_pe_p2_qcom_health_aidl_candidate.xml",
+        )
+        shutil.copyfile(
             self.original_root / "default.xml", self.root / "default.xml"
         )
         profiles.ROOT = self.root
@@ -774,6 +778,36 @@ class ManifestEntryPointTests(unittest.TestCase):
             '  <remove-project name="kernel/configs" />',
         )
         with self.assertRaisesRegex(ValueError, "FM broadcast source excluded"):
+            self.check()
+
+    def test_qualcomm_health_aidl_v5_pin_cannot_drift(self):
+        self.rewrite(
+            "aosp17_pe_p2_qcom_health_aidl_candidate.xml",
+            "cfb2ea5aafeaf2ac177453c95ffd628cfa023742",
+            "0000000000000000000000000000000000000000",
+        )
+        with self.assertRaisesRegex(
+                ValueError, "unreviewed Qualcomm Health AIDL V5 candidate"):
+            self.check()
+
+    def test_qualcomm_health_aidl_v5_cannot_replace_platform_health(self):
+        self.rewrite(
+            "aosp17_pe_p2_qcom_health_aidl_candidate.xml",
+            '  <project path="vendor/qcom/opensource/healthd-ext"',
+            '  <remove-project name="hardware_interfaces" />\n'
+            '  <project path="vendor/qcom/opensource/healthd-ext"',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "unreviewed Qualcomm Health AIDL V5 candidate"):
+            self.check()
+
+    def test_qualcomm_health_aidl_v5_cannot_become_default(self):
+        self.rewrite(
+            "default.xml",
+            'name="aosp17_pe_p2_kernel_configs.xml"',
+            'name="aosp17_pe_p2_qcom_health_aidl_candidate.xml"',
+        )
+        with self.assertRaisesRegex(ValueError, "default.xml must include"):
             self.check()
 
     def test_duplicate_source_owner_fails_closed(self):
