@@ -839,6 +839,31 @@ class ManifestEntryPointTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "archived Qualcomm Power HAL excluded"):
             self.check()
 
+    def test_unverified_qcom_thermal_header_cannot_enter_mondrian_graph(self):
+        # This checkout only exports libThermal_headers, not a Thermal HAL.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="vendor/qcom/opensource/thermal-engine" '
+            'name="vendor_qcom_opensource_thermal-engine" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "unverified Qualcomm thermal client header excluded"):
+            self.check()
+
+    def test_unverified_qcom_thermal_header_alias_cannot_bypass_gate(self):
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="vendor/vendorname/thermal-headers" '
+            'name="android_vendor_qcom_opensource_thermal-engine" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "unverified Qualcomm thermal client header excluded"):
+            self.check()
+
     def test_qualcomm_health_aidl_v5_pin_cannot_drift(self):
         self.rewrite(
             "aosp17_pe_p2_qcom_health_aidl_candidate.xml",
