@@ -193,6 +193,7 @@ FORBIDDEN_NAMES = {
     "vendor_nxp_opensource_sn100x_halimpl",
     "vendor_nxp_opensource_sn100x_hidlimpl",
     "vendor_nxp_secure_element",
+    "vendor_nxp_secure_element_extns",
     "hardware_broadcom_libbt", "hardware_custom_compat",
     "hardware_google_pixel", "hardware_libhardware",
 }
@@ -346,6 +347,10 @@ def validate():
         # official AOSP17 SE AIDL V1 and system OMAPI source owners.
         if "vendor/nxp/secure_element" in projects:
             raise ValueError(f"{file}: archived NXP P73 Secure Element HAL activated")
+        # Obsolete eSE JCOP/DWP update checker and APDU downloader are
+        # neither an AOSP17 SE AIDL HAL nor the system OMAPI implementation.
+        if "vendor/nxp/secure_element_extns" in projects:
+            raise ValueError(f"{file}: archived NXP JCOP eSE client activated")
         expected_count = 1071 + int(index >= 2)
         if len(projects) != expected_count:
             raise ValueError(f"{file}: {len(projects)} paths, expected {expected_count}")
