@@ -195,6 +195,7 @@ FORBIDDEN_NAMES = {
     "vendor_nxp_secure_element",
     "vendor_nxp_secure_element_extns",
     "vendor_qcom_opensource_audio-hal_st-hal",
+    "vendor_qcom_opensource_audio-hal_st-hal-ar",
     "hardware_broadcom_libbt", "hardware_custom_compat",
     "hardware_google_pixel", "hardware_libhardware",
 }
@@ -357,6 +358,11 @@ def validate():
         # AOSP17 SoundTrigger3 AIDL and AudioReach/PAL device integration.
         if "vendor/qcom/opensource/audio-hal/st-hal" in projects:
             raise ValueError(f"{file}: archived Qualcomm legacy Sound Trigger HAL activated")
+        # Old PAL-backed 2024 sound_trigger.primary.* frontend is still
+        # legacy, unlike separately pinned modern Qualcomm AIDL factory.
+        # This path is ONLY permitted in nondefault exact six-project preview.
+        if "vendor/qcom/opensource/audio-hal/st-hal-ar" in projects:
+            raise ValueError(f"{file}: archived Qualcomm PAL legacy Sound Trigger HAL activated")
         expected_count = 1071 + int(index >= 2)
         if len(projects) != expected_count:
             raise ValueError(f"{file}: {len(projects)} paths, expected {expected_count}")
