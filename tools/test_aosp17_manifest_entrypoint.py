@@ -658,6 +658,33 @@ class ManifestEntryPointTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "default.xml must include"):
             self.check()
 
+    def test_old_qualcomm_pal_sthal_ar_not_enabled_in_android17(self):
+        # This AudioReach variant is still sound_trigger.primary.* C API,
+        # not modern frozen SoundTrigger3 AIDL/NDK Binder service.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="vendor/qcom/opensource/audio-hal/st-hal-ar" '
+            'name="vendor_qcom_opensource_audio-hal_st-hal-ar" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "archived Qualcomm PAL legacy Sound Trigger HAL activated"):
+            self.check()
+
+    def test_new_qualcomm_aidl_candidate_cannot_use_old_pal_hal_owner(self):
+        # Same checkout path, different actual implementation generation.
+        # The preview must pin Sony-hosted Qualcomm-derived AIDL source,
+        # never the 2024 PE legacy sound_trigger.primary.* module.
+        self.rewrite(
+            "aosp17_pe_p2_qcom_audio_aidl_candidate.xml",
+            'name="vendor-qcom-opensource-audio-hal-st-hal-ar"',
+            'name="vendor_qcom_opensource_audio-hal_st-hal-ar"',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "unreviewed Qualcomm AudioReach candidate SHA/pin"):
+            self.check()
+
     def test_duplicate_source_owner_fails_closed(self):
         self.rewrite(
             "aosp17_pe_p2_qcom_wlan.xml",
