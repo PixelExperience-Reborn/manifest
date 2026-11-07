@@ -41,6 +41,12 @@ The newer primary HAL contains a `configs/taro/` directory, which is useful **pl
 
 Do not enable microphone/hotword capture, misrepresent missing DSP hardware, grant blanket audio permissions or install duplicate HIDL/AIDL HAL instances. A modern Qualcomm codebase is worth selecting **only as a coordinated compatible stack** after independent Soong/NDK build, real VINTF and vendor ABI verification, soundtrigger HAL VTS, audio CTS, voice/wakeup/RF/privacy/power and device tests.
 
+## Verified source-reproduction result
+
+[GitHub Actions #42327531250](https://github.com/PixelExperience-Reborn/vendor_qcom_opensource_audio-hal_st-hal/actions/runs/42327531250) **SUCCESS** confirmed nine pinned Git commit/tree pairs, source contracts, **48/48 manifest regressions**, official `repo manifest` resolution of **1075 selected project paths** (1069 original + 6 isolated modern Qualcomm-derived candidates), and **real targeted `repo sync` of the new AIDL STHAL and primary HAL source checkouts** with exact SHA and tree hashes. It checked SoundTrigger3 AIDL **V1**, Qualcomm primary Audio Core **V3** and Effects **V4**; the selected AOSP17 `hardware/interfaces` remains frozen through **SoundTrigger3 AIDL V4**.
+
+**Important distinction:** this CI did **not** compile any Qualcomm audio modules. The remaining four modern companion repositories were Git-fetched and pinned but not `repo sync`-selected as an assembled product; the AIDL factory was not registered by a live service. Proven source identity must not be described as a working DSP/audio path or a compatible `mondrian` vendor ABI.
+
 ## Isolation and validation
 
 The six source checkouts are deliberately added as a **nondefault, source-only preview**, not production dependencies. Active `default.xml`, all **25** reviewed source profiles, original `seventeen` branches, current AOSP17 SoundTrigger AIDL V4 interface, and independent PE-Reborn code stay untouched. A strict manifest validator checks the six immutable pins, single fetch remote and every original owner/revision/group; four negative tests fail if the old legacy `st-hal` is injected, a candidate SHA is changed, a source path is substituted, or `default.xml` is silently promoted.
