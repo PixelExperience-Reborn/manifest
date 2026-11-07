@@ -485,6 +485,47 @@ class ManifestEntryPointTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "replaced critical AOSP17 owner"):
             self.check()
 
+    def test_legacy_nxp_p73_hidl_se_cannot_enter_android17(self):
+        # Old SE HIDL1.2 advertises unverified eSE1/SIM1/SIM2 and can
+        # trigger JCOP/SPI updater. It is not AOSP17 SE AIDL V1.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="vendor/nxp/secure_element" '
+            'name="vendor_nxp_secure_element" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "archived NXP P73 Secure Element HAL activated"):
+            self.check()
+
+    def test_legacy_nxp_p73_cannot_take_official_aosp17_se_hal(self):
+        # Official hardware/nxp/secure_element must remain the AOSP17
+        # AIDL SE HAL owner, not a historic vendor HIDL implementation.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <remove-project name="platform/hardware/nxp/secure_element" />\n'
+            '  <project path="hardware/nxp/secure_element" '
+            'name="vendor_nxp_secure_element" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(ValueError, "replaced critical AOSP17 owner"):
+            self.check()
+
+    def test_legacy_nxp_p73_cannot_take_system_omapi_owner(self):
+        # Vendor SPI/P73 libraries are not the system OMAPI service.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <remove-project name="platform/system/secure_element" />\n'
+            '  <project path="system/secure_element" '
+            'name="vendor_nxp_secure_element" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(ValueError, "replaced critical AOSP17 owner"):
+            self.check()
+
     def test_duplicate_source_owner_fails_closed(self):
         self.rewrite(
             "aosp17_pe_p2_qcom_wlan.xml",
