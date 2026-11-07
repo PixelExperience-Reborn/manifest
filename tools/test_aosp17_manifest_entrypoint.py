@@ -750,6 +750,32 @@ class ManifestEntryPointTests(unittest.TestCase):
                 ValueError, "unreviewed Qualcomm HWC3 display candidate shape/pin"):
             self.check()
 
+    def test_mondrian_fm_commonsys_cannot_be_imported(self):
+        # Optional FM broadcast radio is outside this product scope, even
+        # if a later Qualcomm or historical PE checkout becomes available.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="vendor/qcom/opensource/fm-commonsys" '
+            'name="vendor_qcom_opensource_fm-commonsys" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(ValueError, "FM broadcast source excluded"):
+            self.check()
+
+    def test_mondrian_fm_jni_alias_cannot_hide_at_other_checkout_path(self):
+        # Check repository ownership, not only the canonical checkout
+        # path; aliasing libfmjni under an arbitrary path must not bypass it.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="vendor/unreviewed/radio-jni" '
+            'name="vendor_qcom_opensource_libfmjni" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(ValueError, "FM broadcast source excluded"):
+            self.check()
+
     def test_duplicate_source_owner_fails_closed(self):
         self.rewrite(
             "aosp17_pe_p2_qcom_wlan.xml",
