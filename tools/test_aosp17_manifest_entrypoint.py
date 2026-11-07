@@ -815,6 +815,30 @@ class ManifestEntryPointTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "FM broadcast source excluded"):
             self.check()
 
+    def test_archived_qcom_power_hal_cannot_enter_mondrian_source(self):
+        # The old QTI V3 HAL advertises dummy/no-op ADPF sessions.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="vendor/qcom/opensource/power" '
+            'name="vendor_qcom_opensource_power" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(ValueError, "archived Qualcomm Power HAL excluded"):
+            self.check()
+
+    def test_archived_qcom_power_hal_alias_is_not_a_bypass(self):
+        # Match repository aliases even if the checkout path changes.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="vendor/external/legacy-power" '
+            'name="android_vendor_qcom_opensource_power" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(ValueError, "archived Qualcomm Power HAL excluded"):
+            self.check()
+
     def test_qualcomm_health_aidl_v5_pin_cannot_drift(self):
         self.rewrite(
             "aosp17_pe_p2_qcom_health_aidl_candidate.xml",
