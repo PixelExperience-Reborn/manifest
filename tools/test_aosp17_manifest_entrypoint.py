@@ -27,6 +27,10 @@ class ManifestEntryPointTests(unittest.TestCase):
             self.root / "aosp17_pe_p2_nfc_security_candidate.xml",
         )
         shutil.copyfile(
+            self.original_root / "aosp17_pe_p2_se_security_candidate.xml",
+            self.root / "aosp17_pe_p2_se_security_candidate.xml",
+        )
+        shutil.copyfile(
             self.original_root / "default.xml", self.root / "default.xml"
         )
         profiles.ROOT = self.root
@@ -524,6 +528,41 @@ class ManifestEntryPointTests(unittest.TestCase):
             '  <remove-project name="kernel/configs" />',
         )
         with self.assertRaisesRegex(ValueError, "replaced critical AOSP17 owner"):
+            self.check()
+
+    def test_se_security_candidate_is_immutable_exact_aosp17_sha(self):
+        # This is the real official AOSP17 channel-index bounds fix tree,
+        # not any mutable tag HEAD, and not an active ROM security SPL.
+        self.rewrite(
+            "aosp17_pe_p2_se_security_candidate.xml",
+            "8aec22fde8121bf3f74006730ce42e9ac0366b62",
+            "0000000000000000000000000000000000000000",
+        )
+        with self.assertRaisesRegex(
+                ValueError, "unreviewed NXP SE security candidate manifest shape or pin"):
+            self.check()
+
+    def test_se_security_candidate_does_not_take_over_default(self):
+        # A new SE security source alone cannot justify switching the
+        # full-platform build or claiming current Android security SPL.
+        self.rewrite(
+            "default.xml",
+            'name="aosp17_pe_p2_kernel_configs.xml"',
+            'name="aosp17_pe_p2_se_security_candidate.xml"',
+        )
+        with self.assertRaisesRegex(ValueError, "default.xml must include"):
+            self.check()
+
+    def test_se_security_candidate_must_not_modify_system_omapi(self):
+        # SE HAL AIDL source is distinct from system OMAPI; only one
+        # exact hardware/nxp/secure_element checkout may be modified.
+        self.rewrite(
+            "aosp17_pe_p2_se_security_candidate.xml",
+            '  <remove-project name="platform/hardware/nxp/secure_element" />',
+            '  <remove-project name="platform/system/secure_element" />',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "unreviewed NXP SE security candidate manifest shape or pin"):
             self.check()
 
     def test_duplicate_source_owner_fails_closed(self):
