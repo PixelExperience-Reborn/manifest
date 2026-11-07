@@ -20,6 +20,12 @@ Audited patches and shell diff: [source CI #42322285010](https://github.com/Pixe
 
 Strict Python source-graph validation rejects altered candidate SHA/shape, unexpected checkout changes, switching `default.xml` to this candidate or replacing system OMAPI. All old NXP P73/HIDL source names and paths remain forbidden.
 
+## Real source-graph and Git verification
+
+[GitHub Actions #42322975040](https://github.com/PixelExperience-Reborn/vendor_nxp_secure_element/actions/runs/42322975040) **SUCCESS**: official Android `repo` launcher resolved this exact experimental profile to **1069 unique default-selected project paths**, preserving independent owners for NFC HAL, NFC Mainline and system OMAPI. A targeted `repo sync` of **only `hardware/nxp/secure_element`** checked out official commit `8aec22fde8121bf3f74006730ce42e9ac0366b62`, exact tree `60db7cd2fb71673b3d8468162eaaed6649e3c42c`, and verified the AIDL logical-channel bounds check in both `SecureElement.cpp` and `VirtualISO.cpp`. The manifest validator passed all **25 active review stages** and **41/41** regressions, including protections against altering the candidate, its ownership or `default.xml`.
+
+The canonical flattened `repo manifest` omits `remote="aosp"` when it is inherited from the manifest default. The source validator separately enforces the input candidate's explicit `remote="aosp"`; the real selected Git commit and tree prove the source identity. The dedicated [SE security candidate CI workflow](https://github.com/PixelExperience-Reborn/manifest/blob/port/a17-aosp17-manifest-20261102/.github/workflows/aosp17-p2-se-security-candidate.yml) is committed, but these **verified CI results are from the isolated audit repository run**. This distinguishes recorded evidence from an unobserved workflow run.
+
 ## Required acceptance for an actual ROM
 
 1. Confirm the official AOSP17 r3 security commit in full source, inspect each of the ten HIDL/AIDL code changes for boundary and response-length correctness, run static sanitizers and SE HAL VTS/unit tests.
