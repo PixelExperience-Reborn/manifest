@@ -142,6 +142,7 @@ OFFICIAL_PATHS = {
     "hardware/broadcom/libbt": "platform/hardware/broadcom/libbt",
     "hardware/libhardware": "platform/hardware/libhardware",
     "hardware/nxp/nfc": "platform/hardware/nxp/nfc",
+    "hardware/nxp/secure_element": "platform/hardware/nxp/secure_element",
     "platform_testing": "platform/platform_testing",
     "prebuilts/build-tools": "platform/prebuilts/build-tools",
     "prebuilts/clang/host/linux-x86": "platform/prebuilts/clang/host/linux-x86",
@@ -191,6 +192,7 @@ FORBIDDEN_NAMES = {
     "vendor_nxp_opensource_pn5xx_hidlimpl",
     "vendor_nxp_opensource_sn100x_halimpl",
     "vendor_nxp_opensource_sn100x_hidlimpl",
+    "vendor_nxp_secure_element",
     "hardware_broadcom_libbt", "hardware_custom_compat",
     "hardware_google_pixel", "hardware_libhardware",
 }
@@ -339,6 +341,10 @@ def validate():
         # service and eSE extension stack, not stable Android17 NFC AIDL.
         if "vendor/nxp/opensource/sn100x/hidlimpl" in projects:
             raise ValueError(f"{file}: archived SN100x NFC HIDL services activated")
+        # 2023 archived P73 SE-HIDL1.2/JCOP updater must not shadow
+        # official AOSP17 SE AIDL V1 and system OMAPI source owners.
+        if "vendor/nxp/secure_element" in projects:
+            raise ValueError(f"{file}: archived NXP P73 Secure Element HAL activated")
         expected_count = 1071 + int(index >= 2)
         if len(projects) != expected_count:
             raise ValueError(f"{file}: {len(projects)} paths, expected {expected_count}")
