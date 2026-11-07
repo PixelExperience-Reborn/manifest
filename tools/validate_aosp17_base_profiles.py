@@ -196,6 +196,7 @@ FORBIDDEN_NAMES = {
     "vendor_nxp_secure_element_extns",
     "vendor_qcom_opensource_audio-hal_st-hal",
     "vendor_qcom_opensource_audio-hal_st-hal-ar",
+    "vendor_qcom_opensource_display",
     "hardware_broadcom_libbt", "hardware_custom_compat",
     "hardware_google_pixel", "hardware_libhardware",
 }
@@ -246,6 +247,7 @@ def validate():
     expected_files.add("aosp17_pe_p2_nfc_security_candidate.xml")
     expected_files.add("aosp17_pe_p2_se_security_candidate.xml")
     expected_files.add("aosp17_pe_p2_qcom_audio_aidl_candidate.xml")
+    expected_files.add("aosp17_pe_p2_qcom_display_aidl_candidate.xml")
     actual_files = {p.name for p in ROOT.glob("aosp17_*.xml")}
     if actual_files != expected_files:
         raise ValueError(f"stage list drift: missing={expected_files - actual_files}, extra={actual_files - expected_files}")
@@ -363,6 +365,10 @@ def validate():
         # This path is ONLY permitted in nondefault exact six-project preview.
         if "vendor/qcom/opensource/audio-hal/st-hal-ar" in projects:
             raise ValueError(f"{file}: archived Qualcomm PAL legacy Sound Trigger HAL activated")
+        # Old 2021 HIDL mapper 4 / vendor.display.config 2 metadata shim
+        # cannot silently become a modern Android17 Composer3/Gralloc5 HAL.
+        if "vendor/qcom/opensource/display" in projects:
+            raise ValueError(f"{file}: archived Qualcomm HIDL display helpers activated")
         expected_count = 1071 + int(index >= 2)
         if len(projects) != expected_count:
             raise ValueError(f"{file}: {len(projects)} paths, expected {expected_count}")
@@ -548,6 +554,39 @@ def validate():
             raise ValueError("Qualcomm candidate changed selected source " + path)
     if "vendor/qcom/opensource/audio-hal/st-hal" in qcom_graph:
         raise ValueError("Qualcomm candidate accidentally includes old legacy STHAL")
+    # HWC3/Gralloc5 prototype is intentionally nondefault and incomplete
+    # without exact SDM/DRM and mondrian display driver/vendor blobs.
+    display_name = "aosp17_pe_p2_qcom_display_aidl_candidate.xml"
+    display_root = ET.parse(ROOT / display_name).getroot()
+    display_nodes = list(display_root)
+    display_expected = {
+        "path": "hardware/qcom/display",
+        "name": "hardware-qcom-display",
+        "remote": "sony-qcom-display-review",
+        "revision": "baf61f736e2109522e3f72754ee7cfacbfa2dc6c",
+        "upstream": "refs/heads/aosp/DISPLAY.LA.5.0.r1",
+        "groups": "device",
+    }
+    if (display_root.tag != "manifest" or len(display_nodes) != 3 or
+            [n.tag for n in display_nodes] !=
+            ["include", "remote", "project"] or
+            display_nodes[0].attrib != {"name": STAGES[-1][0]} or
+            display_nodes[1].attrib != {
+                "name": "sony-qcom-display-review",
+                "fetch": "https://github.com/sonyxperiadev",
+            } or display_nodes[2].attrib != display_expected):
+        raise ValueError("unreviewed Qualcomm HWC3 display candidate shape/pin")
+    display_graph = resolve(display_name)
+    if set(display_graph) != set(final) | {"hardware/qcom/display"}:
+        raise ValueError("Qualcomm display candidate altered source path set")
+    for path, original in final.items():
+        if display_graph[path].attrib != original.attrib:
+            raise ValueError("Qualcomm display candidate altered active AOSP17 owner: " + path)
+    if display_graph["hardware/qcom/display"].attrib != display_expected:
+        raise ValueError("Qualcomm display candidate has different source checkout")
+    if "vendor/qcom/opensource/display" in display_graph:
+        raise ValueError("Qualcomm display candidate imported old HIDL helpers")
+    print("PASS: experimental Qualcomm HWC3 AIDL display candidate isolated/pinned")
     print("PASS: modern Qualcomm-derived AIDL six-source stack isolated/pinned")
     print("PASS: experimental official NXP SE channel-bounds security source pinned")
     print("PASS: experimental newer NFC source strictly isolated and pinned")
