@@ -1,0 +1,101 @@
+name: AOSP17 modern Qualcomm AudioReach AIDL source candidate
+
+on:
+  push:
+    branches:
+      - port/a17-aosp17-manifest-20261102
+    paths:
+      - 'aosp17_pe_p2_qcom_audio_aidl_candidate.xml'
+      - 'docs/ANDROID_17_QCOM_AUDIO_AIDL_CANDIDATE.md'
+      - 'tools/validate_aosp17_base_profiles.py'
+      - 'tools/test_aosp17_manifest_entrypoint.py'
+      - '.github/workflows/aosp17-p2-qcom-audio-aidl-candidate.yml'
+      - 'default.xml'
+  pull_request:
+    paths:
+      - 'aosp17_pe_p2_qcom_audio_aidl_candidate.xml'
+      - '.github/workflows/aosp17-p2-qcom-audio-aidl-candidate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  immutable-qualcomm-audio-17-source-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 65
+    steps:
+      - name: Checkout independent PE-Reborn AOSP17 manifest
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Validate active 25 source stages, old STHAL deny and candidate pins
+        run: |
+          python3 tools/validate_aosp17_base_profiles.py
+          python3 -m unittest discover -s tools \
+            -p test_aosp17_manifest_entrypoint.py -v
+      - name: Fetch official Android repo launcher
+        run: |
+          set -euo pipefail
+          curl -fLsS --retry 4 \
+            https://storage.googleapis.com/git-repo-downloads/repo \
+            -o "$RUNNER_TEMP/repo"
+          chmod +x "$RUNNER_TEMP/repo"
+      - name: Resolve immutable six-repo modern Qualcomm AudioReach preview
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/qualcomm-audio-aidl"
+          cd "$RUNNER_TEMP/qualcomm-audio-aidl"
+          "$RUNNER_TEMP/repo" init -q --no-clone-bundle \
+            --partial-clone --clone-filter=blob:none \
+            -u https://github.com/PixelExperience-Reborn/manifest.git \
+            -b port/a17-aosp17-manifest-20261102 \
+            -m aosp17_pe_p2_qcom_audio_aidl_candidate.xml
+          "$RUNNER_TEMP/repo" manifest -o "$RUNNER_TEMP/qualcomm-audio-flat.xml"
+          python3 - <<'PY'
+          import os
+          import xml.etree.ElementTree as ET
+          root=ET.parse(os.path.join(os.environ["RUNNER_TEMP"],"qualcomm-audio-flat.xml")).getroot()
+          projects=root.findall(".//project")
+          by_path={p.get("path") or p.get("name"):p for p in projects}
+          assert len(projects)==len(by_path)==1075
+          sha={
+              "vendor/qcom/opensource/audio-hal/st-hal-ar":"1dcb1275256b3f43b78d342d623870324a831720",
+              "vendor/qcom/opensource/audio-hal/primary-hal-ar":"b071e74ead44a7aecee69969003b902632cd4ab3",
+              "vendor/qcom/opensource/pal":"44e6ad74fd34c390b053bbe19811502c132f007e",
+              "vendor/qcom/opensource/agm":"7ad4167f2241beefd2a48b9e87453c3a80c5811b",
+              "vendor/qcom/opensource/audioreach-graphservices":"d38796b5d74ff727a5fbd9f10ecbc7f5c0335ff5",
+              "vendor/qcom/opensource/audioreach-conf":"5e90f9e4d6bb790fca0a092d57fdee8572d5b990",
+          }
+          for path, revision in sha.items():
+              assert by_path[path].get("revision")==revision
+          assert "vendor/qcom/opensource/audio-hal/st-hal" not in by_path
+          assert by_path["hardware/interfaces"].get("name")=="hardware_interfaces"
+          assert by_path["frameworks/av"].get("name")=="frameworks_av"
+          print("PASS: exact six newer Qualcomm-derived commits, 1075 selected paths")
+          print("PASS: frozen PE AOSP17 SoundTrigger3 and framework owners unchanged")
+          PY
+      - name: Sync only actual SoundTrigger3 AIDL and Android17 primary HAL
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/qualcomm-audio-aidl"
+          "$RUNNER_TEMP/repo" sync -c -j2 --no-tags --fail-fast \
+            vendor/qcom/opensource/audio-hal/st-hal-ar \
+            vendor/qcom/opensource/audio-hal/primary-hal-ar
+          cd vendor/qcom/opensource/audio-hal/st-hal-ar
+          test "$(git rev-parse HEAD)" = "1dcb1275256b3f43b78d342d623870324a831720"
+          test "$(git rev-parse 'HEAD^{tree}')" = "d47390edeaf35ee6b50d15b88e9f5537f372174e"
+          grep -q "android.hardware.soundtrigger3-V1-ndk" Android.mk
+          grep -q 'createISoundTriggerFactory()' src/soundtriggerhw/Service.cpp
+          cd ../primary-hal-ar
+          test "$(git rev-parse HEAD)" = "b071e74ead44a7aecee69969003b902632cd4ab3"
+          test "$(git rev-parse 'HEAD^{tree}')" = "c78551f4c27dab685e396cd8996c1458b724787d"
+          grep -q "android.hardware.audio.core-V3-ndk" Android.mk
+          grep -q "android.hardware.audio.effect-V4-ndk" Android.mk
+          echo "PASS: real targeted repo sync checked out the exact modern ST/primary sources"
+      - name: Declare limits
+        run: |
+          echo "SOURCE ONLY. Modern Qualcomm AIDL V1 != AOSP17 frozen AIDL V4."
+          echo "NOT TESTED: Soong build, primary/VINTF registration, PAL/AGM ABI,"
+          echo "ADSP/ACDB/DSP firmware, call routing, mic privacy, CTS/VTS, mondrian."
+          echo "The reviewed 25-stage default.xml is intentionally unchanged."
