@@ -262,6 +262,27 @@ def reject_archived_qcom_power(profile, projects):
                 f"{profile}: archived Qualcomm Power HAL excluded for mondrian: {path}")
 
 
+# Qualcomm thermal-engine here is a 4-file legacy client HEADER module, not
+# a daemon or the Android Thermal HAL. Require proof of a vendor client plus
+# matching ABI before a future independently reviewed checkout may be used.
+UNREVIEWED_QCOM_THERMAL_HEADER_PATHS = {
+    "vendor/qcom/opensource/thermal-engine",
+}
+UNREVIEWED_QCOM_THERMAL_HEADER_NAMES = {
+    "vendor_qcom_opensource_thermal-engine",
+    "vendor-qcom-opensource-thermal-engine",
+    "android_vendor_qcom_opensource_thermal-engine",
+}
+
+
+def reject_unreviewed_qcom_thermal_header(profile, projects):
+    for path, project in projects.items():
+        if (path in UNREVIEWED_QCOM_THERMAL_HEADER_PATHS or
+                project.get("name") in UNREVIEWED_QCOM_THERMAL_HEADER_NAMES):
+            raise ValueError(
+                f"{profile}: unverified Qualcomm thermal client header excluded: {path}")
+
+
 def reject_mondrian_fm_source(profile, projects):
     for path, project in projects.items():
         if path in FM_SOURCE_PATHS or project.get("name") in FM_SOURCE_NAMES:
@@ -324,6 +345,7 @@ def validate():
     reject_mondrian_fm_source("aosp17_reference.xml", baseline)
     reject_unreviewed_qcom_interfaces("aosp17_reference.xml", baseline)
     reject_archived_qcom_power("aosp17_reference.xml", baseline)
+    reject_unreviewed_qcom_thermal_header("aosp17_reference.xml", baseline)
     if len(baseline) != 1071:
         raise ValueError(f"unexpected base path count {len(baseline)}, expected 1071")
     if "vendor/aosp" in baseline:
@@ -354,6 +376,7 @@ def validate():
         reject_mondrian_fm_source(file, projects)
         reject_unreviewed_qcom_interfaces(file, projects)
         reject_archived_qcom_power(file, projects)
+        reject_unreviewed_qcom_thermal_header(file, projects)
         # Report a forbidden legacy binary import before the generic count
         # check, so this failure remains actionable and regression-testable.
         if "prebuilts/extract-tools" in projects:
@@ -705,9 +728,11 @@ def validate():
         reject_mondrian_fm_source(name, graph)
         reject_unreviewed_qcom_interfaces(name, graph)
         reject_archived_qcom_power(name, graph)
+        reject_unreviewed_qcom_thermal_header(name, graph)
     print("PASS: FM broadcast source excluded from mondrian AOSP17 profiles")
     print("PASS: archived mixed Qualcomm HIDL interfaces excluded from AOSP17 profiles")
     print("PASS: obsolete QTI Power AIDL V3 and fake ADPF excluded from AOSP17 profiles")
+    print("PASS: unverified Qualcomm thermal client header excluded; real Thermal HAL untouched")
     print("PASS: Qualcomm Health AIDL V5 source candidate isolated/pinned")
     print("PASS: experimental Qualcomm HWC3 AIDL display candidate isolated/pinned")
     print("PASS: modern Qualcomm-derived AIDL six-source stack isolated/pinned")
