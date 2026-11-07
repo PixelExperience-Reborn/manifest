@@ -786,7 +786,7 @@ class ManifestEntryPointTests(unittest.TestCase):
             "aosp17_pe_p2_kernel_configs.xml",
             '  <remove-project name="kernel/configs" />',
             '  <project path="vendor/qcom/opensource/interfaces" '
-            'name="vendor_qcom_opensource_interfaces" />\\n'
+            'name="vendor_qcom_opensource_interfaces" />\n'
             '  <remove-project name="kernel/configs" />',
         )
         with self.assertRaisesRegex(ValueError, "archived Qualcomm interfaces source excluded"):
@@ -798,7 +798,7 @@ class ManifestEntryPointTests(unittest.TestCase):
             "aosp17_pe_p2_kernel_configs.xml",
             '  <remove-project name="kernel/configs" />',
             '  <project path="vendor/external/qti-interfaces" '
-            'name="android_vendor_qcom_opensource_interfaces" />\\n'
+            'name="android_vendor_qcom_opensource_interfaces" />\n'
             '  <remove-project name="kernel/configs" />',
         )
         with self.assertRaisesRegex(ValueError, "archived Qualcomm interfaces source excluded"):
@@ -809,7 +809,7 @@ class ManifestEntryPointTests(unittest.TestCase):
             "aosp17_pe_p2_kernel_configs.xml",
             '  <remove-project name="kernel/configs" />',
             '  <project path="vendor/qcom/opensource/libfmjni" '
-            'name="vendor_qcom_opensource_libfmjni" />\\n'
+            'name="vendor_qcom_opensource_libfmjni" />\n'
             '  <remove-project name="kernel/configs" />',
         )
         with self.assertRaisesRegex(ValueError, "FM broadcast source excluded"):
