@@ -194,6 +194,7 @@ FORBIDDEN_NAMES = {
     "vendor_nxp_opensource_sn100x_hidlimpl",
     "vendor_nxp_secure_element",
     "vendor_nxp_secure_element_extns",
+    "vendor_qcom_opensource_audio-hal_st-hal",
     "hardware_broadcom_libbt", "hardware_custom_compat",
     "hardware_google_pixel", "hardware_libhardware",
 }
@@ -243,6 +244,7 @@ def validate():
     expected_files = {name for name, _ in STAGES}
     expected_files.add("aosp17_pe_p2_nfc_security_candidate.xml")
     expected_files.add("aosp17_pe_p2_se_security_candidate.xml")
+    expected_files.add("aosp17_pe_p2_qcom_audio_aidl_candidate.xml")
     actual_files = {p.name for p in ROOT.glob("aosp17_*.xml")}
     if actual_files != expected_files:
         raise ValueError(f"stage list drift: missing={expected_files - actual_files}, extra={actual_files - expected_files}")
@@ -351,6 +353,10 @@ def validate():
         # neither an AOSP17 SE AIDL HAL nor the system OMAPI implementation.
         if "vendor/nxp/secure_element_extns" in projects:
             raise ValueError(f"{file}: archived NXP JCOP eSE client activated")
+        # Legacy Qualcomm 2023 C/LSM/GCS STHAL is excluded from modern
+        # AOSP17 SoundTrigger3 AIDL and AudioReach/PAL device integration.
+        if "vendor/qcom/opensource/audio-hal/st-hal" in projects:
+            raise ValueError(f"{file}: archived Qualcomm legacy Sound Trigger HAL activated")
         expected_count = 1071 + int(index >= 2)
         if len(projects) != expected_count:
             raise ValueError(f"{file}: {len(projects)} paths, expected {expected_count}")
@@ -469,6 +475,74 @@ def validate():
         if se_candidate[candidate_path].attrib != expected:
             raise ValueError(
                 f"NXP SE candidate changed unexpected source: {candidate_path}")
+    # Modern Sony-hosted Qualcomm-derived AudioReach AIDL sources form
+    # one isolated six-repository candidate; never silently activate a
+    # single STHAL .so with a mismatched PAL, AGM or primary audio HAL.
+    qcom_name = "aosp17_pe_p2_qcom_audio_aidl_candidate.xml"
+    qcom_root = ET.parse(ROOT / qcom_name).getroot()
+    qcom_nodes = list(qcom_root)
+    qcom_expected = {
+        "vendor/qcom/opensource/audio-hal/st-hal-ar": (
+            "vendor-qcom-opensource-audio-hal-st-hal-ar",
+            "1dcb1275256b3f43b78d342d623870324a831720"),
+        "vendor/qcom/opensource/audio-hal/primary-hal-ar": (
+            "vendor-qcom-opensource-audio-hal-primary-hal-ar",
+            "b071e74ead44a7aecee69969003b902632cd4ab3"),
+        "vendor/qcom/opensource/pal": (
+            "vendor-qcom-opensource-arpal-lx",
+            "44e6ad74fd34c390b053bbe19811502c132f007e"),
+        "vendor/qcom/opensource/agm": (
+            "vendor-qcom-opensource-agm",
+            "7ad4167f2241beefd2a48b9e87453c3a80c5811b"),
+        "vendor/qcom/opensource/audioreach-graphservices": (
+            "vendor-qcom-opensource-audioreach-graphservices",
+            "d38796b5d74ff727a5fbd9f10ecbc7f5c0335ff5"),
+        "vendor/qcom/opensource/audioreach-conf": (
+            "vendor-qcom-opensource-audioreach-conf",
+            "5e90f9e4d6bb790fca0a092d57fdee8572d5b990"),
+    }
+    if (qcom_root.tag != "manifest" or len(qcom_nodes) != 8 or
+            [node.tag for node in qcom_nodes] !=
+            ["include", "remote"] + ["project"] * 6 or
+            qcom_nodes[0].attrib != {"name": STAGES[-1][0]} or
+            qcom_nodes[1].attrib != {
+                "name": "sony-qcom-audio-review",
+                "fetch": "https://github.com/sonyxperiadev",
+            }):
+        raise ValueError("unreviewed Qualcomm AudioReach candidate shape/remote")
+    if [n.get("path") for n in qcom_nodes[2:]] != list(qcom_expected):
+        raise ValueError("unreviewed Qualcomm AudioReach candidate source set")
+    for node in qcom_nodes[2:]:
+        path = node.get("path")
+        name, revision = qcom_expected[path]
+        expected = {
+            "path": path, "name": name,
+            "remote": "sony-qcom-audio-review",
+            "revision": revision,
+            "upstream": "refs/heads/aosp/AUDIO.LA.10.0.r1",
+            "groups": "device",
+        }
+        if node.attrib != expected:
+            raise ValueError("unreviewed Qualcomm AudioReach candidate SHA/pin")
+    qcom_graph = resolve(qcom_name)
+    if set(qcom_graph) != set(final) | set(qcom_expected):
+        raise ValueError("Qualcomm AudioReach candidate added/removed unexpected paths")
+    for path, original in final.items():
+        if qcom_graph[path].attrib != original.attrib:
+            raise ValueError("Qualcomm candidate altered active AOSP17 owner: " + path)
+    for path in qcom_expected:
+        if qcom_graph[path].attrib != {
+                "path": path,
+                "name": qcom_expected[path][0],
+                "remote": "sony-qcom-audio-review",
+                "revision": qcom_expected[path][1],
+                "upstream": "refs/heads/aosp/AUDIO.LA.10.0.r1",
+                "groups": "device",
+        }:
+            raise ValueError("Qualcomm candidate changed selected source " + path)
+    if "vendor/qcom/opensource/audio-hal/st-hal" in qcom_graph:
+        raise ValueError("Qualcomm candidate accidentally includes old legacy STHAL")
+    print("PASS: modern Qualcomm-derived AIDL six-source stack isolated/pinned")
     print("PASS: experimental official NXP SE channel-bounds security source pinned")
     print("PASS: experimental newer NFC source strictly isolated and pinned")
     print(f"PASS: safe default.xml resolves to {len(active)} reviewed project paths")
