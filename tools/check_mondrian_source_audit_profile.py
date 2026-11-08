@@ -17,9 +17,9 @@ PROFILE = "aosp17_pe_mondrian_source_audit.xml"
 EXPECTED = {
     "device/xiaomi/mondrian": ("android_device_xiaomi_mondrian", "7e768d2b4f57dd1d4bc5595013c87c2c84c3ec54"),
     "device/xiaomi/sm8450-common": ("android_device_xiaomi_sm8450-common", "02e63af3ff5e62783017aeee22180bccf715d4fd"),
-    "kernel/xiaomi/sm8450": ("android_kernel_xiaomi_sm8450", "769d4b03b4203c48ae2615b8b56389e2612ed237"),
-    "kernel/xiaomi/sm8450-modules": ("android_kernel_xiaomi_sm8450-modules", "11505e89ed42004e346facebf695d1682dead8d0"),
-    "kernel/xiaomi/sm8450-devicetrees": ("android_kernel_xiaomi_sm8450-devicetrees", "bd1874c9345707695867c694d55567da1f6d3f15"),
+    "kernel/xiaomi/sm8450": ("android_kernel_xiaomi_sm8450", "2c28c5613b03ac5fa130d10429afac279373ca43"),
+    "kernel/xiaomi/sm8450-modules": ("android_kernel_xiaomi_sm8450-modules", "e2773bb698daf86f27aab3c04119e1e44c37d1ef"),
+    "kernel/xiaomi/sm8450-devicetrees": ("android_kernel_xiaomi_sm8450-devicetrees", "49f561ecd8c18053e708697c78b4ce8997faee4a"),
 }
 VENDOR_SHA = "38bf62440be54eb86b4f5c6ccc888e467b5a9a53"
 SHA = re.compile(r"^[a-f0-9]{40}$")
