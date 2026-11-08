@@ -964,6 +964,33 @@ class ManifestEntryPointTests(unittest.TestCase):
                 ValueError, "archived Clang 12 r416183b excluded"):
             self.check()
 
+    def test_archived_aarch64_gcc49_not_enabled_in_aosp17(self):
+        # Old GCC49 plus GNU binutils was a PE extras dependency, not part
+        # of official AOSP17 or a qualified mondrian 5.10 toolchain.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9" '
+            'name="prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "archived AArch64 GCC 4.9 excluded"):
+            self.check()
+
+    def test_archived_aarch64_gcc49_alias_cannot_hide_at_other_path(self):
+        # Renaming the checkout cannot reintroduce archived GNU executables.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="prebuilts/host/alternative-aarch64" '
+            'name="android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "archived AArch64 GCC 4.9 excluded"):
+            self.check()
+
     def test_qualcomm_health_aidl_v5_pin_cannot_drift(self):
         self.rewrite(
             "aosp17_pe_p2_qcom_health_aidl_candidate.xml",
