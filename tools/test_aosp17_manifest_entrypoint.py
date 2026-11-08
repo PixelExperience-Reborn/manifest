@@ -1153,6 +1153,32 @@ class ManifestEntryPointTests(unittest.TestCase):
                 ValueError, "unreviewed Qualcomm core-utils-sys fwk-detect source excluded"):
             self.check()
 
+    def test_unqualified_qcom_core_utils_vendor_qspa_not_in_aosp17(self):
+        # Historical vendor QSPA binary needs an external QTI Stable AIDL
+        # V1 module and has unchecked CPU topology handling.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="vendor/qcom/opensource/core-utils-vendor" '
+            'name="vendor_qcom_opensource_core-utils-vendor" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "unqualified QTI vendor core-utils QSPA source excluded"):
+            self.check()
+
+    def test_qcom_core_utils_vendor_alias_cannot_bypass_qspa_guard(self):
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="vendor/qcom/provisional/qspa" '
+            'name="android_vendor_qcom_opensource_core-utils-vendor" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "unqualified QTI vendor core-utils QSPA source excluded"):
+            self.check()
+
     def test_qualcomm_health_aidl_v5_pin_cannot_drift(self):
         self.rewrite(
             "aosp17_pe_p2_qcom_health_aidl_candidate.xml",
