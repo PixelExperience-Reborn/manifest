@@ -83,6 +83,18 @@ class ManifestEntryPointTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "default.xml must include"):
             self.check()
 
+    def test_vendor_aosp_android17_launcher_pin_cannot_revert(self):
+        # The previously approved PE vendor HEAD did not select a native
+        # Launcher3QuickStep HOME. All AOSP17 staged profiles must keep the
+        # CI-reviewed source that now requests the official Google module.
+        self.rewrite(
+            "aosp17_pe_envsetup.xml",
+            "38bf62440be54eb86b4f5c6ccc888e467b5a9a53",
+            "07a2c6976375f971d05fa5f210bcd8e45d7723e0",
+        )
+        with self.assertRaisesRegex(ValueError, "bad revision/owner"):
+            self.check()
+
     def test_kernel_config_pin_cannot_drift(self):
         self.rewrite(
             "aosp17_pe_p2_kernel_configs.xml",
