@@ -1071,6 +1071,34 @@ class ManifestEntryPointTests(unittest.TestCase):
                 ValueError, "unreviewed Qualcomm display-commonsys-intf V11 source excluded"):
             self.check()
 
+    def test_archived_qcom_display_commonsys_hidl_shims_cannot_enter_aosp17(self):
+        # The historical QSSI14 system_ext libs require HIDL Mapper4 and
+        # vendor.display.config@2.0, not Android17-native graphics.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="vendor/qcom/opensource/commonsys/display" '
+            'name="vendor_qcom_opensource_commonsys_display" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "unreviewed QSSI14 display-commonsys HIDL shims excluded"):
+            self.check()
+
+    def test_archived_qcom_display_commonsys_alias_at_other_path_rejected(self):
+        # Only the archived identity is rejected; official AOSP17 graphics
+        # or future independently audited HWC3 AIDL are not blocked.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="vendor/qcom/temporary/graphics-compat" '
+            'name="android_vendor_qcom_opensource_commonsys_display" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "unreviewed QSSI14 display-commonsys HIDL shims excluded"):
+            self.check()
+
     def test_qualcomm_health_aidl_v5_pin_cannot_drift(self):
         self.rewrite(
             "aosp17_pe_p2_qcom_health_aidl_candidate.xml",
