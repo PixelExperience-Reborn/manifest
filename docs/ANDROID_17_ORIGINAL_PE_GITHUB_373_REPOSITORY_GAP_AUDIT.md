@@ -83,7 +83,7 @@
 | PE14 путь | Оригинальное имя | Статус |
 |---|---|---|
 | `external/faceunlock` | `external_faceunlock` | Face Unlock — необязательная дополнительная возможность |
-| `vendor/gms` | `vendor_gms` | GMS/Google Pixel Launcher — лицензия и Android17 продукт отдельно |
+| `vendor/gms` | `vendor_gms` | GitLab GMS; NexusLauncherRelease — только подтверждённый dexpreopt reference; источник APK и лицензия отдельно |
 
 ## Пять необязательных OEM-проектов (оригинальный PE14 default их не включал)
 
