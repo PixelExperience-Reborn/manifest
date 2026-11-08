@@ -42,7 +42,7 @@
 | Путь | Репозиторий оригинальной PE | AOSP17 путь | Решение |
 |---|---|---|---|
 | `external/faceunlock` | `external_faceunlock` | Нет | GitLab: необязательный Face Unlock; отложить |
-| `vendor/gms` | `vendor_gms` | Нет | GitLab: проприетарный GMS/Pixel Launcher; лицензия и Android17 совместимость отдельно |
+| `vendor/gms` | `vendor_gms` | Нет | GitLab: GMS; NexusLauncherRelease упомянут в dexpreopt, но источник APK не доказан; лицензия и Android17 отдельно |
 | `hardware/qcom/sdm845/data/ipacfg-mgr` | `hardware_qcom_sdm845_data_ipacfg-mgr` | Нет | Исторические Snapdragon 845 HAL; не переносить как платформенную основу |
 | `hardware/qcom/sdm845/display` | `hardware_qcom_sdm845_display` | Нет | Исторические Snapdragon 845 HAL; не переносить как платформенную основу |
 | `hardware/qcom/sdm845/media` | `hardware_qcom_sdm845_media` | Нет | Исторические Snapdragon 845 HAL; не переносить как платформенную основу |
