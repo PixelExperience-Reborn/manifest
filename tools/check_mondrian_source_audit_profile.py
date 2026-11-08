@@ -17,7 +17,7 @@ PROFILE = "aosp17_pe_mondrian_source_audit.xml"
 EXPECTED = {
     "device/xiaomi/mondrian": ("android_device_xiaomi_mondrian", "7e768d2b4f57dd1d4bc5595013c87c2c84c3ec54"),
     "device/xiaomi/sm8450-common": ("android_device_xiaomi_sm8450-common", "0a86a5aeb333c3bcb8be866a0db51f9f7743d55b"),
-    "kernel/xiaomi/sm8450": ("android_kernel_xiaomi_sm8450", "2c28c5613b03ac5fa130d10429afac279373ca43"),
+    "kernel/xiaomi/sm8450": ("android_kernel_xiaomi_sm8450", "5ecbda42e7997befc409b6ba752b2bd1c4d40559"),
     "kernel/xiaomi/sm8450-modules": ("android_kernel_xiaomi_sm8450-modules", "e2773bb698daf86f27aab3c04119e1e44c37d1ef"),
     "kernel/xiaomi/sm8450-devicetrees": ("android_kernel_xiaomi_sm8450-devicetrees", "49f561ecd8c18053e708697c78b4ce8997faee4a"),
 }
