@@ -1043,6 +1043,34 @@ class ManifestEntryPointTests(unittest.TestCase):
                 ValueError, "archived Android-target x86_64 GCC 4.9 excluded"):
             self.check()
 
+    def test_archived_qcom_display_commonsys_intf_cannot_enter_aosp17(self):
+        # Old QTI config V1..V11 and HIDL composer/mapper product list cannot
+        # provide the modern nondefault HWC3 candidate's config V12 + AIQE V2.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="vendor/qcom/opensource/commonsys-intf/display" '
+            'name="vendor_qcom_opensource_commonsys-intf_display" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "unreviewed Qualcomm display-commonsys-intf V11 source excluded"):
+            self.check()
+
+    def test_archived_qcom_display_commonsys_intf_alias_rejected(self):
+        # Aliasing the historical Qualcomm repo into a new checkout does not
+        # avoid source ownership/graphics ABI protection.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="vendor/qcom/alternate/display-interfaces" '
+            'name="android_vendor_qcom_opensource_commonsys-intf_display" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "unreviewed Qualcomm display-commonsys-intf V11 source excluded"):
+            self.check()
+
     def test_qualcomm_health_aidl_v5_pin_cannot_drift(self):
         self.rewrite(
             "aosp17_pe_p2_qcom_health_aidl_candidate.xml",
