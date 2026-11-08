@@ -991,6 +991,31 @@ class ManifestEntryPointTests(unittest.TestCase):
                 ValueError, "archived AArch64 GCC 4.9 excluded"):
             self.check()
 
+    def test_archived_arm32_gcc49_not_imported_into_aosp17(self):
+        # ARM32 GCC 4.9 was an old PE extra. The modern kernel may compile
+        # compat-vDSO with LLVM, but needs a separate validated toolchain.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9" '
+            'name="prebuilts_gcc_linux-x86_arm_arm-linux-androideabi-4.9" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(ValueError, "archived ARM32 GCC 4.9 excluded"):
+            self.check()
+
+    def test_archived_arm32_gcc49_alias_cannot_hide_at_other_checkout(self):
+        # Renaming a repo checkout cannot reintroduce unsupported old tools.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="prebuilts/old-compat-vdso" '
+            'name="android_prebuilts_gcc_linux-x86_arm_arm-linux-androideabi-4.9" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(ValueError, "archived ARM32 GCC 4.9 excluded"):
+            self.check()
+
     def test_qualcomm_health_aidl_v5_pin_cannot_drift(self):
         self.rewrite(
             "aosp17_pe_p2_qcom_health_aidl_candidate.xml",
