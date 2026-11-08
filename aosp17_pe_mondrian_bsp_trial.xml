@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+  <!-- PE-Reborn AOSP17 / mondrian SM8475: OPT-IN BUILD-SOURCE TRIAL ONLY.
+       The normal source-audit profile retains our own five PE repositories.
+       This overlay temporarily replaces the three PE audit-only kernel
+       paths with source-bearing LF52406 public hardware reference trees.
+       No third-party ROM product, Google binaries or Xiaomi vendor firmware
+       are imported. Never make this default or claim release eligibility.
+       Linux 5.10 GKI is NOT supported for Android17 QPR1+ by AOSP. -->
+  <include name="aosp17_pe_mondrian_source_audit.xml" />
+
+  <remove-project name="android_kernel_xiaomi_sm8450" />
+  <remove-project name="android_kernel_xiaomi_sm8450-modules" />
+  <remove-project name="android_kernel_xiaomi_sm8450-devicetrees" />
+
+  <remote name="lf-bsp-trial" fetch="https://github.com/LF52406" />
+
+  <project path="kernel/xiaomi/sm8450"
+           name="android_kernel_xiaomi_sm8450"
+           remote="lf-bsp-trial"
+           revision="283772ceb84491fd446e340fd211d45fb9dd9a36"
+           upstream="refs/heads/lineage-24.0"
+           groups="device,mondrian,notdefault" />
+  <project path="kernel/xiaomi/sm8450-modules"
+           name="android_kernel_xiaomi_sm8450-modules"
+           remote="lf-bsp-trial"
+           revision="91cdb1347970ae98291986926eb16bf1b172138e"
+           upstream="refs/heads/lineage-24.0"
+           groups="device,mondrian,notdefault" />
+  <project path="kernel/xiaomi/sm8450-devicetrees"
+           name="android_kernel_xiaomi_sm8450-devicetrees"
+           remote="lf-bsp-trial"
+           revision="99f1330d8dce0c80de5a19f425d0a118b2eb7fe3"
+           upstream="refs/heads/lineage-24.0"
+           groups="device,mondrian,notdefault" />
+</manifest>
