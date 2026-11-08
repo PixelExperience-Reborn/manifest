@@ -366,6 +366,29 @@ def reject_archived_kernel_clang12(profile, projects):
                 f"{profile}: archived Clang 12 r416183b excluded from AOSP17 base: {path}")
 
 
+
+# Archived PE AArch64 GCC 4.9 (2021) is NOT a valid AOSP17 platform compiler.
+# The old PE archive also carries GNU binutils aliases for a kernel-only
+# LLVM_IAS=0 fallback; select/test such tools in a separate kernel graph.
+# Ban the exact checkout path and historical repo aliases, not all host GCC.
+ARCHIVED_AARCH64_GCC49_PATHS = {
+    "prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9",
+}
+ARCHIVED_AARCH64_GCC49_NAMES = {
+    "prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9",
+    "prebuilts-gcc-linux-x86-aarch64-aarch64-linux-android-4.9",
+    "android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9",
+}
+
+
+def reject_archived_aarch64_gcc49(profile, projects):
+    for path, project in projects.items():
+        if (path in ARCHIVED_AARCH64_GCC49_PATHS or
+                project.get("name") in ARCHIVED_AARCH64_GCC49_NAMES):
+            raise ValueError(
+                f"{profile}: archived AArch64 GCC 4.9 excluded from AOSP17 base: {path}")
+
+
 def reject_mondrian_fm_source(profile, projects):
     for path, project in projects.items():
         if path in FM_SOURCE_PATHS or project.get("name") in FM_SOURCE_NAMES:
@@ -409,6 +432,9 @@ def resolve(filename: str, stack=()):
             if len(targets) != 1:
                 raise ValueError(f"{filename}: cannot uniquely remove {name}: {targets}")
             del projects[targets[0]]
+    # Every staged and candidate include resolves through this common exit.
+    # Reject a renamed archived GCC repo before owner/count checks.
+    reject_archived_aarch64_gcc49(filename, projects)
     return projects
 
 
