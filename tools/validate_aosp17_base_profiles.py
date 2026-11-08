@@ -535,6 +535,31 @@ def reject_archived_qcom_core_utils_sys(profile, projects):
                 f"{profile}: unreviewed Qualcomm core-utils-sys fwk-detect source excluded: {path}")
 
 
+
+# Historical Qualcomm core-utils-vendor from LA.VENDOR.13.2.0 QSPA AIDL:
+# the vendor.qti.hardware.qspa-V1-ndk module provider is absent from this
+# checkout, and CPU topology parsers have deterministic path/range defects.
+# Do not introduce an unqualified optional vendor HAL into the AOSP17
+# platform manifest. Modern independent QTI source is not blanket blocked.
+ARCHIVED_QCOM_CORE_UTILS_VENDOR_PATHS = {
+    "vendor/qcom/opensource/core-utils-vendor",
+}
+ARCHIVED_QCOM_CORE_UTILS_VENDOR_NAMES = {
+    "vendor_qcom_opensource_core-utils-vendor",
+    "vendor-qcom-opensource-core-utils-vendor",
+    "android_vendor_qcom_opensource_core-utils-vendor",
+    "vendor_qcom_opensource_core_utils_vendor",
+}
+
+
+def reject_archived_qcom_core_utils_vendor(profile, projects):
+    for path, project in projects.items():
+        if (path in ARCHIVED_QCOM_CORE_UTILS_VENDOR_PATHS or
+                project.get("name") in ARCHIVED_QCOM_CORE_UTILS_VENDOR_NAMES):
+            raise ValueError(
+                f"{profile}: unqualified QTI vendor core-utils QSPA source excluded: {path}")
+
+
 def reject_mondrian_fm_source(profile, projects):
     for path, project in projects.items():
         if path in FM_SOURCE_PATHS or project.get("name") in FM_SOURCE_NAMES:
@@ -587,6 +612,7 @@ def resolve(filename: str, stack=()):
     reject_archived_qcom_display_commonsys(filename, projects)
     reject_archived_qcom_qssi_core_utils(filename, projects)
     reject_archived_qcom_core_utils_sys(filename, projects)
+    reject_archived_qcom_core_utils_vendor(filename, projects)
     return projects
 
 
