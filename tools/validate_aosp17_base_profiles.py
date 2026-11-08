@@ -560,6 +560,31 @@ def reject_archived_qcom_core_utils_vendor(profile, projects):
                 f"{profile}: unqualified QTI vendor core-utils QSPA source excluded: {path}")
 
 
+
+# Historical 2023 Qualcomm Data Services RMNET checkout. It contains a
+# conditional legacy linux/rmnet_data.h API as well as rtnetlink, but its
+# Soong kernel-header providers and exact kernel/vendor ABI are not yet
+# resolved for the independent Android17 platform.
+# This blocks only this archived repository's path and known name aliases,
+# NOT a separately qualified modern Qualcomm RMNET implementation.
+ARCHIVED_QCOM_DATASERVICES_PATHS = {
+    "vendor/qcom/opensource/dataservices",
+}
+ARCHIVED_QCOM_DATASERVICES_NAMES = {
+    "vendor_qcom_opensource_dataservices",
+    "android_vendor_qcom_opensource_dataservices",
+    "vendor-qcom-opensource-dataservices",
+}
+
+
+def reject_archived_qcom_dataservices(profile, projects):
+    for path, project in projects.items():
+        if (path in ARCHIVED_QCOM_DATASERVICES_PATHS or
+                project.get("name") in ARCHIVED_QCOM_DATASERVICES_NAMES):
+            raise ValueError(
+                f"{profile}: unqualified historical Qualcomm RMNET dataservices excluded: {path}")
+
+
 def reject_mondrian_fm_source(profile, projects):
     for path, project in projects.items():
         if path in FM_SOURCE_PATHS or project.get("name") in FM_SOURCE_NAMES:
@@ -613,6 +638,7 @@ def resolve(filename: str, stack=()):
     reject_archived_qcom_qssi_core_utils(filename, projects)
     reject_archived_qcom_core_utils_sys(filename, projects)
     reject_archived_qcom_core_utils_vendor(filename, projects)
+    reject_archived_qcom_dataservices(filename, projects)
     return projects
 
 
