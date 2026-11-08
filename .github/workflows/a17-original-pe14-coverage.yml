@@ -52,7 +52,7 @@ jobs:
           python3 tools/audit_original_pe_fourteen_coverage.py \
             --original "$RUNNER_TEMP/original-pe14-manifest"
 
-      - name: Verify archived Pixel Launcher packaging from original vendor_aosp
+      - name: Verify original Google launcher dexpreopt references and GMS inclusion
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/original-pe14-product"
@@ -62,11 +62,12 @@ jobs:
           curl --fail --location --silent --show-error --retry 3 \
             "https://raw.githubusercontent.com/PixelExperience/vendor_aosp/5002afb5177d57e65248d1333312346b689a8802/config/rro_overlays.mk" \
             --output "$RUNNER_TEMP/original-pe14-product/overlays.mk"
+          grep -Fq 'PRODUCT_DEXPREOPT_SPEED_APPS +=' "$RUNNER_TEMP/original-pe14-product/common.mk"
           grep -Fq 'NexusLauncherRelease' "$RUNNER_TEMP/original-pe14-product/common.mk"
           grep -Fq 'SystemUIGoogle' "$RUNNER_TEMP/original-pe14-product/common.mk"
           grep -Fq 'vendor/gms/products/gms.mk' "$RUNNER_TEMP/original-pe14-product/common.mk"
           grep -Fq 'PixelLauncherCustomOverlay' "$RUNNER_TEMP/original-pe14-product/overlays.mk"
-          echo "PASS: PE14 NexusLauncherRelease came from GMS product packaging."
+          echo "PASS: PE14 lists Google launcher preopt and inherits GMS; APK installation/source not proven."
           echo "No proprietary Google applications downloaded or made part of AOSP17."
 
       - name: Clear test scope
