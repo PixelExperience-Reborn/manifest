@@ -13,13 +13,13 @@
   <project path="device/xiaomi/mondrian"
            name="android_device_xiaomi_mondrian"
            remote="reborn-mondrian"
-           revision="63b0d825d4294ca85e05467c207ad2b0ac1b68f7"
+           revision="7e768d2b4f57dd1d4bc5595013c87c2c84c3ec54"
            upstream="refs/heads/bringup/a17-mondrian-native-scaffold-20261108"
            groups="device,mondrian" />
   <project path="device/xiaomi/sm8450-common"
            name="android_device_xiaomi_sm8450-common"
            remote="reborn-mondrian"
-           revision="33faddef91540d8a676fac11e5c08e51b04bb327"
+           revision="30b898801e24d166dc60d988d38419787c3a4b72"
            upstream="refs/heads/bringup/a17-sm8450-common-native-scaffold-20261108"
            groups="device,mondrian" />
 
