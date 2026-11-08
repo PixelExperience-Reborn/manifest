@@ -67,6 +67,25 @@ def verify():
     require(not any("vendor/xiaomi" in c.get("path", "")
                     or c.get("path", "") == "hardware/xiaomi"
                     for c in ps), "proprietary or HAL source implicitly activated")
+    # The trial manifest is merely a transport for the same kernel/module/DT
+    # revisions recorded by our independently maintained kernel source lock.
+    import json
+    lock = json.loads((ROOT / "bsp_trial_lock.json").read_text(encoding="utf-8"))
+    expected_by_role = {
+        "kernel": "kernel/xiaomi/sm8450",
+        "modules": "kernel/xiaomi/sm8450-modules",
+        "devicetrees": "kernel/xiaomi/sm8450-devicetrees",
+    }
+    require(lock["status"] == "TRIAL_SOURCE_ONLY_NOT_SELECTED_FOR_RELEASE",
+            "trial source lock incorrectly promoted")
+    require(not any(lock["gates"].values()), "build gates incorrectly promoted")
+    for source in lock["sources"]:
+        path = expected_by_role[source["role"]]
+        actual = by_path[path]
+        require(actual.get("revision") == source["commit_sha"],
+                f"manifest and immutable BSP source lock disagree: {path}")
+        require("LF52406/" + actual.get("name") == source["repository"],
+                f"source lock repository owner changed: {path}")
     require(not any(c.tag == "project" for c in t if c.get("name", "").startswith("lineage_")),
             "a ROM product slipped into the trial")
     print("[PASS] independent PE AOSP17 device base preserved; three full LF BSP trees locked")
