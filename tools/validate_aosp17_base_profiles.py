@@ -486,6 +486,31 @@ def reject_archived_qcom_display_commonsys(profile, projects):
                 f"{profile}: unreviewed QSSI14 display-commonsys HIDL shims excluded: {path}")
 
 
+
+# Historical Qualcomm QSSI core-utils is a 2023 platform build wrapper,
+# not the official Android17 build/make, Soong, release, VINTF or boot-tools.
+# Its archive also tracks historical key-like signing material; do NOT
+# select the repo into any active or nondefault AOSP17 source profile.
+# Modern independently qualified Qualcomm components are not blocked.
+ARCHIVED_QCOM_QSSI_CORE_UTILS_PATHS = {
+    "vendor/qcom/opensource/core-utils",
+}
+ARCHIVED_QCOM_QSSI_CORE_UTILS_NAMES = {
+    "vendor_qcom_opensource_core-utils",
+    "vendor-qcom-opensource-core-utils",
+    "android_vendor_qcom_opensource_core-utils",
+    "vendor_qcom_opensource_core_utils",
+}
+
+
+def reject_archived_qcom_qssi_core_utils(profile, projects):
+    for path, project in projects.items():
+        if (path in ARCHIVED_QCOM_QSSI_CORE_UTILS_PATHS or
+                project.get("name") in ARCHIVED_QCOM_QSSI_CORE_UTILS_NAMES):
+            raise ValueError(
+                f"{profile}: archived QSSI14 core-utils build wrapper excluded from AOSP17: {path}")
+
+
 def reject_mondrian_fm_source(profile, projects):
     for path, project in projects.items():
         if path in FM_SOURCE_PATHS or project.get("name") in FM_SOURCE_NAMES:
@@ -536,6 +561,7 @@ def resolve(filename: str, stack=()):
     reject_archived_x86_64_android_gcc49(filename, projects)
     reject_archived_qcom_display_commonsys_intf(filename, projects)
     reject_archived_qcom_display_commonsys(filename, projects)
+    reject_archived_qcom_qssi_core_utils(filename, projects)
     return projects
 
 
