@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PROFILE = "aosp17_pe_mondrian_source_audit.xml"
 EXPECTED = {
     "device/xiaomi/mondrian": ("android_device_xiaomi_mondrian", "7e768d2b4f57dd1d4bc5595013c87c2c84c3ec54"),
-    "device/xiaomi/sm8450-common": ("android_device_xiaomi_sm8450-common", "fc0b15b55de763d9c34ecb0aba42ea45db0b740c"),
+    "device/xiaomi/sm8450-common": ("android_device_xiaomi_sm8450-common", "299b85d1910818a15748c597d3d7f2dc44afa78e"),
     "kernel/xiaomi/sm8450": ("android_kernel_xiaomi_sm8450", "5ecbda42e7997befc409b6ba752b2bd1c4d40559"),
     "kernel/xiaomi/sm8450-modules": ("android_kernel_xiaomi_sm8450-modules", "4646b3118363e3515970a58ab44f124eb4d23bd3"),
     "kernel/xiaomi/sm8450-devicetrees": ("android_kernel_xiaomi_sm8450-devicetrees", "fee9a766808bf21fcd7970d23b73ebce865fc4bf"),
