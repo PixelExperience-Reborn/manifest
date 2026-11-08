@@ -389,6 +389,29 @@ def reject_archived_aarch64_gcc49(profile, projects):
                 f"{profile}: archived AArch64 GCC 4.9 excluded from AOSP17 base: {path}")
 
 
+
+# Archived PixelExperience 32-bit ARM GCC 4.9, restored in 2020.
+# It is not needed by Android17 Soong and must not be enabled merely to
+# build ARM32 compat-vDSO. The mondrian Linux 5.10 CC_COMPAT/LD_COMPAT
+# path requires a separate, reproducible kernel-toolchain decision.
+ARCHIVED_ARM32_GCC49_PATHS = {
+    "prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9",
+}
+ARCHIVED_ARM32_GCC49_NAMES = {
+    "prebuilts_gcc_linux-x86_arm_arm-linux-androideabi-4.9",
+    "prebuilts-gcc-linux-x86-arm-arm-linux-androideabi-4.9",
+    "android_prebuilts_gcc_linux-x86_arm_arm-linux-androideabi-4.9",
+}
+
+
+def reject_archived_arm32_gcc49(profile, projects):
+    for path, project in projects.items():
+        if (path in ARCHIVED_ARM32_GCC49_PATHS or
+                project.get("name") in ARCHIVED_ARM32_GCC49_NAMES):
+            raise ValueError(
+                f"{profile}: archived ARM32 GCC 4.9 excluded from AOSP17 base: {path}")
+
+
 def reject_mondrian_fm_source(profile, projects):
     for path, project in projects.items():
         if path in FM_SOURCE_PATHS or project.get("name") in FM_SOURCE_NAMES:
@@ -435,6 +458,7 @@ def resolve(filename: str, stack=()):
     # Every staged and candidate include resolves through this common exit.
     # Reject a renamed archived GCC repo before owner/count checks.
     reject_archived_aarch64_gcc49(filename, projects)
+    reject_archived_arm32_gcc49(filename, projects)
     return projects
 
 
