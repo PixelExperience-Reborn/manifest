@@ -18,8 +18,8 @@ EXPECTED = {
     "device/xiaomi/mondrian": ("android_device_xiaomi_mondrian", "7e768d2b4f57dd1d4bc5595013c87c2c84c3ec54"),
     "device/xiaomi/sm8450-common": ("android_device_xiaomi_sm8450-common", "0a86a5aeb333c3bcb8be866a0db51f9f7743d55b"),
     "kernel/xiaomi/sm8450": ("android_kernel_xiaomi_sm8450", "5ecbda42e7997befc409b6ba752b2bd1c4d40559"),
-    "kernel/xiaomi/sm8450-modules": ("android_kernel_xiaomi_sm8450-modules", "e2773bb698daf86f27aab3c04119e1e44c37d1ef"),
-    "kernel/xiaomi/sm8450-devicetrees": ("android_kernel_xiaomi_sm8450-devicetrees", "49f561ecd8c18053e708697c78b4ce8997faee4a"),
+    "kernel/xiaomi/sm8450-modules": ("android_kernel_xiaomi_sm8450-modules", "4646b3118363e3515970a58ab44f124eb4d23bd3"),
+    "kernel/xiaomi/sm8450-devicetrees": ("android_kernel_xiaomi_sm8450-devicetrees", "fee9a766808bf21fcd7970d23b73ebce865fc4bf"),
 }
 VENDOR_SHA = "38bf62440be54eb86b4f5c6ccc888e467b5a9a53"
 SHA = re.compile(r"^[a-f0-9]{40}$")
