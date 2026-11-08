@@ -325,6 +325,26 @@ def reject_unreviewed_qcom_vibrator(profile, projects):
                 f"{profile}: unverified QTI Vibrator AIDL V2 source excluded: {path}")
 
 
+# WFD Commonsys is an archived vendor AAC wrapper, not a Miracast service.
+# Its C++ codec consumer and Android17 display/media deps are unverified.
+UNREVIEWED_QCOM_WFD_AAC_PATHS = {
+    "vendor/qcom/opensource/wfd-commonsys",
+}
+UNREVIEWED_QCOM_WFD_AAC_NAMES = {
+    "vendor_qcom_opensource_wfd-commonsys",
+    "vendor-qcom-opensource-wfd-commonsys",
+    "android_vendor_qcom_opensource_wfd-commonsys",
+}
+
+
+def reject_unreviewed_qcom_wfd_aac(profile, projects):
+    for path, project in projects.items():
+        if (path in UNREVIEWED_QCOM_WFD_AAC_PATHS or
+                project.get("name") in UNREVIEWED_QCOM_WFD_AAC_NAMES):
+            raise ValueError(
+                f"{profile}: unverified Qualcomm WFD AAC source excluded: {path}")
+
+
 def reject_mondrian_fm_source(profile, projects):
     for path, project in projects.items():
         if path in FM_SOURCE_PATHS or project.get("name") in FM_SOURCE_NAMES:
@@ -390,6 +410,7 @@ def validate():
     reject_unreviewed_qcom_thermal_header("aosp17_reference.xml", baseline)
     reject_unreviewed_qcom_usb("aosp17_reference.xml", baseline)
     reject_unreviewed_qcom_vibrator("aosp17_reference.xml", baseline)
+    reject_unreviewed_qcom_wfd_aac("aosp17_reference.xml", baseline)
     if len(baseline) != 1071:
         raise ValueError(f"unexpected base path count {len(baseline)}, expected 1071")
     if "vendor/aosp" in baseline:
@@ -423,6 +444,7 @@ def validate():
         reject_unreviewed_qcom_thermal_header(file, projects)
         reject_unreviewed_qcom_usb(file, projects)
         reject_unreviewed_qcom_vibrator(file, projects)
+        reject_unreviewed_qcom_wfd_aac(file, projects)
         # Report a forbidden legacy binary import before the generic count
         # check, so this failure remains actionable and regression-testable.
         if "prebuilts/extract-tools" in projects:
@@ -777,12 +799,14 @@ def validate():
         reject_unreviewed_qcom_thermal_header(name, graph)
         reject_unreviewed_qcom_usb(name, graph)
         reject_unreviewed_qcom_vibrator(name, graph)
+        reject_unreviewed_qcom_wfd_aac(name, graph)
     print("PASS: FM broadcast source excluded from mondrian AOSP17 profiles")
     print("PASS: archived mixed Qualcomm HIDL interfaces excluded from AOSP17 profiles")
     print("PASS: obsolete QTI Power AIDL V3 and fake ADPF excluded from AOSP17 profiles")
     print("PASS: unverified Qualcomm thermal client header excluded; real Thermal HAL untouched")
     print("PASS: archive USB HIDL services excluded; official AOSP17 USB AIDL owner preserved")
     print("PASS: unverified QTI Vibrator AIDL V2 excluded; official AOSP17 haptics API preserved")
+    print("PASS: unverified Qualcomm WFD AAC isolated; no Miracast feature implied")
     print("PASS: Qualcomm Health AIDL V5 source candidate isolated/pinned")
     print("PASS: experimental Qualcomm HWC3 AIDL display candidate isolated/pinned")
     print("PASS: modern Qualcomm-derived AIDL six-source stack isolated/pinned")
