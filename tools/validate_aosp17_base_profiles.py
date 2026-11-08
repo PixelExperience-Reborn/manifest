@@ -511,6 +511,30 @@ def reject_archived_qcom_qssi_core_utils(profile, projects):
                 f"{profile}: archived QSSI14 core-utils build wrapper excluded from AOSP17: {path}")
 
 
+
+# Historical Qualcomm core-utils-sys is a four-module fwk-detect shim for
+# two ro.vendor.qti.va_* properties. It is NOT an Android17 platform
+# framework dependency, AIDL interface, service provider or device tree.
+# A real consumer/Soong/partition policy needs independent qualification.
+ARCHIVED_QCOM_CORE_UTILS_SYS_PATHS = {
+    "vendor/qcom/opensource/core-utils-sys",
+}
+ARCHIVED_QCOM_CORE_UTILS_SYS_NAMES = {
+    "vendor_qcom_opensource_core-utils-sys",
+    "vendor-qcom-opensource-core-utils-sys",
+    "android_vendor_qcom_opensource_core-utils-sys",
+    "vendor_qcom_opensource_core_utils_sys",
+}
+
+
+def reject_archived_qcom_core_utils_sys(profile, projects):
+    for path, project in projects.items():
+        if (path in ARCHIVED_QCOM_CORE_UTILS_SYS_PATHS or
+                project.get("name") in ARCHIVED_QCOM_CORE_UTILS_SYS_NAMES):
+            raise ValueError(
+                f"{profile}: unreviewed Qualcomm core-utils-sys fwk-detect source excluded: {path}")
+
+
 def reject_mondrian_fm_source(profile, projects):
     for path, project in projects.items():
         if path in FM_SOURCE_PATHS or project.get("name") in FM_SOURCE_NAMES:
@@ -562,6 +586,7 @@ def resolve(filename: str, stack=()):
     reject_archived_qcom_display_commonsys_intf(filename, projects)
     reject_archived_qcom_display_commonsys(filename, projects)
     reject_archived_qcom_qssi_core_utils(filename, projects)
+    reject_archived_qcom_core_utils_sys(filename, projects)
     return projects
 
 
