@@ -345,6 +345,27 @@ def reject_unreviewed_qcom_wfd_aac(profile, projects):
                 f"{profile}: unverified Qualcomm WFD AAC source excluded: {path}")
 
 
+# Archived 2022 Clang 12.0.5 / Android 13 kernel prebuilt.
+# Never override AOSP17 host Clang and its build/soong version resolution.
+# Keep the historical PE toolchain in its original repository only.
+ARCHIVED_KERNEL_CLANG12_PATHS = {
+    "prebuilts/clang/kernel/linux-x86/clang-r416183b",
+}
+ARCHIVED_KERNEL_CLANG12_NAMES = {
+    "prebuilts_clang_kernel_linux-x86_clang-r416183b",
+    "prebuilts-clang-kernel-linux-x86-clang-r416183b",
+    "android_prebuilts_clang_kernel_linux-x86_clang-r416183b",
+}
+
+
+def reject_archived_kernel_clang12(profile, projects):
+    for path, project in projects.items():
+        if (path in ARCHIVED_KERNEL_CLANG12_PATHS or
+                project.get("name") in ARCHIVED_KERNEL_CLANG12_NAMES):
+            raise ValueError(
+                f"{profile}: archived Clang 12 r416183b excluded from AOSP17 base: {path}")
+
+
 def reject_mondrian_fm_source(profile, projects):
     for path, project in projects.items():
         if path in FM_SOURCE_PATHS or project.get("name") in FM_SOURCE_NAMES:
@@ -411,6 +432,7 @@ def validate():
     reject_unreviewed_qcom_usb("aosp17_reference.xml", baseline)
     reject_unreviewed_qcom_vibrator("aosp17_reference.xml", baseline)
     reject_unreviewed_qcom_wfd_aac("aosp17_reference.xml", baseline)
+    reject_archived_kernel_clang12("aosp17_reference.xml", baseline)
     if len(baseline) != 1071:
         raise ValueError(f"unexpected base path count {len(baseline)}, expected 1071")
     if "vendor/aosp" in baseline:
@@ -445,6 +467,7 @@ def validate():
         reject_unreviewed_qcom_usb(file, projects)
         reject_unreviewed_qcom_vibrator(file, projects)
         reject_unreviewed_qcom_wfd_aac(file, projects)
+        reject_archived_kernel_clang12(file, projects)
         # Report a forbidden legacy binary import before the generic count
         # check, so this failure remains actionable and regression-testable.
         if "prebuilts/extract-tools" in projects:
@@ -800,6 +823,7 @@ def validate():
         reject_unreviewed_qcom_usb(name, graph)
         reject_unreviewed_qcom_vibrator(name, graph)
         reject_unreviewed_qcom_wfd_aac(name, graph)
+        reject_archived_kernel_clang12(name, graph)
     print("PASS: FM broadcast source excluded from mondrian AOSP17 profiles")
     print("PASS: archived mixed Qualcomm HIDL interfaces excluded from AOSP17 profiles")
     print("PASS: obsolete QTI Power AIDL V3 and fake ADPF excluded from AOSP17 profiles")
@@ -807,6 +831,7 @@ def validate():
     print("PASS: archive USB HIDL services excluded; official AOSP17 USB AIDL owner preserved")
     print("PASS: unverified QTI Vibrator AIDL V2 excluded; official AOSP17 haptics API preserved")
     print("PASS: unverified Qualcomm WFD AAC isolated; no Miracast feature implied")
+    print("PASS: legacy Clang 12 r416183b excluded; official AOSP17 host LLVM owner untouched")
     print("PASS: Qualcomm Health AIDL V5 source candidate isolated/pinned")
     print("PASS: experimental Qualcomm HWC3 AIDL display candidate isolated/pinned")
     print("PASS: modern Qualcomm-derived AIDL six-source stack isolated/pinned")
