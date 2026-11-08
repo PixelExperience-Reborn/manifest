@@ -27,7 +27,7 @@
   <project path="kernel/xiaomi/sm8450"
            name="android_kernel_xiaomi_sm8450"
            remote="reborn-mondrian"
-           revision="2c28c5613b03ac5fa130d10429afac279373ca43"
+           revision="5ecbda42e7997befc409b6ba752b2bd1c4d40559"
            upstream="refs/heads/audit/a17-mondrian-kernel-bsp-provenance-20261108"
            groups="device,mondrian" />
   <project path="kernel/xiaomi/sm8450-modules"
