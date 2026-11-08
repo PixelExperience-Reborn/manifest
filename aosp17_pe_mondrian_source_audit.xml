@@ -33,13 +33,13 @@
   <project path="kernel/xiaomi/sm8450-modules"
            name="android_kernel_xiaomi_sm8450-modules"
            remote="reborn-mondrian"
-           revision="e2773bb698daf86f27aab3c04119e1e44c37d1ef"
+           revision="4646b3118363e3515970a58ab44f124eb4d23bd3"
            upstream="refs/heads/audit/a17-mondrian-module-kmi-contract-20261108"
            groups="device,mondrian" />
   <project path="kernel/xiaomi/sm8450-devicetrees"
            name="android_kernel_xiaomi_sm8450-devicetrees"
            remote="reborn-mondrian"
-           revision="49f561ecd8c18053e708697c78b4ce8997faee4a"
+           revision="fee9a766808bf21fcd7970d23b73ebce865fc4bf"
            upstream="refs/heads/audit/a17-mondrian-dtbo-contract-20261108"
            groups="device,mondrian" />
 </manifest>
