@@ -461,6 +461,31 @@ def reject_archived_qcom_display_commonsys_intf(profile, projects):
                 f"{profile}: unreviewed Qualcomm display-commonsys-intf V11 source excluded: {path}")
 
 
+
+# QSSI14 historical display-commonsys is a three-shim HIDL client set:
+# libgralloc.system.qti -> android.hardware.graphics.mapper@4.0,
+# libdisplayconfig.system.qti -> vendor.display.config@2.0, plus old
+# libqdMetaData.system. Its Soong namespace imports the separate archived
+# commonsys-intf/display tree; neither is independently qualified for AOSP17.
+# This does NOT deny current AOSP graphics HALs or a validated new QTI port.
+ARCHIVED_QCOM_DISPLAY_COMMONSYS_PATHS = {
+    "vendor/qcom/opensource/commonsys/display",
+}
+ARCHIVED_QCOM_DISPLAY_COMMONSYS_NAMES = {
+    "vendor_qcom_opensource_commonsys_display",
+    "vendor-qcom-opensource-commonsys-display",
+    "android_vendor_qcom_opensource_commonsys_display",
+}
+
+
+def reject_archived_qcom_display_commonsys(profile, projects):
+    for path, project in projects.items():
+        if (path in ARCHIVED_QCOM_DISPLAY_COMMONSYS_PATHS or
+                project.get("name") in ARCHIVED_QCOM_DISPLAY_COMMONSYS_NAMES):
+            raise ValueError(
+                f"{profile}: unreviewed QSSI14 display-commonsys HIDL shims excluded: {path}")
+
+
 def reject_mondrian_fm_source(profile, projects):
     for path, project in projects.items():
         if path in FM_SOURCE_PATHS or project.get("name") in FM_SOURCE_NAMES:
@@ -510,6 +535,7 @@ def resolve(filename: str, stack=()):
     reject_archived_arm32_gcc49(filename, projects)
     reject_archived_x86_64_android_gcc49(filename, projects)
     reject_archived_qcom_display_commonsys_intf(filename, projects)
+    reject_archived_qcom_display_commonsys(filename, projects)
     return projects
 
 
