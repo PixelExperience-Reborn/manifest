@@ -18,7 +18,8 @@ OPTIONAL = "snippets/pixel-extras-dependencies.xml"
 MATRIX = "docs/ANDROID_17_135_REPOSITORY_PORT_MATRIX.md"
 PROJECT_PATTERN = re.compile(
     r"^\|\s*P[0-3]\s*\|\s*\x60([^\x60]+)\x60\s*\|"
-    r"\s*\[([^\]]+)\]\(https://github\.com/PixelExperience-Reborn/([^)]+)\)"
+    r"\s*\[([^\]]+)\]\(https://github\.com/PixelExperience-Reborn/([^/)]+)"
+    r"(?:/tree/[^)]*)?\)"
 )
 
 
