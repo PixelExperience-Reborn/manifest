@@ -940,6 +940,30 @@ class ManifestEntryPointTests(unittest.TestCase):
                 ValueError, "unverified Qualcomm WFD AAC source excluded"):
             self.check()
 
+    def test_archived_clang_12_not_mistaken_for_aosp17_platform_toolchain(self):
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="prebuilts/clang/kernel/linux-x86/clang-r416183b" '
+            'name="prebuilts_clang_kernel_linux-x86_clang-r416183b" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "archived Clang 12 r416183b excluded"):
+            self.check()
+
+    def test_archived_clang_12_renamed_path_cannot_bypass_base_gate(self):
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="prebuilts/clang/host/legacy-kernel-toolchain" '
+            'name="android_prebuilts_clang_kernel_linux-x86_clang-r416183b" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "archived Clang 12 r416183b excluded"):
+            self.check()
+
     def test_qualcomm_health_aidl_v5_pin_cannot_drift(self):
         self.rewrite(
             "aosp17_pe_p2_qcom_health_aidl_candidate.xml",
