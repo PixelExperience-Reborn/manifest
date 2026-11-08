@@ -1,0 +1,76 @@
+name: AOSP17 original PE14 completeness and launcher provenance
+
+on:
+  push:
+    branches:
+      - port/a17-aosp17-manifest-20261102
+    paths:
+      - 'tools/audit_original_pe_fourteen_coverage.py'
+      - 'docs/ANDROID_17_ORIGINAL_PE14_REPOSITORY_COVERAGE_AUDIT.md'
+      - 'docs/ANDROID_17_135_REPOSITORY_PORT_MATRIX.md'
+      - 'aosp17_reference.xml'
+      - '.github/workflows/a17-original-pe14-coverage.yml'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-original-pe14-manifest-scope:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout current independent AOSP17 manifest
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          filter: blob:none
+
+      - name: Verify current 135 selected PE projects and profile boundaries
+        run: |
+          set -euo pipefail
+          python3 tools/validate_135_repository_matrix.py
+          python3 tools/validate_aosp17_base_profiles.py
+          python3 -m unittest discover -s tools -p test_aosp17_manifest_entrypoint.py -v
+
+      - name: Fetch original PixelExperience Android14 MANIFEST only, pinned commit
+        run: |
+          set -euo pipefail
+          git init -q "$RUNNER_TEMP/original-pe14-manifest"
+          git -C "$RUNNER_TEMP/original-pe14-manifest" remote add origin \
+            https://github.com/PixelExperience/manifest.git
+          git -C "$RUNNER_TEMP/original-pe14-manifest" fetch -q --depth 1 origin \
+            136aee696422bda841eb5c6a3c9279bbb6bbef02
+          git -C "$RUNNER_TEMP/original-pe14-manifest" checkout -q --detach FETCH_HEAD
+          test "$(git -C "$RUNNER_TEMP/original-pe14-manifest" rev-parse HEAD)" = \
+            "136aee696422bda841eb5c6a3c9279bbb6bbef02"
+          echo "Original PE14 manifest is pinned to March 6 2024."
+
+      - name: Compare main PE14 185, selected 135, omitted 50 and optional OEM 5
+        run: |
+          set -euo pipefail
+          python3 tools/audit_original_pe_fourteen_coverage.py \
+            --original "$RUNNER_TEMP/original-pe14-manifest"
+
+      - name: Verify archived Pixel Launcher packaging from original vendor_aosp
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/original-pe14-product"
+          curl --fail --location --silent --show-error --retry 3 \
+            "https://raw.githubusercontent.com/PixelExperience/vendor_aosp/5002afb5177d57e65248d1333312346b689a8802/config/common.mk" \
+            --output "$RUNNER_TEMP/original-pe14-product/common.mk"
+          curl --fail --location --silent --show-error --retry 3 \
+            "https://raw.githubusercontent.com/PixelExperience/vendor_aosp/5002afb5177d57e65248d1333312346b689a8802/config/rro_overlays.mk" \
+            --output "$RUNNER_TEMP/original-pe14-product/overlays.mk"
+          grep -Fq 'NexusLauncherRelease' "$RUNNER_TEMP/original-pe14-product/common.mk"
+          grep -Fq 'SystemUIGoogle' "$RUNNER_TEMP/original-pe14-product/common.mk"
+          grep -Fq 'vendor/gms/products/gms.mk' "$RUNNER_TEMP/original-pe14-product/common.mk"
+          grep -Fq 'PixelLauncherCustomOverlay' "$RUNNER_TEMP/original-pe14-product/overlays.mk"
+          echo "PASS: PE14 NexusLauncherRelease came from GMS product packaging."
+          echo "No proprietary Google applications downloaded or made part of AOSP17."
+
+      - name: Clear test scope
+        run: |
+          echo "Historical source inventory was compared to original PE14 read-only."
+          echo "135/135 is ONLY the preselected fork audit, not the complete 185 PE14 projects."
+          echo "No Launcher3 or GMS APK adopted; no full repo sync, Soong or ROM build."
