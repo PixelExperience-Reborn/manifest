@@ -3,6 +3,8 @@
 **Дата проверки:** 2026-11-08. **Исходник:** [PixelExperience/manifest](https://github.com/PixelExperience/manifest/tree/136aee696422bda841eb5c6a3c9279bbb6bbef02), pinned commit `136aee696422bda841eb5c6a3c9279bbb6bbef02` (2024-03-06).
 **Сопоставление:** [матрица 135 PE-Reborn](ANDROID_17_135_REPOSITORY_PORT_MATRIX.md) на ветке `port/a17-aosp17-manifest-20261102`; официальный [`aosp17_reference.xml`](../aosp17_reference.xml) закреплён на Android `android-17.0.0_r1`.
 
+**Полный аудит публичной GitHub-организации:** [373 оригинальных репозитория против 135 форков PE-Reborn, классификация отсутствующих 238](ANDROID_17_ORIGINAL_PE_GITHUB_373_REPOSITORY_GAP_AUDIT.md). Ни одно из этих чисел не является оценкой готовности прошивки.
+
 ## Уточнение границ прежнего аудита
 
 - **185** объявлений project в трёх сниппетах исходной PE14, непосредственно включённых оригинальным `default.xml`: 71 `pixel.xml`, 29 `pixel-extras.xml`, 85 `pixel-caf.xml`.
