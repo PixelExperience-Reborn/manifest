@@ -435,6 +435,32 @@ def reject_archived_x86_64_android_gcc49(profile, projects):
                 f"{profile}: archived Android-target x86_64 GCC 4.9 excluded from AOSP17 base: {path}")
 
 
+
+# Archived 2024 QTI display-commonsys-intf (AIDL display.config V1..V11,
+# vendor composer3 extension V1 importing platform Composer3 V2). Its
+# product templates still package HIDL Composer2 and Mapper4; it cannot
+# supply the modern nondefault Qualcomm display candidate's display.config
+# V12 + AIQE V2 and does not contain SDM/DRM/Composer3 service sources.
+# Block the old repo's path AND aliases in EVERY resolved AOSP17 graph.
+ARCHIVED_QCOM_DISPLAY_COMMONSYS_INTF_PATHS = {
+    "vendor/qcom/opensource/commonsys-intf/display",
+}
+ARCHIVED_QCOM_DISPLAY_COMMONSYS_INTF_NAMES = {
+    "vendor_qcom_opensource_commonsys-intf_display",
+    "vendor-qcom-opensource-commonsys-intf-display",
+    "android_vendor_qcom_opensource_commonsys-intf_display",
+    "vendor_qcom_opensource_commonsys_intf_display",
+}
+
+
+def reject_archived_qcom_display_commonsys_intf(profile, projects):
+    for path, project in projects.items():
+        if (path in ARCHIVED_QCOM_DISPLAY_COMMONSYS_INTF_PATHS or
+                project.get("name") in ARCHIVED_QCOM_DISPLAY_COMMONSYS_INTF_NAMES):
+            raise ValueError(
+                f"{profile}: unreviewed Qualcomm display-commonsys-intf V11 source excluded: {path}")
+
+
 def reject_mondrian_fm_source(profile, projects):
     for path, project in projects.items():
         if path in FM_SOURCE_PATHS or project.get("name") in FM_SOURCE_NAMES:
@@ -483,6 +509,7 @@ def resolve(filename: str, stack=()):
     reject_archived_aarch64_gcc49(filename, projects)
     reject_archived_arm32_gcc49(filename, projects)
     reject_archived_x86_64_android_gcc49(filename, projects)
+    reject_archived_qcom_display_commonsys_intf(filename, projects)
     return projects
 
 
