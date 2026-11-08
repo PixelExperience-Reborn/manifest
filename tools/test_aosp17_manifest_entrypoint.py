@@ -1099,6 +1099,33 @@ class ManifestEntryPointTests(unittest.TestCase):
                 ValueError, "unreviewed QSSI14 display-commonsys HIDL shims excluded"):
             self.check()
 
+    def test_archived_qssi14_core_utils_not_imported_into_aosp17(self):
+        # The 2023 Qualcomm QSSI wrapper would shadow/reintroduce unreviewed
+        # build scripts, VINTF and signing material. Preserve Google AOSP17.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="vendor/qcom/opensource/core-utils" '
+            'name="vendor_qcom_opensource_core-utils" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "archived QSSI14 core-utils build wrapper excluded"):
+            self.check()
+
+    def test_archived_qssi14_core_utils_alias_does_not_bypass_guard(self):
+        # An alias at another path is still the archived build-wrapper source.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="vendor/qcom/experimental/qssi-utils" '
+            'name="android_vendor_qcom_opensource_core-utils" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "archived QSSI14 core-utils build wrapper excluded"):
+            self.check()
+
     def test_qualcomm_health_aidl_v5_pin_cannot_drift(self):
         self.rewrite(
             "aosp17_pe_p2_qcom_health_aidl_candidate.xml",
