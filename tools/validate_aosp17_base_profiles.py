@@ -412,6 +412,29 @@ def reject_archived_arm32_gcc49(profile, projects):
                 f"{profile}: archived ARM32 GCC 4.9 excluded from AOSP17 base: {path}")
 
 
+
+# Historical 2021 PixelExperience x86_64 ANDROID-TARGET GCC 4.9.
+# This is not the official x86_64 Linux HOST GCC4.8 in AOSP17. Do not
+# import obsolete target binaries or broken GCC Python-wrapper chains.
+# Mondrian is ARM64; any future x86 emulator target needs separate review.
+ARCHIVED_X86_64_ANDROID_GCC49_PATHS = {
+    "prebuilts/gcc/linux-x86/x86/x86_64-linux-android-4.9",
+}
+ARCHIVED_X86_64_ANDROID_GCC49_NAMES = {
+    "prebuilts_gcc_linux-x86_x86_x86_64-linux-android-4.9",
+    "prebuilts-gcc-linux-x86-x86-x86_64-linux-android-4.9",
+    "android_prebuilts_gcc_linux-x86_x86_x86_64-linux-android-4.9",
+}
+
+
+def reject_archived_x86_64_android_gcc49(profile, projects):
+    for path, project in projects.items():
+        if (path in ARCHIVED_X86_64_ANDROID_GCC49_PATHS or
+                project.get("name") in ARCHIVED_X86_64_ANDROID_GCC49_NAMES):
+            raise ValueError(
+                f"{profile}: archived Android-target x86_64 GCC 4.9 excluded from AOSP17 base: {path}")
+
+
 def reject_mondrian_fm_source(profile, projects):
     for path, project in projects.items():
         if path in FM_SOURCE_PATHS or project.get("name") in FM_SOURCE_NAMES:
@@ -459,6 +482,7 @@ def resolve(filename: str, stack=()):
     # Reject a renamed archived GCC repo before owner/count checks.
     reject_archived_aarch64_gcc49(filename, projects)
     reject_archived_arm32_gcc49(filename, projects)
+    reject_archived_x86_64_android_gcc49(filename, projects)
     return projects
 
 
