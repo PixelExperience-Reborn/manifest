@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+  <!-- P0: exact official AOSP 17 Connectivity source tree, zero PE functional
+       modifications. Old TrafficStats / DUN patches are intentionally absent.
+       Not a compiled Android/NetworkStack module or an on-device test. -->
+  <include name="aosp17_pe_p0_bluetooth.xml" />
+  <remove-project name="platform/packages/modules/Connectivity" />
+  <remote name="reborn-connectivity" fetch="https://github.com/PixelExperience-Reborn" />
+  <project path="packages/modules/Connectivity" name="packages_modules_Connectivity"
+           remote="reborn-connectivity" revision="701882b51546230c6c32c9654a3f7b9814429e13"
+           upstream="refs/heads/port/a17-connectivity-aosp17-base-20261103"
+           groups="pdk-cw-fs,pdk-fs" />
+</manifest>

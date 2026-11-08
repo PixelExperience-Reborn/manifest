@@ -1,0 +1,66 @@
+name: AOSP17 P1 telephony exact source sync
+
+on:
+  push:
+    branches:
+      - port/a17-aosp17-manifest-20261102
+    paths:
+      - aosp17_pe_p1_telephony.xml
+      - .github/workflows/aosp17-p1-telephony-source-sync.yml
+  pull_request:
+    paths:
+      - aosp17_pe_p1_telephony.xml
+      - .github/workflows/aosp17-p1-telephony-source-sync.yml
+
+permissions:
+  contents: read
+
+jobs:
+  source-sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 85
+    steps:
+      - name: Download official Android repo client
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fLsS --retry 4 https://storage.googleapis.com/git-repo-downloads/repo \
+            -o "$RUNNER_TEMP/repo"
+          chmod +x "$RUNNER_TEMP/repo"
+      - name: Initialize reviewed P1 telephony source manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/aosp"
+          cd "$RUNNER_TEMP/aosp"
+          "$RUNNER_TEMP/repo" init -q --no-clone-bundle --partial-clone \
+            --clone-filter=blob:none \
+            -u https://github.com/PixelExperience-Reborn/manifest \
+            -b port/a17-aosp17-manifest-20261102 -m aosp17_pe_p1_telephony.xml
+      - name: Sync only the pinned official AOSP17 telephony source
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/aosp"
+          "$RUNNER_TEMP/repo" sync -c -j2 --no-tags --fail-fast frameworks/opt/telephony
+      - name: Verify immutable telephony snapshot, original tree and IMS source behavior
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/aosp/frameworks/opt/telephony"
+          test "$(git rev-parse HEAD)" = "548270c2e6ab41b036c670339fa0d4b04ca1ed59"
+          test "$(git rev-parse 'HEAD^{tree}')" = "84cdeedb201966bab5b28548a92b5e5e814c34bf"
+          python3 - <<'PY'
+          from pathlib import Path
+          root = Path("src/java/com/android/internal/telephony")
+          radio = (root / "RadioMessagingProxy.java").read_text()
+          assert "public void sendImsSms(" in radio
+          assert "cdmaPdu != null" in radio
+          ims = (root / "imsphone/ImsPhoneCallTracker.java").read_text()
+          assert "executeAndWaitForReturn(()-> processIncomingCall(c, callId, extras))" in ims
+          assert "ro.telephony.block_binder_thread_on_incoming_calls" not in ims
+          assert not (root / "SubscriptionController.java").exists()
+          assert (root / "subscription/SubscriptionManagerService.java").is_file()
+          print("PASS: unchanged official AOSP17 telephony source; no PE IMS legacy bypass")
+          PY
+          echo "PASS: exact Android17 telephony Git tree and revision"

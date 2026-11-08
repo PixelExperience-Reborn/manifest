@@ -1,0 +1,63 @@
+name: AOSP17 P0 system/sepolicy exact-source sync
+
+on:
+  push:
+    branches:
+      - port/a17-aosp17-manifest-20261102
+    paths:
+      - aosp17_pe_p0_sepolicy.xml
+      - .github/workflows/aosp17-p0-sepolicy-source-sync.yml
+  pull_request:
+    paths:
+      - aosp17_pe_p0_sepolicy.xml
+      - .github/workflows/aosp17-p0-sepolicy-source-sync.yml
+
+permissions:
+  contents: read
+
+jobs:
+  source-sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Fetch official Android repo launcher
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fLsS --retry 4 \
+            https://storage.googleapis.com/git-repo-downloads/repo \
+            -o "$RUNNER_TEMP/repo"
+          chmod +x "$RUNNER_TEMP/repo"
+      - name: Initialize opt-in AOSP17 SELinux profile
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/aosp"
+          cd "$RUNNER_TEMP/aosp"
+          "$RUNNER_TEMP/repo" init -q --no-clone-bundle --partial-clone \
+            --clone-filter=blob:none \
+            -u https://github.com/PixelExperience-Reborn/manifest \
+            -b port/a17-aosp17-manifest-20261102 -m aosp17_pe_p0_sepolicy.xml
+      - name: Sync only the exact AOSP17 system/sepolicy source
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/aosp"
+          "$RUNNER_TEMP/repo" sync -c -j2 --no-tags --fail-fast system/sepolicy
+      - name: Verify immutable AOSP17 tree and essential SELinux source restrictions
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/aosp/system/sepolicy"
+          test "$(git rev-parse HEAD)" = "f12e84e0ba4fe3d1cc093af15c41ceb8dba8cc69"
+          test "$(git rev-parse 'HEAD^{tree}')" = "f0e857a84958d5472dee9187c54f7b4f191a415a"
+          python3 - <<'PY'
+          from pathlib import Path
+          vold = Path("private/vold.te").read_text()
+          assert "FS_IOC_ADD_ENCRYPTION_KEY" in vold
+          assert "FS_IOC_REMOVE_ENCRYPTION_KEY" in vold
+          wifi = Path("private/property_contexts").read_text()
+          assert "wifi.interface.           u:object_r:wifi_hal_prop:s0 prefix string" in wifi
+          print("PASS: official AOSP17 FBE encryption key limits and Wi-Fi HAL labels remain")
+          PY
+          echo "PASS: exact system/sepolicy tree confirmed, no PE policy relaxation"

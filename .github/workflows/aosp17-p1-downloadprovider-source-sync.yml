@@ -1,0 +1,99 @@
+name: AOSP17 P1 DownloadProvider exact-source audit
+
+on:
+  push:
+    branches:
+      - port/a17-aosp17-manifest-20261102
+    paths:
+      - aosp17_reference.xml
+      - aosp17_pe_p1_timezonepicker.xml
+      - .github/workflows/aosp17-p1-downloadprovider-source-sync.yml
+  pull_request:
+    paths:
+      - aosp17_reference.xml
+      - aosp17_pe_p1_timezonepicker.xml
+      - .github/workflows/aosp17-p1-downloadprovider-source-sync.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 80
+    steps:
+      - name: Fetch official Android repo launcher
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fLsS --retry 4 https://storage.googleapis.com/git-repo-downloads/repo -o "$RUNNER_TEMP/repo"
+          chmod +x "$RUNNER_TEMP/repo"
+      - name: Resolve staged P1 source graph
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/aosp"
+          cd "$RUNNER_TEMP/aosp"
+          "$RUNNER_TEMP/repo" init -q --no-clone-bundle --partial-clone --clone-filter=blob:none \
+            -u https://github.com/PixelExperience-Reborn/manifest \
+            -b port/a17-aosp17-manifest-20261102 -m aosp17_pe_p1_timezonepicker.xml
+          "$RUNNER_TEMP/repo" manifest -o "$RUNNER_TEMP/effective.xml"
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          root = ET.parse(Path(os.environ["RUNNER_TEMP"]) / "effective.xml").getroot()
+          names = {p.get("path") or p.get("name"): p.get("name") for p in root.findall("project")}
+          assert names.get("packages/providers/DownloadProvider") == "platform/packages/providers/DownloadProvider"
+          assert "packages_providers_DownloadProvider" not in names.values()
+          assert names.get("packages/providers/MediaProvider") == "platform/packages/providers/MediaProvider"
+          print("PASS: official Android17 DownloadProvider and MediaProvider source selections")
+          PY
+      - name: Sync exact official DownloadProvider
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/aosp"
+          "$RUNNER_TEMP/repo" sync -c -j2 --no-tags --fail-fast packages/providers/DownloadProvider
+      - name: Validate immutable source and privileged provider contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/aosp/packages/providers/DownloadProvider"
+          test "$(git rev-parse HEAD)" = "20f95c184971841ba7c7fa9a74eeb0bb8cd5d8b2"
+          test "$(git rev-parse 'HEAD^{tree}')" = "8076bd37e0bb5a2fd62cff113e501075f21d68f4"
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          bp = Path("Android.bp").read_text()
+          assert 'name: "DownloadProvider"' in bp
+          assert 'certificate: "media"' in bp
+          assert 'privileged: true' in bp
+          assert '"com.android.providers.downloads.flags-aconfig-java"' in bp
+          assert 'release_flag("RELEASE_CONSCRYPT_NSC")' in bp
+          assert '"framework-conscrypt-nsc.stubs"' in bp
+          assert '"framework-connectivity.stubs.module_lib"' in bp
+          root = ET.parse("AndroidManifest.xml").getroot()
+          ns = "{http://schemas.android.com/apk/res/android}"
+          assert root.get("package") == "com.android.providers.downloads"
+          assert root.get(ns+"sharedUserId") == "android.media"
+          permissions = {x.get(ns+"name") for x in root.findall("uses-permission")}
+          assert "android.permission.RUN_USER_INITIATED_JOBS" in permissions
+          providers = {p.get(ns+"authorities"): p for p in root.findall("./application/provider")}
+          assert "downloads" in providers
+          assert "com.android.providers.downloads.documents" in providers
+          assert providers["downloads"].get(ns+"exported") == "true"
+          assert providers["com.android.providers.downloads.documents"].get(ns+"permission") == "android.permission.MANAGE_DOCUMENTS"
+          assert any(x.get(ns+"pathPrefix") == "/all_downloads" and
+                     x.get(ns+"permission") == "android.permission.ACCESS_ALL_DOWNLOADS"
+                     for x in providers["downloads"].findall("path-permission"))
+          notifier = Path("src/com/android/providers/downloads/DownloadNotifier.java").read_text()
+          assert "com.android.providers.downloads.flags.Flags" in notifier
+          assert "JobParameters" in notifier
+          constants = Path("src/com/android/providers/downloads/Constants.java").read_text()
+          assert "ACTION_RESUME_QUEUE" not in constants
+          assert "ACTION_PAUSE" not in constants
+          print("PASS: exact official Android17 DownloadProvider source/Soong/manifest contracts")
+          print("NOT TESTED: AOSP17 Soong APK, CTS provider tests, download DB/URI operations or mondrian")
+          PY

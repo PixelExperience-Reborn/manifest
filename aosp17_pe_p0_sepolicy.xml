@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+  <!-- P0: exact official AOSP17 SELinux policy. No old PE neverallow
+       exemptions, fsck_untrusted sys_admin grants or recovery privilege
+       relaxations are included. Device policy and VTS not verified. -->
+  <include name="aosp17_pe_p0_security.xml" />
+  <remove-project name="platform/system/sepolicy" />
+  <remote name="reborn-sepolicy" fetch="https://github.com/PixelExperience-Reborn" />
+  <project path="system/sepolicy" name="system_sepolicy"
+           remote="reborn-sepolicy" revision="f12e84e0ba4fe3d1cc093af15c41ceb8dba8cc69"
+           upstream="refs/heads/port/a17-sepolicy-aosp17-base-20261103"
+           groups="pdk" />
+</manifest>

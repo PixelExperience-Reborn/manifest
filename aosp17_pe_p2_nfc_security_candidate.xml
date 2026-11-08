@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+  <!-- EXPERIMENTAL SOURCE-ONLY NFC SECURITY CANDIDATE, NOT default.xml.
+       Official Android 17 NFC newer AOSP branch tag, reviewed separately.
+       android-security-17.0.0_r3 tag date alone does NOT prove inclusion
+       of every November 2026 Android security bulletin patch.
+       Do not ship or set ro.build.version.security_patch from this profile.
+       Complete upstream vulnerability/ABI/APEX, Java/Soong, CTS/VTS review
+       and actual mondrian NFC/SE testing are NOT done. -->
+  <include name="aosp17_pe_p2_kernel_configs.xml" />
+  <remove-project name="platform/packages/modules/Nfc" />
+  <project path="packages/modules/Nfc" name="platform/packages/modules/Nfc"
+           remote="aosp"
+           revision="6f3a074cf6c87a2dcc3970c03462a6970b06f9cd"
+           upstream="refs/tags/android-security-17.0.0_r3"
+           groups="pdk-cw-fs,pdk-fs" />
+</manifest>

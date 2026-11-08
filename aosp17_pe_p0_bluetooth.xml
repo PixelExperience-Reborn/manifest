@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+  <!-- P0: official exact AOSP17 Bluetooth module plus one reviewed PE OPP
+       null-safe URI check. Only mondrian is targeted for device validation.
+       Android module/APEX and device tests have not run. -->
+  <include name="aosp17_pe_p0_hardware.xml" />
+  <remove-project name="platform/packages/modules/Bluetooth" />
+  <remote name="reborn-bluetooth" fetch="https://github.com/PixelExperience-Reborn" />
+  <project path="packages/modules/Bluetooth" name="packages_modules_Bluetooth" remote="reborn-bluetooth"
+           revision="e7c2f47e3c73c4f2b83f03145441e419f45124b3"
+           upstream="refs/heads/port/a17-bluetooth-pe-20261103"
+           groups="pdk" />
+</manifest>

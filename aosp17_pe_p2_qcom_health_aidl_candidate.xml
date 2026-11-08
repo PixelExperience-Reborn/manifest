@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+  <!-- SOURCE-ONLY, NONDEFAULT Qualcomm Health AIDL V5 candidate for PE-Reborn
+       based on official AOSP17 health/aidl V5 interface and vendor wrapper.
+       This source is not a ready mondrian HAL/product. DO NOT import legacy
+       HIDL health2.1, Lineage-specific health services or duplicate charger.
+       Validate vendor health sysfs, Soong, VINTF/FCM, recovery, init,
+       SELinux and charging on a native PE-Reborn mondrian device tree first. -->
+  <include name="aosp17_pe_p2_kernel_configs.xml" />
+  <remote name="reborn-qcom-health-review"
+          fetch="https://github.com/PixelExperience-Reborn" />
+  <project path="vendor/qcom/opensource/healthd-ext"
+           name="vendor_qcom_opensource_healthd-ext"
+           remote="reborn-qcom-health-review"
+           revision="cfb2ea5aafeaf2ac177453c95ffd628cfa023742"
+           upstream="refs/heads/port/a17-health-aidl-v5-mondrian-20261107"
+           groups="device" />
+</manifest>

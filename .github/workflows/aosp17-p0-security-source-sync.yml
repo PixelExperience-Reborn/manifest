@@ -1,0 +1,64 @@
+name: AOSP17 P0 system/security exact source sync
+
+on:
+  push:
+    branches:
+      - port/a17-aosp17-manifest-20261102
+    paths:
+      - aosp17_pe_p0_security.xml
+      - .github/workflows/aosp17-p0-security-source-sync.yml
+  pull_request:
+    paths:
+      - aosp17_pe_p0_security.xml
+      - .github/workflows/aosp17-p0-security-source-sync.yml
+
+permissions:
+  contents: read
+
+jobs:
+  source-sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 85
+    steps:
+      - name: Fetch official Android repo launcher
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location --retry 4 \
+            https://storage.googleapis.com/git-repo-downloads/repo \
+            -o "$RUNNER_TEMP/repo"
+          chmod +x "$RUNNER_TEMP/repo"
+      - name: Initialize isolated AOSP17 security P0 profile
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/aosp"
+          cd "$RUNNER_TEMP/aosp"
+          "$RUNNER_TEMP/repo" init -q --no-clone-bundle --partial-clone \
+            --clone-filter=blob:none \
+            -u https://github.com/PixelExperience-Reborn/manifest \
+            -b port/a17-aosp17-manifest-20261102 -m aosp17_pe_p0_security.xml
+      - name: Sync only system/security from exact reviewed AOSP17 source
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/aosp"
+          "$RUNNER_TEMP/repo" sync -c -j2 --no-tags --fail-fast system/security
+      - name: Confirm immutable SHA, Google tree and unchanged KeyMint compatibility source
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/aosp/system/security"
+          test "$(git rev-parse HEAD)" = "a939bea3461e668355b1df87230f9308a8d50837"
+          test "$(git rev-parse 'HEAD^{tree}')" = "dcea0071b9c34f1542c576b3f46fc14d1fb14823"
+          python3 - <<'PY'
+          from pathlib import Path
+          file = Path("keystore2/src/km_compat/km_compat.cpp")
+          src = file.read_text()
+          assert "KeyMintDevice::generateKey(" in src
+          assert "convertKeyParametersToLegacy(extractGenerationParams(inKeyParams))" in src
+          assert "mDevice->generateKey(" in src
+          assert "KM_TAG_FBE_ICE" not in src
+          print("PASS: unchanged official KeyMint/legacy Keymaster compatibility source")
+          PY
+          echo "PASS: pinned AOSP17 system/security source checkout"

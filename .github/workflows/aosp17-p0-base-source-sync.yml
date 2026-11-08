@@ -1,0 +1,45 @@
+name: AOSP17 P0 frameworks/base selected source sync
+
+on:
+  push:
+    branches:
+      - port/a17-aosp17-manifest-20261102
+    paths:
+      - aosp17_pe_p0_base.xml
+      - .github/workflows/aosp17-p0-base-source-sync.yml
+  pull_request:
+    paths:
+      - aosp17_pe_p0_base.xml
+      - .github/workflows/aosp17-p0-base-source-sync.yml
+
+permissions:
+  contents: read
+
+jobs:
+  source-sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    steps:
+      - name: Install official Android repo client
+        run: |
+          set -euo pipefail
+          curl -fLsS --retry 4 https://storage.googleapis.com/git-repo-downloads/repo             -o "$RUNNER_TEMP/repo"
+          chmod +x "$RUNNER_TEMP/repo"
+      - name: Initialize optional Android17 PE framework base profile
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/aosp"
+          cd "$RUNNER_TEMP/aosp"
+          "$RUNNER_TEMP/repo" init -q --no-clone-bundle --partial-clone             --clone-filter=blob:none             -u https://github.com/PixelExperience-Reborn/manifest             -b port/a17-aosp17-manifest-20261102 -m aosp17_pe_p0_base.xml
+      - name: Sync only frameworks/base (not whole platform)
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/aosp"
+          "$RUNNER_TEMP/repo" sync -c -j2 --no-tags --fail-fast frameworks/base
+      - name: Verify pinned source and PE toast resource
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/aosp/frameworks/base"
+          test "$(git rev-parse HEAD)" = "382d5c9c0b20bbdb67b70176bce02c7e64767b0c"
+          python3 -m unittest discover -s tests/host -p 'test_pe_*.py' -v
+          echo "PASS: exact pinned framework/base PE SHA and source resource checks"

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+  <!-- P2 isolated source graph: exact official AOSP17 r1 Qualcomm WLAN
+       merged with historical PE Git ancestry, with the one reviewed
+       Wi-Fi HAL header conflict resolved. This is a source pin only:
+       Android17 Soong/vendor Wi-Fi modules and mondrian are NOT tested. -->
+  <include name="aosp17_pe_p2_tinycompress.xml" />
+  <remove-project name="platform/hardware/qcom/wlan" />
+  <remote name="reborn-wlan" fetch="https://github.com/PixelExperience-Reborn" />
+  <project path="hardware/qcom/wlan" name="hardware_qcom_wlan"
+           remote="reborn-wlan" revision="667daa664e107f0de451b9046a12da74b99a0e6b"
+           upstream="refs/heads/integrate/a17-aosp17-qcom-wlan-20261105"
+           groups="qcom_wlan,pdk-qcom" />
+</manifest>

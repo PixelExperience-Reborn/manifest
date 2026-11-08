@@ -1,0 +1,53 @@
+name: AOSP17 P0 hardware/interfaces selected source sync
+
+on:
+  push:
+    branches:
+      - port/a17-aosp17-manifest-20261102
+    paths:
+      - aosp17_pe_p0_hardware.xml
+      - .github/workflows/aosp17-p0-hardware-source-sync.yml
+  pull_request:
+    paths:
+      - aosp17_pe_p0_hardware.xml
+      - .github/workflows/aosp17-p0-hardware-source-sync.yml
+
+permissions:
+  contents: read
+
+jobs:
+  source-sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    steps:
+      - name: Install official repo client
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fLsS --retry 4 https://storage.googleapis.com/git-repo-downloads/repo \
+            -o "$RUNNER_TEMP/repo"
+          chmod +x "$RUNNER_TEMP/repo"
+      - name: Initialize the isolated reviewed Android17 P0 hardware profile
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/aosp"
+          cd "$RUNNER_TEMP/aosp"
+          "$RUNNER_TEMP/repo" init -q --no-clone-bundle --partial-clone \
+            --clone-filter=blob:none \
+            -u https://github.com/PixelExperience-Reborn/manifest \
+            -b port/a17-aosp17-manifest-20261102 -m aosp17_pe_p0_hardware.xml
+      - name: Sync only hardware/interfaces at the exact PE SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/aosp"
+          "$RUNNER_TEMP/repo" sync -c -j2 --no-tags --fail-fast hardware/interfaces
+      - name: Confirm immutable source SHA and compile real C++ HIDL guard in host harness
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/aosp/hardware/interfaces"
+          test "$(git rev-parse HEAD)" = "735e364cbdd00b0d6e4dc33ea0866dbb6d971a11"
+          python3 -m unittest discover -s tests/host -p 'test_*.py' -v
+          echo "PASS: AOSP17 hardware/interfaces source synced, pinned and host tested"

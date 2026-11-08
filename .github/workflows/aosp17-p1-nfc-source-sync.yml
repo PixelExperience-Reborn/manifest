@@ -1,0 +1,89 @@
+name: AOSP17 P1 NFC Mainline source boundary
+
+on:
+  push:
+    branches:
+      - port/a17-aosp17-manifest-20261102
+    paths:
+      - aosp17_reference.xml
+      - aosp17_pe_p1_timezonepicker.xml
+      - .github/workflows/aosp17-p1-nfc-source-sync.yml
+  pull_request:
+    paths:
+      - aosp17_reference.xml
+      - aosp17_pe_p1_timezonepicker.xml
+      - .github/workflows/aosp17-p1-nfc-source-sync.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  official-nfc-source-sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 80
+    steps:
+      - name: Get official Android repo launcher
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fLsS --retry 4 https://storage.googleapis.com/git-repo-downloads/repo -o "$RUNNER_TEMP/repo"
+          chmod +x "$RUNNER_TEMP/repo"
+      - name: Initialize P1 staged AOSP17 profile (without legacy NFC override)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/aosp"
+          cd "$RUNNER_TEMP/aosp"
+          "$RUNNER_TEMP/repo" init -q --no-clone-bundle --partial-clone --clone-filter=blob:none \
+            -u https://github.com/PixelExperience-Reborn/manifest \
+            -b port/a17-aosp17-manifest-20261102 -m aosp17_pe_p1_timezonepicker.xml
+          "$RUNNER_TEMP/repo" manifest -o "$RUNNER_TEMP/effective-manifest.xml"
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+
+          root = ET.parse(Path(__import__('os').environ['RUNNER_TEMP']) / 'effective-manifest.xml').getroot()
+          entries = {p.get('path') or p.get('name'): p.get('name') for p in root.findall('project')}
+          assert entries.get('packages/modules/Nfc') == 'platform/packages/modules/Nfc', 'not official AOSP17 NFC'
+          assert entries.get('prebuilts/module_sdk/Nfc') == 'platform/prebuilts/module_sdk/Nfc', 'NFC module SDK missing'
+          assert entries.get('hardware/nxp/nfc') == 'platform/hardware/nxp/nfc', 'NXP NFC HAL source missing'
+          assert 'packages/apps/Nfc' not in entries, 'duplicate historical NFC directory selected'
+          assert 'packages_apps_Nfc' not in entries.values(), 'archived PE NFC selected'
+          print('PASS: single official NFC source path, SDK and NXP HAL source in effective profile')
+          PY
+      - name: Sync only official NFC module
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/aosp"
+          "$RUNNER_TEMP/repo" sync -c -j2 --no-tags --fail-fast packages/modules/Nfc
+      - name: Verify immutable upstream tree and dual NFC packaging declarations
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/aosp/packages/modules/Nfc"
+          test "$(git rev-parse HEAD)" = "940212c440f57032a19cf0f90c7faa8eca48d546"
+          test "$(git rev-parse 'HEAD^{tree}')" = "da01c841e3238648d0ae33c3392c05f1552e63d5"
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+
+          apps = Path('NfcNci/Android.bp').read_text()
+          apex = Path('apex/Android.bp').read_text()
+          manifest = ET.parse('NfcNci/AndroidManifest.xml').getroot()
+          assert 'name: "NfcNci"' in apps
+          assert 'name: "NfcNciApex"' in apps
+          assert 'sdk_version: "core_platform"' in apps
+          assert 'sdk_version: "module_current"' in apps
+          assert '"com.android.nfcservices"' in apps
+          assert 'name: "com.android.nfcservices"' in apex
+          assert 'apps: ["NfcNciApex"]' in apex
+          assert '"libnfc_nci_jni"' in apex
+          assert manifest.get('package') == 'com.android.nfc'
+          assert manifest.get('{http://schemas.android.com/apk/res/android}sharedUserId') == 'android.uid.nfc'
+          assert Path('NfcNci/com.android.nfc.xml').is_file()
+          assert Path('NfcNci/preinstalled-packages-com.android.nfc.xml').is_file()
+          print('PASS: official NFC platform/APEX Soong module source invariants')
+          print('NOT TESTED: product selection, Soong/APEX build, mondrian NXP HAL, HCE/eSE or runtime')
+          PY

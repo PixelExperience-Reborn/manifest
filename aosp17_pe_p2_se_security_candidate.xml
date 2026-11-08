@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+  <!-- EXPERIMENTAL SOURCE-ONLY NXP SECURE ELEMENT SECURITY CANDIDATE.
+       NOT default.xml and NOT one of the reviewed 25 active stages.
+       Official AOSP17 android-security-17.0.0_r3 source changes
+       10 actual SE paths vs android-17.0.0_r1, including AIDL SE
+       logical-channel index bounds checks in SecureElement/VirtualISO.
+       The old r1 and NXP vendor 17.07.00 sources do not include this
+       particular bounds guard. Do not infer complete SPL readiness.
+       NO firmware/update agent, VINTF/product, eSE/UICC enablement,
+       or HAL runtime validation. Require coordinated security rebase,
+       Soong/APEX/NDK, NFC/OMAPI tests, CTS/VTS and physical mondrian. -->
+  <include name="aosp17_pe_p2_kernel_configs.xml" />
+  <remove-project name="platform/hardware/nxp/secure_element" />
+  <project path="hardware/nxp/secure_element"
+           name="platform/hardware/nxp/secure_element"
+           remote="aosp"
+           revision="8aec22fde8121bf3f74006730ce42e9ac0366b62"
+           upstream="refs/tags/android-security-17.0.0_r3"
+           groups="pdk" />
+</manifest>

@@ -1,0 +1,89 @@
+name: AOSP17 Qualcomm HWC3 AIDL source-only candidate
+
+on:
+  push:
+    branches:
+      - port/a17-aosp17-manifest-20261102
+    paths:
+      - 'aosp17_pe_p2_qcom_display_aidl_candidate.xml'
+      - 'docs/ANDROID_17_QCOM_DISPLAY_AIDL_CANDIDATE.md'
+      - 'tools/validate_aosp17_base_profiles.py'
+      - 'tools/test_aosp17_manifest_entrypoint.py'
+      - '.github/workflows/aosp17-p2-qcom-display-aidl-candidate.yml'
+      - 'default.xml'
+  pull_request:
+    paths:
+      - 'aosp17_pe_p2_qcom_display_aidl_candidate.xml'
+      - '.github/workflows/aosp17-p2-qcom-display-aidl-candidate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pinned-hwc3-source-preview-not-a-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout independent PE-Reborn AOSP17 working manifest
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Preserve all reviewed stages and candidate source boundaries
+        run: |
+          python3 tools/validate_aosp17_base_profiles.py
+          python3 -m unittest discover -s tools \
+            -p test_aosp17_manifest_entrypoint.py -v
+      - name: Download and use official Android repo launcher
+        run: |
+          set -euo pipefail
+          curl -fLsS --retry 4 \
+            https://storage.googleapis.com/git-repo-downloads/repo \
+            -o "$RUNNER_TEMP/repo"
+          chmod +x "$RUNNER_TEMP/repo"
+          mkdir -p "$RUNNER_TEMP/qcom-display"
+          cd "$RUNNER_TEMP/qcom-display"
+          "$RUNNER_TEMP/repo" init -q --no-clone-bundle \
+            --partial-clone --clone-filter=blob:none \
+            -u https://github.com/PixelExperience-Reborn/manifest.git \
+            -b port/a17-aosp17-manifest-20261102 \
+            -m aosp17_pe_p2_qcom_display_aidl_candidate.xml
+          "$RUNNER_TEMP/repo" manifest -o "$RUNNER_TEMP/qcom-display-flat.xml"
+          python3 - <<'PY'
+          import os
+          import xml.etree.ElementTree as ET
+          root=ET.parse(os.path.join(os.environ["RUNNER_TEMP"],"qcom-display-flat.xml")).getroot()
+          items=root.findall(".//project")
+          projects={p.get("path") or p.get("name"):p for p in items}
+          assert len(items)==len(projects)==1070,(len(items),len(projects))
+          display=projects["hardware/qcom/display"]
+          assert display.get("name")=="hardware-qcom-display"
+          assert display.get("revision")=="baf61f736e2109522e3f72754ee7cfacbfa2dc6c"
+          assert display.get("groups")=="device"
+          assert projects["hardware/interfaces"].get("name")=="hardware_interfaces"
+          assert projects["frameworks/av"].get("name")=="frameworks_av"
+          assert "vendor/qcom/opensource/display" not in projects
+          assert "hardware/qcom-caf/sm8450/display" not in projects
+          print("PASS: 1070 selected project paths; one immutable HWC3 source candidate")
+          PY
+      - name: Sync only modern source and verify Composer/Allocator version IDs
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/qcom-display"
+          "$RUNNER_TEMP/repo" sync -c -j2 --no-tags --fail-fast hardware/qcom/display
+          cd hardware/qcom/display
+          test "$(git rev-parse HEAD)" = "baf61f736e2109522e3f72754ee7cfacbfa2dc6c"
+          test "$(git rev-parse 'HEAD^{tree}')" = "f35e03e1904a346fad8257321233a32650b4ee77"
+          grep -q 'android.hardware.graphics.composer3-V3-ndk' composer/Android.bp
+          grep -q 'android.hardware.graphics.allocator-V2-ndk' gralloc/Android.bp
+          grep -q 'name: "mapper.qti"' gralloc/Android.bp
+          test ! -d sdm/libs
+          test ! -d sde-drm
+          echo "PASS: modern display source Git tree and AIDL v3/v2, mapper Stable-C v5"
+          echo "BLOCKER: matching SDM/DRM modules and Xiaomi vendor ABI unknown"
+      - name: Clarify this cannot authorize product integration or display firmware
+        run: |
+          echo "SOURCE ONLY, NOT AN ANDROID17 ROM/HWC3 BUILD."
+          echo "Do not inherit Sony/Sharp/Visionox QDCM/backlight panel examples."
+          echo "Do not mix old SM8450 Composer2/SDM with newer AIDL without ABI proof."
+          echo "NOT TESTED: Soong, VINTF/FCM, SELinux, panel, UBWC, DRM, CTS/VTS."

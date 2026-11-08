@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+  <!-- Stage P0 Recovery: official Android17 source with reviewed PE device
+       identification and an optional-safe stage parser.
+       Preserve upstream package signature, SPL and ADB-debug checks. -->
+  <include name="aosp17_pe_p0_frameworks.xml" />
+  <remove-project name="platform/bootable/recovery" />
+  <remote name="reborn-recovery" fetch="https://github.com/PixelExperience-Reborn" />
+  <project path="bootable/recovery" name="bootable_recovery" remote="reborn-recovery"
+           revision="0ed8dc4f93020555afdfc19141263ca40629ef74"
+           upstream="refs/heads/port/a17-recovery-pe-20261103"
+           groups="pdk" />
+</manifest>

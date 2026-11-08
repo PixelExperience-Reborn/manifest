@@ -1,0 +1,65 @@
+name: AOSP17 P0 Connectivity exact source sync
+
+on:
+  push:
+    branches:
+      - port/a17-aosp17-manifest-20261102
+    paths:
+      - aosp17_pe_p0_connectivity.xml
+      - .github/workflows/aosp17-p0-connectivity-source-sync.yml
+  pull_request:
+    paths:
+      - aosp17_pe_p0_connectivity.xml
+      - .github/workflows/aosp17-p0-connectivity-source-sync.yml
+
+permissions:
+  contents: read
+
+jobs:
+  source-sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 80
+    steps:
+      - name: Fetch official Android repo launcher
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fLsS --retry 4 https://storage.googleapis.com/git-repo-downloads/repo \
+            -o "$RUNNER_TEMP/repo"
+          chmod +x "$RUNNER_TEMP/repo"
+      - name: Initialize reviewed Android17 Connectivity profile
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/aosp"
+          cd "$RUNNER_TEMP/aosp"
+          "$RUNNER_TEMP/repo" init -q --no-clone-bundle --partial-clone \
+            --clone-filter=blob:none \
+            -u https://github.com/PixelExperience-Reborn/manifest \
+            -b port/a17-aosp17-manifest-20261102 -m aosp17_pe_p0_connectivity.xml
+      - name: Sync only the Connectivity module
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/aosp"
+          "$RUNNER_TEMP/repo" sync -c -j2 --no-tags --fail-fast packages/modules/Connectivity
+      - name: Verify published SHA/tree and preserved AOSP17 network policies
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/aosp/packages/modules/Connectivity"
+          test "$(git rev-parse HEAD)" = "701882b51546230c6c32c9654a3f7b9814429e13"
+          test "$(git rev-parse 'HEAD^{tree}')" = "3a9df5486bd2b0d48cf22a4df8b8e097d36da07d"
+          python3 - <<'PY'
+          from pathlib import Path
+          src = Path("framework-t/src/android/net/TrafficStats.java").read_text()
+          assert "LOGD = Log.isLoggable(TAG, Log.DEBUG)" in src
+          tether = Path(
+              "Tethering/src/com/android/networkstack/tethering/TetheringConfiguration.java"
+          ).read_text()
+          method = tether.split("public static boolean checkDunRequired(Context ctx)", 1)[1]
+          method = method.split("public int getOffloadPollInterval()", 1)[0]
+          assert "tm.isTetheringApnRequired()" in method
+          print("PASS: AOSP17 dynamic TrafficStats logging and carrier DUN policy retained")
+          PY
+          echo "PASS: exact AOSP17 Connectivity source snapshot synced"

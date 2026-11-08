@@ -1,0 +1,68 @@
+name: AOSP17 P0 Permission exact source sync
+
+on:
+  push:
+    branches:
+      - port/a17-aosp17-manifest-20261102
+    paths:
+      - aosp17_pe_p0_permission.xml
+      - .github/workflows/aosp17-p0-permission-source-sync.yml
+  pull_request:
+    paths:
+      - aosp17_pe_p0_permission.xml
+      - .github/workflows/aosp17-p0-permission-source-sync.yml
+
+permissions:
+  contents: read
+
+jobs:
+  source-sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 85
+    steps:
+      - name: Install official Android repo launcher
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fLsS --retry 4 https://storage.googleapis.com/git-repo-downloads/repo \
+            -o "$RUNNER_TEMP/repo"
+          chmod +x "$RUNNER_TEMP/repo"
+      - name: Initialize opt-in Permission profile
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/aosp"
+          cd "$RUNNER_TEMP/aosp"
+          "$RUNNER_TEMP/repo" init -q --no-clone-bundle --partial-clone \
+            --clone-filter=blob:none \
+            -u https://github.com/PixelExperience-Reborn/manifest \
+            -b port/a17-aosp17-manifest-20261102 -m aosp17_pe_p0_permission.xml
+      - name: Sync only the Permission APEX module
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/aosp"
+          "$RUNNER_TEMP/repo" sync -c -j2 --no-tags --fail-fast packages/modules/Permission
+      - name: Verify SHA/tree and AOSP17 managed-profile guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/aosp/packages/modules/Permission"
+          test "$(git rev-parse HEAD)" = "f6e6e14b5c4d6e094c205683940a1328384338d9"
+          test "$(git rev-parse 'HEAD^{tree}')" = "5f0dfec33529cfff7ad08c9e61f480e445a59d8b"
+          python3 - <<'PY'
+          from pathlib import Path
+          roles = (
+              "v31/CompanionDeviceWatchRoleBehavior.java",
+              "v33/CompanionDeviceAppStreamingRoleBehavior.java",
+              "v33/CompanionDeviceComputerRoleBehavior.java",
+              "v34/CompanionDeviceGlassesRoleBehavior.java",
+          )
+          root = Path("PermissionController/role-controller/java/com/android/role/controller/behavior")
+          for name in roles:
+              src = (root / name).read_text()
+              assert "UserUtils.isManagedProfile(user, context)" in src, name
+              assert "grantNotificationAccessForPackageAsUser" in src, name
+          print("PASS: AOSP17 managed profile notification access guard is present")
+          PY
+          echo "PASS: Permission original AOSP17 tree at pinned snapshot"

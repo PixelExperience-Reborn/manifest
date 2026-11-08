@@ -1,0 +1,489 @@
+name: AOSP17 manifest structure
+
+on:
+  push:
+    branches:
+      - port/a17-aosp17-manifest-20261102
+    paths:
+      - 'aosp17_*.xml'
+      - 'default.xml'
+      - '.github/workflows/aosp17-manifest-structure.yml'
+      - 'tools/validate_aosp17_base_profiles.py'
+      - 'tools/test_aosp17_manifest_entrypoint.py'
+  pull_request:
+    paths:
+      - aosp17_reference.xml
+      - default.xml
+      - aosp17_pe_bootstrap.xml
+      - aosp17_pe_envsetup.xml
+      - aosp17_pe_p0_native.xml
+      - aosp17_pe_p0_core.xml
+      - aosp17_pe_p0_frameworks.xml
+      - aosp17_pe_p0_recovery.xml
+      - aosp17_pe_p0_av.xml
+      - aosp17_pe_p0_base.xml
+      - aosp17_pe_p0_hardware.xml
+      - aosp17_pe_p0_bluetooth.xml
+      - aosp17_pe_p0_connectivity.xml
+      - aosp17_pe_p0_permission.xml
+      - aosp17_pe_p0_wifi.xml
+      - aosp17_pe_p0_adb.xml
+      - aosp17_pe_p0_security.xml
+      - aosp17_pe_p0_sepolicy.xml
+      - aosp17_pe_p0_update_engine.xml
+      - aosp17_pe_p1_vold.xml
+      - aosp17_pe_p1_telephony.xml
+      - aosp17_pe_p1_timezonepicker.xml
+      - aosp17_pe_p2_tinycompress.xml
+      - aosp17_pe_p2_qcom_wlan.xml
+      - aosp17_pe_p2_ril.xml
+      - aosp17_pe_p2_kernel_configs.xml
+      - .github/workflows/aosp17-manifest-structure.yml
+      - tools/validate_aosp17_base_profiles.py
+      - tools/test_aosp17_manifest_entrypoint.py
+
+permissions:
+  contents: read
+
+jobs:
+  resolve-profiles:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - profile: aosp17_reference.xml
+            expected: 1068
+          - profile: aosp17_pe_bootstrap.xml
+            expected: 1068
+          - profile: aosp17_pe_envsetup.xml
+            expected: 1069
+          - profile: aosp17_pe_p0_native.xml
+            expected: 1069
+          - profile: aosp17_pe_p0_core.xml
+            expected: 1069
+          - profile: aosp17_pe_p0_frameworks.xml
+            expected: 1069
+          - profile: aosp17_pe_p0_recovery.xml
+            expected: 1069
+          - profile: aosp17_pe_p0_av.xml
+            expected: 1069
+          - profile: aosp17_pe_p0_base.xml
+            expected: 1069
+          - profile: aosp17_pe_p0_hardware.xml
+            expected: 1069
+          - profile: aosp17_pe_p0_bluetooth.xml
+            expected: 1069
+          - profile: aosp17_pe_p0_connectivity.xml
+            expected: 1069
+          - profile: aosp17_pe_p0_permission.xml
+            expected: 1069
+          - profile: aosp17_pe_p0_wifi.xml
+            expected: 1069
+          - profile: aosp17_pe_p0_adb.xml
+            expected: 1069
+          - profile: aosp17_pe_p0_security.xml
+            expected: 1069
+          - profile: aosp17_pe_p0_sepolicy.xml
+            expected: 1069
+          - profile: aosp17_pe_p0_update_engine.xml
+            expected: 1069
+          - profile: aosp17_pe_p1_vold.xml
+            expected: 1069
+          - profile: aosp17_pe_p1_telephony.xml
+            expected: 1069
+          - profile: aosp17_pe_p1_timezonepicker.xml
+            expected: 1069
+          - profile: aosp17_pe_p2_tinycompress.xml
+            expected: 1069
+          - profile: aosp17_pe_p2_qcom_wlan.xml
+            expected: 1069
+          - profile: aosp17_pe_p2_ril.xml
+            expected: 1069
+          - profile: aosp17_pe_p2_kernel_configs.xml
+            expected: 1069
+          - profile: default.xml
+            expected: 1069
+    steps:
+      - name: Install official repo client
+        run: |
+          curl --fail --silent --show-error --location \
+            https://storage.googleapis.com/git-repo-downloads/repo \
+            --output "$RUNNER_TEMP/repo"
+          chmod +x "$RUNNER_TEMP/repo"
+      - name: Parse and export effective project graph without repo sync
+        env:
+          PROFILE: ${{ matrix.profile }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/checkout"
+          cd "$RUNNER_TEMP/checkout"
+          "$RUNNER_TEMP/repo" init -q --no-clone-bundle \
+            -u https://github.com/PixelExperience-Reborn/manifest \
+            -b port/a17-aosp17-manifest-20261102 -m "$PROFILE"
+          "$RUNNER_TEMP/repo" manifest -o "$RUNNER_TEMP/resolved.xml"
+      - name: Validate no device-tree imports or old PE platform forks
+        env:
+          PROFILE: ${{ matrix.profile }}
+          EXPECTED: ${{ matrix.expected }}
+        run: |
+          python3 - <<'PY'
+          import os
+          import xml.etree.ElementTree as ET
+
+          root = ET.parse(os.environ["RUNNER_TEMP"] + "/resolved.xml").getroot()
+          projects = root.findall(".//project")
+          profile = os.environ["PROFILE"]
+          expected = int(os.environ["EXPECTED"])
+          paths = [p.get("path") or p.get("name") for p in projects]
+          assert len(paths) == expected, (profile, len(paths), expected)
+          assert len(set(paths)) == len(paths), "duplicate checkout path"
+          # repo manifest exports default-selected projects; three Darwin
+          # prebuilts explicitly use notdefault and are correctly excluded.
+          for excluded in ("prebuilts/clang/host/darwin-x86",
+                           "prebuilts/go/darwin-x86",
+                           "prebuilts/rust-toolchain/darwin"):
+              assert excluded not in paths, "notdefault Darwin prebuilt unexpectedly selected"
+
+          indexed = {p.get("path") or p.get("name"): p for p in projects}
+          # P1 device/custom/sepolicy is an Android14-era PE/Lineage policy
+          # addon, not an AOSP17 project. Do not activate historical
+          # recovery-permissive or vendor-domain rules until CIL/neverallow
+          # and mondrian vendor API compatibility have been demonstrated.
+          assert "device/custom/sepolicy" not in indexed, "unreviewed legacy policy activated"
+          assert all(p.get("name") != "device_custom_sepolicy" for p in projects)
+          # Historical PE vendor.lineage AIDL/HIDL HAL implementations must
+          # not silently join the reviewed AOSP17 graph: old fingerprint,
+          # Wi-Fi/USB/GNSS/fastboot may collide with device-specific HALs.
+          assert "hardware/custom/interfaces" not in indexed, "unreviewed HAL project activated"
+          assert all(p.get("name") != "hardware_custom_interfaces" for p in projects)
+          # Aperture is an optional, unported legacy app. Preserve the
+          # official AOSP17 Camera2 source until the CameraX/Soong graph,
+          # platform build and mondrian camera runtime have all been tested.
+          assert "packages/apps/Aperture" not in indexed, "unreviewed Aperture activated"
+          assert all(p.get("name") != "packages_apps_Aperture" for p in projects)
+          assert indexed["packages/apps/Camera2"].get("name") == "platform/packages/apps/Camera2", "unreviewed camera replacement"
+          # The archived face-unlock app is privileged/platform-signed and
+          # depends on missing vendor code plus unreviewed biometric tokens.
+          # Its old AIDL/hidden API path is never silently loaded into A17.
+          assert "packages/apps/FaceUnlockService" not in indexed, "unreviewed face unlock service activated"
+          assert all(p.get("name") != "packages_apps_FaceUnlockService" for p in projects)
+          # Android 17 NFC lives in packages/modules/Nfc (Mainline-ready
+          # with both NfcNci and NfcNciApex packaging variants). Do not let
+          # the archived Android14 packages/apps/Nfc create a duplicate NfcNci.
+          assert "packages/apps/Nfc" not in indexed, "legacy NFC package activated"
+          assert all(p.get("name") != "packages_apps_Nfc" for p in projects)
+          assert indexed["packages/modules/Nfc"].get("name") == "platform/packages/modules/Nfc", "AOSP17 NFC module replaced"
+          assert indexed["prebuilts/module_sdk/Nfc"].get("name") == "platform/prebuilts/module_sdk/Nfc", "AOSP17 NFC SDK replaced"
+          assert indexed["hardware/nxp/nfc"].get("name") == "platform/hardware/nxp/nfc", "AOSP17 NXP HAL source replaced"
+          # The archived PE Settings tree is Android14-era and requires
+          # faceunlock_framework / vendor.lineage.fastcharge plus obsolete
+          # SettingsLib defaults. Keep AOSP17 Settings until Soong/API and
+          # per-feature device/security reviews have passed.
+          assert indexed["packages/apps/Settings"].get("name") == "platform/packages/apps/Settings", "unreviewed Settings replacement"
+          assert all(p.get("name") != "packages_apps_Settings" for p in projects)
+          # The legacy TouchGestures APK depends on obsolete framework
+          # DeviceKeyHandler APIs and has unverified proximity/keyguard paths.
+          # A standalone app cannot satisfy the old Settings resource link.
+          assert "packages/apps/TouchGestures" not in indexed, "unreviewed TouchGestures activated"
+          assert all(p.get("name") != "packages_apps_TouchGestures" for p in projects)
+          # DownloadProvider owns the downloads URI authority, media
+          # shared UID and user-initiated job contracts. The 2024 PE source
+          # lacks modern AConfig and framework-stubs selections and must not
+          # replace this privileged Android17 provider without a full review.
+          assert indexed["packages/providers/DownloadProvider"].get("name") == "platform/packages/providers/DownloadProvider", "unreviewed DownloadProvider replacement"
+          assert all(p.get("name") != "packages_providers_DownloadProvider" for p in projects)
+          # MediaProvider is a signed, updatable Mainline APEX hosting
+          # MediaStore, Photo Picker and FUSE. The archived Android14 fork
+          # has incompatible AConfig, JNI, legacy DB and PhotoPicker graph.
+          assert indexed["packages/providers/MediaProvider"].get("name") == "platform/packages/providers/MediaProvider", "unreviewed MediaProvider replacement"
+          assert indexed["prebuilts/module_sdk/MediaProvider"].get("name") == "platform/prebuilts/module_sdk/MediaProvider", "AOSP17 MediaProvider SDK replaced"
+          assert indexed["packages/modules/Media"].get("name") == "platform/packages/modules/Media", "AOSP17 Media module replaced"
+          assert all(p.get("name") != "packages_providers_MediaProvider" for p in projects)
+          # The old PE device-settings resource library is a no-code
+          # Android14 module. It neither defines the native AOSP17 hardware
+          # settings architecture nor satisfies the different LineageOS
+          # resource dependency in the old mondrian hardware reference.
+          # A new PE-Reborn device/common product must be authored separately.
+          assert "packages/resources/devicesettings" not in indexed, "unreviewed PE device resources activated"
+          assert all(p.get("name") != "packages_resources_devicesettings" for p in projects)
+          # Telecom is an Android17 modular service with a separate shim,
+          # TelecomUi and TelephonyCore integration. The 2024 PE legacy
+          # Telecom APK is not compatible with this Soong service graph.
+          assert indexed["packages/services/Telecomm"].get("name") == "platform/packages/services/Telecomm", "unreviewed Telecomm replacement"
+          assert indexed["packages/modules/Telecom"].get("name") == "platform/packages/modules/Telecom", "AOSP17 Telecom module replaced"
+          assert indexed["packages/modules/Telephony"].get("name") == "platform/packages/modules/Telephony", "AOSP17 Telephony module replaced"
+          assert indexed["packages/services/Telephony"].get("name") == "platform/packages/services/Telephony", "AOSP17 Telephony service replaced"
+          assert all(p.get("name") != "packages_services_Telecomm" for p in projects)
+          # Android17 BPF requires the Rust bpfloader and the distinct
+          # system/bpfprogs compiler/flags graph. The archived Android14
+          # C++ loader risks early-boot netd crashes and outdated map policy.
+          assert indexed["system/bpf"].get("name") == "platform/system/bpf", "unreviewed old BPF loader replacement"
+          assert indexed["system/bpfprogs"].get("name") == "platform/system/bpfprogs", "AOSP17 BPF programs missing or replaced"
+          assert indexed["system/netd"].get("name") == "platform/system/netd", "AOSP17 netd replaced"
+          assert all(p.get("name") != "system_bpf" for p in projects)
+          # The archived Android14 system/extras includes old boot-image
+          # BootSignature heuristics and an optional host-only lpunpack_static.
+          # Never replace Android17 fscrypt/verity/dynamic-partition libraries
+          # just to obtain an extraction utility or old signing behavior.
+          assert indexed["system/extras"].get("name") == "platform/system/extras", "unreviewed system/extras or boot signing replacement"
+          assert all(p.get("name") != "system_extras" for p in projects)
+          # The Android14 PE HIDL fork reintroduced deprecated
+          # gBn/gBs constructor-map symbols for legacy proprietary blobs.
+          # They are not an Android17 ABI until actual vendor ELF consumer
+          # symbols are verified; old recovery flags are not auto-enabled.
+          assert indexed["system/libhidl"].get("name") == "platform/system/libhidl", "unreviewed legacy HIDL ABI override"
+          assert indexed["system/libhwbinder"].get("name") == "platform/system/libhwbinder", "AOSP17 HIDL binder replaced"
+          assert all(p.get("name") != "system_libhidl" for p in projects)
+          # Legacy PE reverted the post-start HwBinder threadpool shrink
+          # guard for unrelated kona/lahaina cameras. Keep the official
+          # Android17 IPC implementation and Parcel parent-index defenses.
+          assert indexed["system/libhwbinder"].get("name") == "platform/system/libhwbinder", "unreviewed old HwBinder threadpool override"
+          assert all(p.get("name") != "system_libhwbinder" for p in projects)
+          # Android17 exposes a separate ziptool.recovery target, modern
+          # IncFS ZIP parsing and APEX linkage. The archived Android14 PE
+          # single-ziptool recovery symlink change is not a safe replacement.
+          assert indexed["system/libziparchive"].get("name") == "platform/system/libziparchive", "unreviewed libziparchive or recovery unzip replacement"
+          assert all(p.get("name") != "system_libziparchive" for p in projects)
+          # Archived Android14 PE logging includes build-type-dependent
+          # liblog debuggable behavior and logd statistics differences.
+          # Android17 logging privacy/permissions and ABI must stay pinned.
+          assert indexed["system/logging"].get("name") == "platform/system/logging", "unreviewed Android14 logging debug-policy replacement"
+          assert all(p.get("name") != "system_logging" for p in projects)
+          # Archived PE system/media patches QSSI audio-policy lookup using
+          # ro.vendor.qti.va_aosp.support. Retain official AOSP17 audio,
+          # camera metadata and other ABI types until real vendor files
+          # in the independently authored mondrian product justify a change.
+          assert indexed["system/media"].get("name") == "platform/system/media", "unreviewed Qualcomm audio config or media ABI override"
+          assert all(p.get("name") != "system_media" for p in projects)
+          # Historical PE dtbToolLineage emits legacy Qualcomm QCDT
+          # images; modern DTBO/DTB partition tools are in AOSP17 libufdt.
+          # No device tree or BoardConfig is approved for this staging profile.
+          assert "system/tools/dtbtool" not in indexed, "legacy Qualcomm QCDT tool accidentally activated"
+          assert all(p.get("name") != "system_tools_dtbtool" for p in projects)
+          # The archived mkbootimg --dt patch writes legacy DT size
+          # into a boot header field, corrupting modern v3/v4 semantics.
+          # Keep Android17 mkbootimg, vendor_boot and libufdt sources.
+          assert indexed["system/tools/mkbootimg"].get("name") == "platform/system/tools/mkbootimg", "unreviewed legacy boot header or mkbootimg override"
+          assert indexed["system/libufdt"].get("name") == "platform/system/libufdt", "official DTBO packaging tools replaced"
+          assert all(p.get("name") != "system_tools_mkbootimg" for p in projects)
+          # The archived Pixel framework config.mk forcibly installs
+          # platform-signed privileged SettingsGoogle/SystemUIGoogle replacing
+          # Settings and SystemUI; its README warns decompiled APK recipes
+          # are unsafe. No such product override is approved in clean AOSP17.
+          assert "vendor/pixel-framework" not in indexed, "old Pixel framework privileged app override activated"
+          assert all(p.get("name") != "vendor_pixel-framework" for p in projects)
+          # Archived PE development/tools/make_key forces PBE-SHA1-3DES
+          # due to obsolete Java interoperability. AOSP17 release signing
+          # must use reviewed official tools and protected non-public keys.
+          assert indexed["development"].get("name") == "platform/development", "unreviewed old PBEv1 signing tool imported"
+          assert all(p.get("name") != "development" for p in projects)
+          # Archived Qualcomm generic sepolicy rewrites frozen API 30-32
+          # CIL at Make parse-time and grants untrusted apps DSP/QSPM HAL
+          # access. AOSP17 uses device-scoped vendor/product policy dirs.
+          assert "device/qcom/sepolicy" not in indexed, "unreviewed Qualcomm SELinux API snapshot mutation activated"
+          assert all(p.get("name") != "device_qcom_sepolicy" for p in projects)
+          # Qualcomm CAF QSSI14 sm8450 sepolicy depends on the archived,
+          # rejected generic QCOM SEPolicy.mk and bundles broad vendor HAL,
+          # KeyMint, dontaudit and unrelated-device policies. Native
+          # PE-Reborn mondrian policy must be assembled per actual service.
+          assert "device/qcom/sepolicy_vndr/sm8450" not in indexed, "unreviewed old CAF sm8450 vendor SELinux policy activated"
+          assert all(p.get("name") != "device_qcom_sepolicy_vndr_sm8450" for p in projects)
+          # Reviewed P0/P1 Android17 source forks (frameworks/base, Connectivity,
+          # system/core, vold and sepolicy) are asserted with exact commit
+          # revisions by the per-profile checks below, not forced to AOSP
+          # repository names across all staged profiles.
+          assert indexed["packages/apps/Settings"].get("name") == "platform/packages/apps/Settings", "official AOSP17 Settings source replaced"
+          # External AVB and ANT remain platform source / absent across all
+          # staged base-only profiles; signing and radio archives are unported.
+          assert indexed["external/avb"].get("name") == "platform/external/avb", "unreviewed AVB signing fork imported"
+          assert all(not path.startswith("external/ant-wireless/") for path in paths), "ANT archive activated in base"
+          assert indexed["system/libufdt"].get("name") == "platform/system/libufdt", "AOSP17 DTBO tool source missing or replaced"
+          assert indexed["system/tools/mkbootimg"].get("name") == "platform/system/tools/mkbootimg", "AOSP17 boot image tools replaced"
+          assert "vendor/lineage" not in indexed, "LineageOS product base incorrectly inherited"
+          assert "device/xiaomi/mondrian" not in indexed, "mondrian tree activated before native AOSP17 bring-up"
+          assert "device/xiaomi/sm8450-common" not in indexed, "sm8450-common tree activated before native AOSP17 bring-up"
+          assert indexed["build/make"].get("name") == "platform/build", "core Make is not AOSP17"
+          for path in ("art", "bionic", "system/core"):
+              project = indexed[path]
+              if profile in ("aosp17_pe_p0_native.xml", "aosp17_pe_p0_core.xml", "aosp17_pe_p0_frameworks.xml", "aosp17_pe_p0_recovery.xml", "aosp17_pe_p0_av.xml", "aosp17_pe_p0_base.xml", "aosp17_pe_p0_hardware.xml", "aosp17_pe_p0_bluetooth.xml", "aosp17_pe_p0_connectivity.xml", "aosp17_pe_p0_permission.xml", "aosp17_pe_p0_wifi.xml", "aosp17_pe_p0_adb.xml", "aosp17_pe_p0_security.xml", "aosp17_pe_p0_sepolicy.xml", "aosp17_pe_p0_update_engine.xml", "aosp17_pe_p1_vold.xml", "aosp17_pe_p1_telephony.xml", "aosp17_pe_p1_timezonepicker.xml", "aosp17_pe_p2_tinycompress.xml", "aosp17_pe_p2_qcom_wlan.xml", "aosp17_pe_p2_ril.xml", "aosp17_pe_p2_kernel_configs.xml", "default.xml") and path in ("art", "bionic"):
+                  assert project.get("name") == path, path
+                  expected_commit = {
+                      "art": "b753cf97923c3695338d21466fa14c57b480a59a",
+                      "bionic": "06356e41c5ed7b12220b24c05ba4fdb873b126a7",
+                  }[path]
+                  assert project.get("revision") == expected_commit, path
+              elif profile in ("aosp17_pe_p0_core.xml", "aosp17_pe_p0_frameworks.xml", "aosp17_pe_p0_recovery.xml", "aosp17_pe_p0_av.xml", "aosp17_pe_p0_base.xml", "aosp17_pe_p0_hardware.xml", "aosp17_pe_p0_bluetooth.xml", "aosp17_pe_p0_connectivity.xml", "aosp17_pe_p0_permission.xml", "aosp17_pe_p0_wifi.xml", "aosp17_pe_p0_adb.xml", "aosp17_pe_p0_security.xml", "aosp17_pe_p0_sepolicy.xml", "aosp17_pe_p0_update_engine.xml", "aosp17_pe_p1_vold.xml", "aosp17_pe_p1_telephony.xml", "aosp17_pe_p1_timezonepicker.xml", "aosp17_pe_p2_tinycompress.xml", "aosp17_pe_p2_qcom_wlan.xml", "aosp17_pe_p2_ril.xml", "aosp17_pe_p2_kernel_configs.xml", "default.xml") and path == "system/core":
+                  assert project.get("name") == "system_core"
+                  assert project.get("revision") == "8e0f22aaac0ee4114a83646e2c96d07578145bfa"
+              else:
+                  assert project.get("name").startswith("platform/"), path
+          if profile in ("aosp17_pe_p0_frameworks.xml", "aosp17_pe_p0_recovery.xml", "aosp17_pe_p0_av.xml", "aosp17_pe_p0_base.xml", "aosp17_pe_p0_hardware.xml", "aosp17_pe_p0_bluetooth.xml", "aosp17_pe_p0_connectivity.xml", "aosp17_pe_p0_permission.xml", "aosp17_pe_p0_wifi.xml", "aosp17_pe_p0_adb.xml", "aosp17_pe_p0_security.xml", "aosp17_pe_p0_sepolicy.xml", "aosp17_pe_p0_update_engine.xml", "aosp17_pe_p1_vold.xml", "aosp17_pe_p1_telephony.xml", "aosp17_pe_p1_timezonepicker.xml", "aosp17_pe_p2_tinycompress.xml", "aosp17_pe_p2_qcom_wlan.xml", "aosp17_pe_p2_ril.xml", "aosp17_pe_p2_kernel_configs.xml", "default.xml"):
+              assert indexed["frameworks/native"].get("name") == "frameworks_native"
+              assert indexed["frameworks/native"].get("revision") == "ae266dcb706d083868578cfedce381ef44488a07"
+          else:
+              assert indexed["frameworks/native"].get("name") == "platform/frameworks/native"
+          if profile in ("aosp17_pe_p0_recovery.xml", "aosp17_pe_p0_av.xml", "aosp17_pe_p0_base.xml", "aosp17_pe_p0_hardware.xml", "aosp17_pe_p0_bluetooth.xml", "aosp17_pe_p0_connectivity.xml", "aosp17_pe_p0_permission.xml", "aosp17_pe_p0_wifi.xml", "aosp17_pe_p0_adb.xml", "aosp17_pe_p0_security.xml", "aosp17_pe_p0_sepolicy.xml", "aosp17_pe_p0_update_engine.xml", "aosp17_pe_p1_vold.xml", "aosp17_pe_p1_telephony.xml", "aosp17_pe_p1_timezonepicker.xml", "aosp17_pe_p2_tinycompress.xml", "aosp17_pe_p2_qcom_wlan.xml", "aosp17_pe_p2_ril.xml", "aosp17_pe_p2_kernel_configs.xml", "default.xml"):
+              assert indexed["bootable/recovery"].get("name") == "bootable_recovery"
+              assert indexed["bootable/recovery"].get("revision") == "0ed8dc4f93020555afdfc19141263ca40629ef74"
+          else:
+              assert indexed["bootable/recovery"].get("name") == "platform/bootable/recovery"
+          if profile in ("aosp17_pe_p0_av.xml", "aosp17_pe_p0_base.xml", "aosp17_pe_p0_hardware.xml", "aosp17_pe_p0_bluetooth.xml", "aosp17_pe_p0_connectivity.xml", "aosp17_pe_p0_permission.xml", "aosp17_pe_p0_wifi.xml", "aosp17_pe_p0_adb.xml", "aosp17_pe_p0_security.xml", "aosp17_pe_p0_sepolicy.xml", "aosp17_pe_p0_update_engine.xml", "aosp17_pe_p1_vold.xml", "aosp17_pe_p1_telephony.xml", "aosp17_pe_p1_timezonepicker.xml", "aosp17_pe_p2_tinycompress.xml", "aosp17_pe_p2_qcom_wlan.xml", "aosp17_pe_p2_ril.xml", "aosp17_pe_p2_kernel_configs.xml", "default.xml"):
+              assert indexed["frameworks/av"].get("name") == "frameworks_av"
+              assert indexed["frameworks/av"].get("revision") == "5db9a6151f33cacb810a8fe7615be8c23d3fa858"
+          else:
+              assert indexed["frameworks/av"].get("name") == "platform/frameworks/av"
+          framework_base = indexed["frameworks/base"]
+          if profile in ("aosp17_pe_p0_base.xml", "aosp17_pe_p0_hardware.xml", "aosp17_pe_p0_bluetooth.xml", "aosp17_pe_p0_connectivity.xml", "aosp17_pe_p0_permission.xml", "aosp17_pe_p0_wifi.xml", "aosp17_pe_p0_adb.xml", "aosp17_pe_p0_security.xml", "aosp17_pe_p0_sepolicy.xml", "aosp17_pe_p0_update_engine.xml", "aosp17_pe_p1_vold.xml", "aosp17_pe_p1_telephony.xml", "aosp17_pe_p1_timezonepicker.xml", "aosp17_pe_p2_tinycompress.xml", "aosp17_pe_p2_qcom_wlan.xml", "aosp17_pe_p2_ril.xml", "aosp17_pe_p2_kernel_configs.xml", "default.xml"):
+              assert framework_base.get("name") == "frameworks_base"
+              assert framework_base.get("revision") == "382d5c9c0b20bbdb67b70176bce02c7e64767b0c"
+          else:
+              assert framework_base.get("name") == "platform/frameworks/base"
+          hardware = indexed["hardware/interfaces"]
+          if profile in ("aosp17_pe_p0_hardware.xml", "aosp17_pe_p0_bluetooth.xml", "aosp17_pe_p0_connectivity.xml", "aosp17_pe_p0_permission.xml", "aosp17_pe_p0_wifi.xml", "aosp17_pe_p0_adb.xml", "aosp17_pe_p0_security.xml", "aosp17_pe_p0_sepolicy.xml", "aosp17_pe_p0_update_engine.xml", "aosp17_pe_p1_vold.xml", "aosp17_pe_p1_telephony.xml", "aosp17_pe_p1_timezonepicker.xml", "aosp17_pe_p2_tinycompress.xml", "aosp17_pe_p2_qcom_wlan.xml", "aosp17_pe_p2_ril.xml", "aosp17_pe_p2_kernel_configs.xml", "default.xml"):
+              assert hardware.get("name") == "hardware_interfaces", hardware.attrib
+              assert hardware.get("revision") == "735e364cbdd00b0d6e4dc33ea0866dbb6d971a11", hardware.attrib
+          else:
+              assert hardware.get("name") == "platform/hardware/interfaces", hardware.attrib
+          bluetooth = indexed["packages/modules/Bluetooth"]
+          if profile in ("aosp17_pe_p0_bluetooth.xml", "aosp17_pe_p0_connectivity.xml", "aosp17_pe_p0_permission.xml", "aosp17_pe_p0_wifi.xml", "aosp17_pe_p0_adb.xml", "aosp17_pe_p0_security.xml", "aosp17_pe_p0_sepolicy.xml", "aosp17_pe_p0_update_engine.xml", "aosp17_pe_p1_vold.xml", "aosp17_pe_p1_telephony.xml", "aosp17_pe_p1_timezonepicker.xml", "aosp17_pe_p2_tinycompress.xml", "aosp17_pe_p2_qcom_wlan.xml", "aosp17_pe_p2_ril.xml", "aosp17_pe_p2_kernel_configs.xml", "default.xml"):
+              assert bluetooth.get("name") == "packages_modules_Bluetooth", bluetooth.attrib
+              assert bluetooth.get("revision") == "e7c2f47e3c73c4f2b83f03145441e419f45124b3", bluetooth.attrib
+          else:
+              assert bluetooth.get("name") == "platform/packages/modules/Bluetooth", bluetooth.attrib
+          connectivity = indexed["packages/modules/Connectivity"]
+          if profile in ("aosp17_pe_p0_connectivity.xml", "aosp17_pe_p0_permission.xml", "aosp17_pe_p0_wifi.xml", "aosp17_pe_p0_adb.xml", "aosp17_pe_p0_security.xml", "aosp17_pe_p0_sepolicy.xml", "aosp17_pe_p0_update_engine.xml", "aosp17_pe_p1_vold.xml", "aosp17_pe_p1_telephony.xml", "aosp17_pe_p1_timezonepicker.xml", "aosp17_pe_p2_tinycompress.xml", "aosp17_pe_p2_qcom_wlan.xml", "aosp17_pe_p2_ril.xml", "aosp17_pe_p2_kernel_configs.xml", "default.xml"):
+              assert connectivity.get("name") == "packages_modules_Connectivity", connectivity.attrib
+              assert connectivity.get("revision") == "701882b51546230c6c32c9654a3f7b9814429e13", connectivity.attrib
+              assert connectivity.get("groups") == "pdk-cw-fs,pdk-fs", connectivity.attrib
+          else:
+              assert connectivity.get("name") == "platform/packages/modules/Connectivity", connectivity.attrib
+          permission = indexed["packages/modules/Permission"]
+          if profile in ("aosp17_pe_p0_permission.xml", "aosp17_pe_p0_wifi.xml", "aosp17_pe_p0_adb.xml", "aosp17_pe_p0_security.xml", "aosp17_pe_p0_sepolicy.xml", "aosp17_pe_p0_update_engine.xml", "aosp17_pe_p1_vold.xml", "aosp17_pe_p1_telephony.xml", "aosp17_pe_p1_timezonepicker.xml", "aosp17_pe_p2_tinycompress.xml", "aosp17_pe_p2_qcom_wlan.xml", "aosp17_pe_p2_ril.xml", "aosp17_pe_p2_kernel_configs.xml", "default.xml"):
+              assert permission.get("name") == "packages_modules_Permission", permission.attrib
+              assert permission.get("revision") == "f6e6e14b5c4d6e094c205683940a1328384338d9", permission.attrib
+              assert permission.get("groups") == "pdk-cw-fs,pdk-fs", permission.attrib
+          else:
+              assert permission.get("name") == "platform/packages/modules/Permission", permission.attrib
+          wifi = indexed["packages/modules/Wifi"]
+          if profile in ("aosp17_pe_p0_wifi.xml", "aosp17_pe_p0_adb.xml", "aosp17_pe_p0_security.xml", "aosp17_pe_p0_sepolicy.xml", "aosp17_pe_p0_update_engine.xml", "aosp17_pe_p1_vold.xml", "aosp17_pe_p1_telephony.xml", "aosp17_pe_p1_timezonepicker.xml", "aosp17_pe_p2_tinycompress.xml", "aosp17_pe_p2_qcom_wlan.xml", "aosp17_pe_p2_ril.xml", "aosp17_pe_p2_kernel_configs.xml", "default.xml"):
+              assert wifi.get("name") == "packages_modules_Wifi", wifi.attrib
+              assert wifi.get("revision") == "f228be88b2f0b8ed7a39ca1c4db94bc5aaaecbce", wifi.attrib
+              assert wifi.get("groups") == "pdk-cw-fs,pdk-fs,sysui-studio", wifi.attrib
+          else:
+              assert wifi.get("name") == "platform/packages/modules/Wifi", wifi.attrib
+          adb = indexed["packages/modules/adb"]
+          if profile in ("aosp17_pe_p0_adb.xml", "aosp17_pe_p0_security.xml", "aosp17_pe_p0_sepolicy.xml", "aosp17_pe_p0_update_engine.xml", "aosp17_pe_p1_vold.xml", "aosp17_pe_p1_telephony.xml", "aosp17_pe_p1_timezonepicker.xml", "aosp17_pe_p2_tinycompress.xml", "aosp17_pe_p2_qcom_wlan.xml", "aosp17_pe_p2_ril.xml", "aosp17_pe_p2_kernel_configs.xml", "default.xml"):
+              assert adb.get("name") == "packages_modules_adb", adb.attrib
+              assert adb.get("revision") == "6daac89c0d6e395f9ff2a032206a21e04421dc5f", adb.attrib
+              assert adb.get("groups") == "pdk", adb.attrib
+          else:
+              assert adb.get("name") == "platform/packages/modules/adb", adb.attrib
+          security = indexed["system/security"]
+          if profile in ("aosp17_pe_p0_security.xml", "aosp17_pe_p0_sepolicy.xml", "aosp17_pe_p0_update_engine.xml", "aosp17_pe_p1_vold.xml", "aosp17_pe_p1_telephony.xml", "aosp17_pe_p1_timezonepicker.xml", "aosp17_pe_p2_tinycompress.xml", "aosp17_pe_p2_qcom_wlan.xml", "aosp17_pe_p2_ril.xml", "aosp17_pe_p2_kernel_configs.xml", "default.xml"):
+              assert security.get("name") == "system_security", security.attrib
+              assert security.get("revision") == "a939bea3461e668355b1df87230f9308a8d50837", security.attrib
+              assert security.get("groups") == "pdk", security.attrib
+          else:
+              assert security.get("name") == "platform/system/security", security.attrib
+          sepolicy = indexed["system/sepolicy"]
+          if profile in ("aosp17_pe_p0_sepolicy.xml", "aosp17_pe_p0_update_engine.xml", "aosp17_pe_p1_vold.xml", "aosp17_pe_p1_telephony.xml", "aosp17_pe_p1_timezonepicker.xml", "aosp17_pe_p2_tinycompress.xml", "aosp17_pe_p2_qcom_wlan.xml", "aosp17_pe_p2_ril.xml", "aosp17_pe_p2_kernel_configs.xml", "default.xml"):
+              assert sepolicy.get("name") == "system_sepolicy", sepolicy.attrib
+              assert sepolicy.get("revision") == "f12e84e0ba4fe3d1cc093af15c41ceb8dba8cc69", sepolicy.attrib
+              assert sepolicy.get("groups") == "pdk", sepolicy.attrib
+          else:
+              assert sepolicy.get("name") == "platform/system/sepolicy", sepolicy.attrib
+          ota = indexed["system/update_engine"]
+          if profile in ("aosp17_pe_p0_update_engine.xml", "aosp17_pe_p1_vold.xml", "aosp17_pe_p1_telephony.xml", "aosp17_pe_p1_timezonepicker.xml", "aosp17_pe_p2_tinycompress.xml", "aosp17_pe_p2_qcom_wlan.xml", "aosp17_pe_p2_ril.xml", "aosp17_pe_p2_kernel_configs.xml", "default.xml"):
+              assert ota.get("name") == "system_update_engine", ota.attrib
+              assert ota.get("revision") == "c0309b604010b9b2e2c58d684e86b6090b74ad77", ota.attrib
+              assert ota.get("groups") == "pdk", ota.attrib
+          else:
+              assert ota.get("name") == "platform/system/update_engine", ota.attrib
+          vold = indexed["system/vold"]
+          if profile in ("aosp17_pe_p1_vold.xml", "aosp17_pe_p1_telephony.xml", "aosp17_pe_p1_timezonepicker.xml", "aosp17_pe_p2_tinycompress.xml", "aosp17_pe_p2_qcom_wlan.xml", "aosp17_pe_p2_ril.xml", "aosp17_pe_p2_kernel_configs.xml", "default.xml"):
+              assert vold.get("name") == "system_vold", vold.attrib
+              assert vold.get("revision") == "76516faf8c3bd5e0eb330611a40793cd137f1f8a", vold.attrib
+              assert vold.get("groups") == "pdk", vold.attrib
+          else:
+              assert vold.get("name") == "platform/system/vold", vold.attrib
+          telephony = indexed["frameworks/opt/telephony"]
+          if profile in ("aosp17_pe_p1_telephony.xml", "aosp17_pe_p1_timezonepicker.xml", "aosp17_pe_p2_tinycompress.xml", "aosp17_pe_p2_qcom_wlan.xml", "aosp17_pe_p2_ril.xml", "aosp17_pe_p2_kernel_configs.xml", "default.xml"):
+              assert telephony.get("name") == "frameworks_opt_telephony", telephony.attrib
+              assert telephony.get("revision") == "548270c2e6ab41b036c670339fa0d4b04ca1ed59", telephony.attrib
+              assert telephony.get("groups") == "pdk,sysui-studio", telephony.attrib
+          else:
+              assert telephony.get("name") == "platform/frameworks/opt/telephony", telephony.attrib
+          picker = indexed["frameworks/opt/timezonepicker"]
+          if profile in ("aosp17_pe_p1_timezonepicker.xml", "aosp17_pe_p2_tinycompress.xml", "aosp17_pe_p2_qcom_wlan.xml", "aosp17_pe_p2_ril.xml", "aosp17_pe_p2_kernel_configs.xml", "default.xml"):
+              assert picker.get("name") == "frameworks_opt_timezonepicker", picker.attrib
+              assert picker.get("revision") == "7a5698b6c651db16f243fe8d3d28008e4243e04c", picker.attrib
+              assert picker.get("groups") == "pdk-cw-fs,pdk-fs", picker.attrib
+          else:
+              assert picker.get("name") == "platform/frameworks/opt/timezonepicker", picker.attrib
+          tinycompress = indexed["external/tinycompress"]
+          if profile in ("aosp17_pe_p2_tinycompress.xml", "aosp17_pe_p2_qcom_wlan.xml", "aosp17_pe_p2_ril.xml", "aosp17_pe_p2_kernel_configs.xml", "default.xml"):
+              assert tinycompress.get("name") == "external_tinycompress", tinycompress.attrib
+              assert tinycompress.get("revision") == "25951427f9de414c3d5e01cd92b98f21ad490372", tinycompress.attrib
+              assert tinycompress.get("groups") == "pdk", tinycompress.attrib
+          else:
+              assert tinycompress.get("name") == "platform/external/tinycompress", tinycompress.attrib
+          # P2 Qualcomm WLAN: exactly one source owner at the official checkout
+          # path. Do not install both the archived qcom-caf WLAN and the
+          # AOSP17 Qualcomm WLAN fork in the same device graph.
+          wlan = indexed["hardware/qcom/wlan"]
+          if profile in ("aosp17_pe_p2_qcom_wlan.xml", "aosp17_pe_p2_ril.xml", "aosp17_pe_p2_kernel_configs.xml", "default.xml"):
+              assert wlan.get("name") == "hardware_qcom_wlan", wlan.attrib
+              assert wlan.get("revision") == "667daa664e107f0de451b9046a12da74b99a0e6b", wlan.attrib
+              assert wlan.get("groups") == "qcom_wlan,pdk-qcom", wlan.attrib
+              assert wlan.get("remote") == "reborn-wlan", wlan.attrib
+              assert "hardware/qcom-caf/wlan" not in indexed, "duplicate QCOM WLAN source"
+          else:
+              assert wlan.get("name") == "platform/hardware/qcom/wlan", wlan.attrib
+          # P2 RIL: one reviewed Soong hardware/ril checkout. Radio AIDL/HIDL
+          # modem vendor HAL selection remains a device bring-up task.
+          ril = indexed["hardware/ril"]
+          if profile in ("aosp17_pe_p2_ril.xml", "aosp17_pe_p2_kernel_configs.xml", "default.xml"):
+              assert ril.get("name") == "hardware_ril", ril.attrib
+              assert ril.get("revision") == "29ea93bac3efe871c54f86b05713f894575dc6b8", ril.attrib
+              assert ril.get("remote") == "reborn-ril", ril.attrib
+              assert ril.get("groups") == "pdk", ril.attrib
+          else:
+              assert ril.get("name") == "platform/hardware/ril", ril.attrib
+          # P2 kernel/configs: single official-source fork at the existing
+          # checkout path, not an additional kernel or device tree.
+          kcfg = indexed["kernel/configs"]
+          if profile in ("aosp17_pe_p2_kernel_configs.xml", "default.xml"):
+              assert kcfg.get("name") == "kernel_configs", kcfg.attrib
+              assert kcfg.get("revision") == "d02620f1f46af9eef024fb41e6d911d935699492", kcfg.attrib
+              assert kcfg.get("groups") == "vts,pdk", kcfg.attrib
+              assert kcfg.get("remote") == "reborn-kconfigs", kcfg.attrib
+          else:
+              assert kcfg.get("name") == "kernel/configs", kcfg.attrib
+          assert not any(path.startswith("device/google/") or
+                         path.startswith("device/linaro/") or
+                         path.startswith("device/amlogic/") for path in paths)
+          if profile == "aosp17_reference.xml":
+              assert indexed["build/soong"].get("name") == "platform/build/soong"
+              assert "vendor/aosp" not in indexed
+          else:
+              soong = indexed["build/soong"]
+              assert soong.get("name") == "build_soong"
+              assert soong.get("revision") == "6215d41c790a463b7795ce81ac77204c238cbf48"
+              if profile in ("aosp17_pe_envsetup.xml", "aosp17_pe_p0_native.xml", "aosp17_pe_p0_core.xml", "aosp17_pe_p0_frameworks.xml", "aosp17_pe_p0_recovery.xml", "aosp17_pe_p0_av.xml", "aosp17_pe_p0_base.xml", "aosp17_pe_p0_hardware.xml", "aosp17_pe_p0_bluetooth.xml", "aosp17_pe_p0_connectivity.xml", "aosp17_pe_p0_permission.xml", "aosp17_pe_p0_wifi.xml", "aosp17_pe_p0_adb.xml", "aosp17_pe_p0_security.xml", "aosp17_pe_p0_sepolicy.xml", "aosp17_pe_p0_update_engine.xml", "aosp17_pe_p1_vold.xml", "aosp17_pe_p1_telephony.xml", "aosp17_pe_p1_timezonepicker.xml", "aosp17_pe_p2_tinycompress.xml", "aosp17_pe_p2_qcom_wlan.xml", "aosp17_pe_p2_ril.xml", "aosp17_pe_p2_kernel_configs.xml", "default.xml"):
+                  vendor = indexed["vendor/aosp"]
+                  assert vendor.get("name") == "vendor_aosp"
+                  assert len(vendor.get("revision", "")) == 40
+              else:
+                  assert "vendor/aosp" not in indexed
+          print(f"PASS: {profile}: {len(paths)} projects, no duplicates, AOSP17 Make/ART/Bionic/core")
+          PY
+
+  verify-native-base-profile-ownership:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate incremental AOSP17 base ownership offline
+        run: python3 tools/validate_aosp17_base_profiles.py
+      - name: Test manifest fail-closed regression scenarios
+        run: python3 tools/test_aosp17_manifest_entrypoint.py

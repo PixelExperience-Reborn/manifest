@@ -1,0 +1,98 @@
+name: AOSP17 P1 TeleService exact source boundary
+
+on:
+  push:
+    branches:
+      - port/a17-aosp17-manifest-20261102
+    paths:
+      - aosp17_reference.xml
+      - aosp17_pe_p1_timezonepicker.xml
+      - .github/workflows/aosp17-p1-teleservice-source-sync.yml
+  pull_request:
+    paths:
+      - aosp17_reference.xml
+      - aosp17_pe_p1_timezonepicker.xml
+      - .github/workflows/aosp17-p1-teleservice-source-sync.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Download Android repo launcher
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fLsS --retry 4 https://storage.googleapis.com/git-repo-downloads/repo -o "$RUNNER_TEMP/repo"
+          chmod +x "$RUNNER_TEMP/repo"
+      - name: Validate official TeleService source graph
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/aosp"
+          cd "$RUNNER_TEMP/aosp"
+          "$RUNNER_TEMP/repo" init -q --no-clone-bundle --partial-clone --clone-filter=blob:none \
+            -u https://github.com/PixelExperience-Reborn/manifest \
+            -b port/a17-aosp17-manifest-20261102 -m aosp17_pe_p1_timezonepicker.xml
+          "$RUNNER_TEMP/repo" manifest -o "$RUNNER_TEMP/effective.xml"
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          root = ET.parse(Path(os.environ["RUNNER_TEMP"]) / "effective.xml").getroot()
+          src = {p.get("path") or p.get("name"): p.get("name") for p in root.findall("project")}
+          for path, name in {
+              "packages/services/Telephony": "platform/packages/services/Telephony",
+              "packages/modules/Telephony": "platform/packages/modules/Telephony",
+              "packages/services/Telecomm": "platform/packages/services/Telecomm",
+              "packages/modules/Telecom": "platform/packages/modules/Telecom",
+              "packages/providers/TelephonyProvider": "platform/packages/providers/TelephonyProvider",
+          }.items():
+              assert src.get(path) == name, (path, src.get(path))
+          assert "packages_services_Telephony" not in src.values()
+          print("PASS: official AOSP17 Telecom/Telephony/Provider source selections")
+          PY
+      - name: Sync exact AOSP17 TeleService
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/aosp"
+          "$RUNNER_TEMP/repo" sync -c -j2 --no-tags --fail-fast packages/services/Telephony
+      - name: Verify upstream SHA/tree, emergency app and modern Soong dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/aosp/packages/services/Telephony"
+          test "$(git rev-parse HEAD)" = "4a3830d926a5a84a6f5f7aab8d27e245e7880a68"
+          test "$(git rev-parse 'HEAD^{tree}')" = "301679ce600c4b4a9ae03667b9444d749dba7aad"
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+
+          bp = Path("Android.bp").read_text()
+          assert 'name: "TeleService"' in bp
+          assert 'name: "SlicePurchaseController"' in bp
+          for symbol in (
+              '"org.apache.http.legacy.stubs.system"',
+              '"modules-utils-fastxmlserializer"',
+              '"android.permission.flags-aconfig-java-export"',
+              '"satellite-s2storage-ro"',
+              '"s2-geometry-library-java"',
+              '"dropbox_flags_lib"',
+              'generate_product_characteristics_rro: true',
+          ):
+              assert symbol in bp, symbol
+          assert 'defaults: ["SettingsLibDefaults"]' not in bp
+          manifest = ET.parse("AndroidManifest.xml").getroot()
+          a = "{http://schemas.android.com/apk/res/android}"
+          assert manifest.get("package") == "com.android.phone"
+          assert manifest.get(a + "sharedUserId") == "android.uid.phone"
+          assert Path("ecc").is_dir() and Path("client").is_dir()
+          assert Path("src/com/android/services/telephony/TelephonyConnectionService.java").exists()
+          print("PASS: pinned AOSP17 TeleService Soong/manifest and emergency routing source")
+          print("NOT TESTED: product Soong compilation, modem, IMS, emergency calls, CTS or mondrian")
+          PY

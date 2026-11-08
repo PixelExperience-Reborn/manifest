@@ -1,0 +1,125 @@
+name: AOSP17 isolated SE logical-channel security candidate
+
+on:
+  push:
+    branches:
+      - port/a17-aosp17-manifest-20261102
+    paths:
+      - 'aosp17_pe_p2_se_security_candidate.xml'
+      - 'docs/ANDROID_17_SE_SECURITY_CANDIDATE.md'
+      - 'tools/validate_aosp17_base_profiles.py'
+      - 'tools/test_aosp17_manifest_entrypoint.py'
+      - '.github/workflows/aosp17-p2-se-security-candidate.yml'
+  pull_request:
+    paths:
+      - 'aosp17_pe_p2_se_security_candidate.xml'
+      - 'docs/ANDROID_17_SE_SECURITY_CANDIDATE.md'
+      - '.github/workflows/aosp17-p2-se-security-candidate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  exact-upstream-se-security-candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    steps:
+      - name: Download official repo launcher
+        run: |
+          set -euo pipefail
+          curl -fLsS --retry 4 https://storage.googleapis.com/git-repo-downloads/repo \
+            -o "$RUNNER_TEMP/repo"
+          chmod +x "$RUNNER_TEMP/repo"
+      - name: Resolve experimental SE candidate through real repo manifest
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/aosp17-se-candidate"
+          cd "$RUNNER_TEMP/aosp17-se-candidate"
+          "$RUNNER_TEMP/repo" init -q --no-clone-bundle \
+            --partial-clone --clone-filter=blob:none \
+            -u https://github.com/PixelExperience-Reborn/manifest.git \
+            -b port/a17-aosp17-manifest-20261102 \
+            -m aosp17_pe_p2_se_security_candidate.xml
+          "$RUNNER_TEMP/repo" manifest -o "$RUNNER_TEMP/se-candidate-resolved.xml"
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          import xml.etree.ElementTree as ET
+          root=ET.parse(Path(os.environ["RUNNER_TEMP"])/"se-candidate-resolved.xml").getroot()
+          items=root.findall(".//project")
+          by_path={p.get("path") or p.get("name"):p for p in items}
+          assert len(items)==len(by_path)==1069,(len(items),len(by_path))
+          se=by_path["hardware/nxp/secure_element"]
+          assert se.get("name")=="platform/hardware/nxp/secure_element"
+          assert se.get("revision")=="8aec22fde8121bf3f74006730ce42e9ac0366b62"
+          # The canonical repo manifest may omit an inherited aosp remote;
+          # exact input XML remote="aosp" is checked in the source validator.
+          assert se.get("groups")=="pdk"
+          assert by_path["hardware/nxp/nfc"].get("name")=="platform/hardware/nxp/nfc"
+          assert by_path["packages/modules/Nfc"].get("name")=="platform/packages/modules/Nfc"
+          assert by_path["system/secure_element"].get("name")=="platform/system/secure_element"
+          assert "vendor/nxp/secure_element" not in by_path
+          assert "vendor/nxp/secure_element_extns" not in by_path
+          print("PASS: 1069 distinct source checkouts, exact official SE r3 candidate")
+          print("PASS: NFC HAL, NFC Mainline and system OMAPI retain official owners")
+          PY
+      - name: Sync only pinned official NXP SE source
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/aosp17-se-candidate"
+          "$RUNNER_TEMP/repo" sync -c -j2 --no-tags --fail-fast hardware/nxp/secure_element
+      - name: Verify immutable SE r3 source, AIDL channel guard and exact patch set
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/aosp17-se-candidate/hardware/nxp/secure_element"
+          test "$(git rev-parse HEAD)" = "8aec22fde8121bf3f74006730ce42e9ac0366b62"
+          test "$(git rev-parse 'HEAD^{tree}')" = "60db7cd2fb71673b3d8468162eaaed6649e3c42c"
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          bp=Path("snxxx/aidl/Android.bp").read_text()
+          assert 'name: "android.hardware.secure_element-service.nxp"' in bp
+          assert '"android.hardware.secure_element-V1-ndk"' in bp
+          assert '"vendor.nxp.nxpnfc_aidl-V1-ndk"' in bp
+          v=ET.parse("snxxx/aidl/secure_element-service-nxp.xml").getroot()
+          h=v.findall("hal")
+          assert len(h)==1 and h[0].get("format")=="aidl"
+          assert h[0].findtext("name")=="android.hardware.secure_element"
+          assert h[0].findtext("version")=="1"
+          assert h[0].findtext("fqname")=="ISecureElement/eSE1"
+          guard="rspApdu.p_data[0] < mMaxChannelCount && rspApdu.p_data[0] > 0"
+          for filename in ("SecureElement.cpp","VirtualISO.cpp"):
+              s=Path("snxxx/aidl",filename).read_text()
+              assert guard in s, filename
+              assert "mOpenedChannels[resApduBuff.channelNumber] = true" in s
+              assert "sestatus = ISecureElement::CHANNEL_NOT_AVAILABLE" in s
+          print("PASS: frozen official SE AIDL V1 eSE1 source and both channel bounds guards")
+          PY
+          git fetch -q --no-tags --depth=1 --filter=blob:none \
+            https://android.googlesource.com/platform/hardware/nxp/secure_element \
+            refs/tags/android-17.0.0_r1
+          test "$(git rev-parse FETCH_HEAD)" = "ebc3542b480e505ed67ec52ea0c3135e5902ff5e"
+          git diff --name-only FETCH_HEAD HEAD > "$RUNNER_TEMP/se-r3-source-diff.txt"
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          modified=set(Path(os.environ["RUNNER_TEMP"],"se-r3-source-diff.txt").read_text().splitlines())
+          expected={
+              "pn8x/1.0/SecureElement.cpp",
+              "pn8x/1.1/SecureElement.cpp",
+              "snxxx/1.0/SecureElement.cpp","snxxx/1.0/VirtualISO.cpp",
+              "snxxx/1.1/SecureElement.cpp","snxxx/1.1/VirtualISO.cpp",
+              "snxxx/1.2/SecureElement.cpp","snxxx/1.2/VirtualISO.cpp",
+              "snxxx/aidl/SecureElement.cpp","snxxx/aidl/VirtualISO.cpp",
+          }
+          assert modified==expected,sorted(modified^expected)
+          print("PASS: exactly 10 reviewed SE security source files changed vs AOSP17 r1")
+          print("OPEN: full platform rebase, OMAPI/VINTF/SELinux, on-device tests")
+          PY
+      - name: State exact limits
+        run: |
+          echo "PASS is repo manifest and source-only security candidate verification."
+          echo "NOT AN ANDROID17 ROM, SE firmware update, CTS/VTS or security SPL proof."
+          echo "NOT TESTED: complete Soong/OMAPI/AIDL build, NXP vendor binary,"
+          echo "SELinux, physical mondrian NFCC/eSE, APDUs, OTA or payments."

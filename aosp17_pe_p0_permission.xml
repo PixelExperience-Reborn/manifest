@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+  <!-- P0: exact AOSP17 Permission module tree with no old PE permission
+       bypasses or UI changes; compilation and device testing still pending. -->
+  <include name="aosp17_pe_p0_connectivity.xml" />
+  <remove-project name="platform/packages/modules/Permission" />
+  <remote name="reborn-permission" fetch="https://github.com/PixelExperience-Reborn" />
+  <project path="packages/modules/Permission" name="packages_modules_Permission"
+           remote="reborn-permission" revision="f6e6e14b5c4d6e094c205683940a1328384338d9"
+           upstream="refs/heads/port/a17-permission-aosp17-base-20261103"
+           groups="pdk-cw-fs,pdk-fs" />
+</manifest>

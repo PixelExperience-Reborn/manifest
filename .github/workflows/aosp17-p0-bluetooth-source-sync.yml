@@ -1,0 +1,58 @@
+name: AOSP17 P0 Bluetooth selected source sync
+
+on:
+  push:
+    branches:
+      - port/a17-aosp17-manifest-20261102
+    paths:
+      - aosp17_pe_p0_bluetooth.xml
+      - .github/workflows/aosp17-p0-bluetooth-source-sync.yml
+  pull_request:
+    paths:
+      - aosp17_pe_p0_bluetooth.xml
+      - .github/workflows/aosp17-p0-bluetooth-source-sync.yml
+
+permissions:
+  contents: read
+
+jobs:
+  source-sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - name: Install official Android repo
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fLsS --retry 4 https://storage.googleapis.com/git-repo-downloads/repo \
+            -o "$RUNNER_TEMP/repo"
+          chmod +x "$RUNNER_TEMP/repo"
+      - name: Initialize isolated Android17 P0 Bluetooth profile
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/aosp"
+          cd "$RUNNER_TEMP/aosp"
+          "$RUNNER_TEMP/repo" init -q --no-clone-bundle --partial-clone \
+            --clone-filter=blob:none \
+            -u https://github.com/PixelExperience-Reborn/manifest \
+            -b port/a17-aosp17-manifest-20261102 -m aosp17_pe_p0_bluetooth.xml
+      - name: Fetch exactly packages/modules/Bluetooth
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/aosp"
+          "$RUNNER_TEMP/repo" sync -c -j2 --no-tags --fail-fast packages/modules/Bluetooth
+      - name: Compile source-extracted OPP Java predicate after SHA verification
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Validate pinned Bluetooth source and host Java regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/aosp/packages/modules/Bluetooth"
+          test "$(git rev-parse HEAD)" = "e7c2f47e3c73c4f2b83f03145441e419f45124b3"
+          python3 -m unittest discover -s tests/host -p 'test_*.py' -v
+          echo "PASS: exact Bluetooth AOSP17 PE SHA, host OPP URI tests"

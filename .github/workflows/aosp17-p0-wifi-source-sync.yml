@@ -1,0 +1,66 @@
+name: AOSP17 P0 WiFi exact source sync
+
+on:
+  push:
+    branches:
+      - port/a17-aosp17-manifest-20261102
+    paths:
+      - aosp17_pe_p0_wifi.xml
+      - .github/workflows/aosp17-p0-wifi-source-sync.yml
+  pull_request:
+    paths:
+      - aosp17_pe_p0_wifi.xml
+      - .github/workflows/aosp17-p0-wifi-source-sync.yml
+
+permissions:
+  contents: read
+
+jobs:
+  source-sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Download official Android repo launcher
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fLsS --retry 4 https://storage.googleapis.com/git-repo-downloads/repo \
+            -o "$RUNNER_TEMP/repo"
+          chmod +x "$RUNNER_TEMP/repo"
+      - name: Initialize reviewed WiFi AOSP17 profile
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/aosp"
+          cd "$RUNNER_TEMP/aosp"
+          "$RUNNER_TEMP/repo" init -q --no-clone-bundle --partial-clone \
+            --clone-filter=blob:none \
+            -u https://github.com/PixelExperience-Reborn/manifest \
+            -b port/a17-aosp17-manifest-20261102 -m aosp17_pe_p0_wifi.xml
+      - name: Sync only Wi-Fi module
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/aosp"
+          "$RUNNER_TEMP/repo" sync -c -j2 --no-tags --fail-fast packages/modules/Wifi
+      - name: Verify exact revision and safe AOSP17 regulatory/WFD handling
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/aosp/packages/modules/Wifi"
+          test "$(git rev-parse HEAD)" = "f228be88b2f0b8ed7a39ca1c4db94bc5aaaecbce"
+          test "$(git rev-parse 'HEAD^{tree}')" = "9d1062a94a9d7c7c4f4ef86a834154e2001f8114"
+          python3 - <<'PY'
+          from pathlib import Path
+          cc = Path("service/java/com/android/server/wifi/WifiCountryCode.java").read_text()
+          body = cc.split("private void handleCountryCodeChanged(String country)", 1)[1]
+          body = body.split("\n    }", 1)[0]
+          assert "mDriverCountryCode = country;" in body
+          assert "notifyListener(country);" in body
+          p2p = Path("service/java/com/android/server/wifi/p2p/WifiP2pServiceImpl.java").read_text()
+          body = p2p.split("public void setMiracastMode(int mode)", 1)[1]
+          body = body.split("\n    }", 1)[0]
+          assert "checkConfigureWifiDisplayPermission()" in body
+          print("PASS: original AOSP17 country-code notification and WFD permission gate")
+          PY
+          echo "PASS: pinned AOSP17 WiFi exact source tree"

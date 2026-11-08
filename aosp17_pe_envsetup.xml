@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+  <!-- Android17 staged PE environment: AOSP17 + pinned PE Soong + PE
+       vendor helper functions. This is NOT a full PE product or release. -->
+  <remote name="reborn-vendor" fetch="https://github.com/PixelExperience-Reborn" />
+  <project path="vendor/aosp"
+           name="vendor_aosp"
+           remote="reborn-vendor"
+           revision="38bf62440be54eb86b4f5c6ccc888e467b5a9a53"
+           upstream="refs/heads/port/a17-vendor-envsetup-20261102" />
+  <include name="aosp17_pe_bootstrap.xml" />
+</manifest>

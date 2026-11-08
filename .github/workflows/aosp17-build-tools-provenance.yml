@@ -1,0 +1,38 @@
+name: Verify official Android17 build-tools prebuilt source tree
+
+on:
+  push:
+    branches:
+      - port/a17-aosp17-manifest-20261102
+    paths:
+      - docs/ANDROID_17_PREBUILTS_BUILD_TOOLS_AUDIT.md
+      - .github/workflows/aosp17-build-tools-provenance.yml
+  pull_request:
+    paths:
+      - docs/ANDROID_17_PREBUILTS_BUILD_TOOLS_AUDIT.md
+      - .github/workflows/aosp17-build-tools-provenance.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-release-tree:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Fetch official AOSP17 tag without copying all binary blobs to GitHub
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/google-build-tools"
+          cd "$RUNNER_TEMP/google-build-tools"
+          git init -q
+          git remote add aosp https://android.googlesource.com/platform/prebuilts/build-tools
+          git -c protocol.version=2 fetch --no-tags --depth=1 --filter=blob:none \
+            aosp refs/tags/android-17.0.0_r1
+          test "$(git rev-parse 'FETCH_HEAD^{commit}')" = "9b6c8c6a2f582a9d7817fd8275c8014959c60cc4"
+          test "$(git rev-parse 'FETCH_HEAD^{tree}')" = "ea52996a4beaea187e897b10ce36bcb913b92e02"
+          git cat-file -e "ea52996a4beaea187e897b10ce36bcb913b92e02^{tree}"
+          echo "PASS: official AOSP17 build-tools source commit/tree verified"
+          echo "No executable binaries were copied into PE GitHub forks"

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+  <!-- EXPERIMENTAL, NONDEFAULT Qualcomm-derived DISPLAY.LA.5.0.r1 source.
+       Sony-hosted source reference, not certified current Qualcomm CLO,
+       not matched Xiaomi mondrian (SM8475/taro) vendor firmware.
+       The checkout contains HWC3 AIDL composer V2/V3, allocator AIDL V2,
+       mapper Stable-C V5 and HIDL Mapper 4 compatibility.
+       PE AOSP17 hardware/interfaces already has Composer3 V1..V5 and
+       allocator AIDL V1..V3; compatibility is NOT established.
+       CRITICAL: this Sony source tree is NOT a complete standalone
+       Qualcomm display stack: composer depends on SDM/DRM libraries,
+       and the matching SDM source/vendor binary ABI is unverified.
+       DO NOT enable its config/display-product.mk: contains Sony/other
+       panel-specific QDCM, backlight, HDR and color-calibration copies.
+       Do not enable HWC/allocator, tune panel, or change default.xml
+       without actual mondrian vendor ABI, Soong, VINTF/FCM, SELinux,
+       buffer mapper/DRM/UBWC, boot/refresh/brightness/CTS/VTS testing.
+       Old vendor/qcom/opensource/display is intentionally excluded. -->
+  <include name="aosp17_pe_p2_kernel_configs.xml" />
+  <remote name="sony-qcom-display-review"
+          fetch="https://github.com/sonyxperiadev" />
+  <project path="hardware/qcom/display"
+           name="hardware-qcom-display"
+           remote="sony-qcom-display-review"
+           revision="baf61f736e2109522e3f72754ee7cfacbfa2dc6c"
+           upstream="refs/heads/aosp/DISPLAY.LA.5.0.r1"
+           groups="device" />
+</manifest>

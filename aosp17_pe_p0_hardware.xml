@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+  <!-- P0: exact AOSP17 hardware/interfaces plus minimal PE HIDL Audio guard.
+       Include prior validated profile; do not touch the A14 default.xml.
+       Android HAL/VINTF build and mondrian hardware tests are still pending. -->
+  <include name="aosp17_pe_p0_base.xml" />
+  <remove-project name="platform/hardware/interfaces" />
+  <remote name="reborn-hardware" fetch="https://github.com/PixelExperience-Reborn" />
+  <project path="hardware/interfaces" name="hardware_interfaces" remote="reborn-hardware"
+           revision="735e364cbdd00b0d6e4dc33ea0866dbb6d971a11"
+           upstream="refs/heads/port/a17-hardware-interfaces-pe-20261103"
+           groups="pdk,sysui-studio" />
+</manifest>
