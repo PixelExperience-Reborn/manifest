@@ -1179,6 +1179,35 @@ class ManifestEntryPointTests(unittest.TestCase):
                 ValueError, "unqualified QTI vendor core-utils QSPA source excluded"):
             self.check()
 
+    def test_historical_qcom_rmnet_dataservices_cannot_enter_aosp17(self):
+        # The 2023 RMNET library requires independently qualified kernel
+        # headers and UAPI; preserve existing AOSP17 netd/Connectivity.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="vendor/qcom/opensource/dataservices" '
+            'name="vendor_qcom_opensource_dataservices" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(
+                ValueError,
+                "unqualified historical Qualcomm RMNET dataservices excluded"):
+            self.check()
+
+    def test_historical_qcom_rmnet_dataservices_alias_rejected(self):
+        # Renamed checkout cannot silently import the same old source graph.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="vendor/qcom/temporary/data-rmnet" '
+            'name="android_vendor_qcom_opensource_dataservices" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(
+                ValueError,
+                "unqualified historical Qualcomm RMNET dataservices excluded"):
+            self.check()
+
     def test_qualcomm_health_aidl_v5_pin_cannot_drift(self):
         self.rewrite(
             "aosp17_pe_p2_qcom_health_aidl_candidate.xml",
