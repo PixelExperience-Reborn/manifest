@@ -915,6 +915,31 @@ class ManifestEntryPointTests(unittest.TestCase):
                 ValueError, "unverified QTI Vibrator AIDL V2 source excluded"):
             self.check()
 
+    def test_unverified_qcom_wfdaac_must_not_enter_aosp17_graph(self):
+        # This is only a 2018 vendor AAC wrapper, not Miracast support.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="vendor/qcom/opensource/wfd-commonsys" '
+            'name="vendor_qcom_opensource_wfd-commonsys" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "unverified Qualcomm WFD AAC source excluded"):
+            self.check()
+
+    def test_unverified_qcom_wfdaac_renamed_repo_alias_not_bypass(self):
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="vendor/another/wfdaac" '
+            'name="android_vendor_qcom_opensource_wfd-commonsys" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "unverified Qualcomm WFD AAC source excluded"):
+            self.check()
+
     def test_qualcomm_health_aidl_v5_pin_cannot_drift(self):
         self.rewrite(
             "aosp17_pe_p2_qcom_health_aidl_candidate.xml",
