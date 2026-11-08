@@ -1126,6 +1126,33 @@ class ManifestEntryPointTests(unittest.TestCase):
                 ValueError, "archived QSSI14 core-utils build wrapper excluded"):
             self.check()
 
+    def test_archived_qcom_core_utils_sys_not_imported_into_aosp17(self):
+        # Old Qualcomm fwk-detect system_ext helper is not an AOSP17 HAL,
+        # platform default, or required Soong module with a proven consumer.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="vendor/qcom/opensource/core-utils-sys" '
+            'name="vendor_qcom_opensource_core-utils-sys" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "unreviewed Qualcomm core-utils-sys fwk-detect source excluded"):
+            self.check()
+
+    def test_archived_qcom_core_utils_sys_alias_cannot_enter_aosp17(self):
+        # The source identity stays unapproved even if checkout is renamed.
+        self.rewrite(
+            "aosp17_pe_p2_kernel_configs.xml",
+            '  <remove-project name="kernel/configs" />',
+            '  <project path="vendor/qcom/review/fwk-detect-shim" '
+            'name="android_vendor_qcom_opensource_core-utils-sys" />\n'
+            '  <remove-project name="kernel/configs" />',
+        )
+        with self.assertRaisesRegex(
+                ValueError, "unreviewed Qualcomm core-utils-sys fwk-detect source excluded"):
+            self.check()
+
     def test_qualcomm_health_aidl_v5_pin_cannot_drift(self):
         self.rewrite(
             "aosp17_pe_p2_qcom_health_aidl_candidate.xml",
