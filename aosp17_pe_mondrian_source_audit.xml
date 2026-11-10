@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+  <!-- PixelExperience-Reborn AOSP 17 SM8475/mondrian SOURCE AUDIT ONLY.
+       Opt-in profile; not an approved ROM product or a bootable kernel BSP.
+       Preserves the reviewed staged Android 17 platform source graph.
+       The source-only kernel, modules and DT repos currently contain
+       qualification data, NOT the source files needed for compilation.
+       No Xiaomi vendor blobs, firmware or hardware/xiaomi HAL are selected. -->
+  <include name="aosp17_pe_p2_kernel_configs.xml" />
+  <remote name="reborn-mondrian" fetch="https://github.com/PixelExperience-Reborn" />
+
+  <!-- Independent PE-Reborn device product scaffolds; no LOS product. -->
+  <project path="device/xiaomi/mondrian"
+           name="android_device_xiaomi_mondrian"
+           remote="reborn-mondrian"
+           revision="7e768d2b4f57dd1d4bc5595013c87c2c84c3ec54"
+           upstream="refs/heads/bringup/a17-mondrian-native-scaffold-20261108"
+           groups="device,mondrian" />
+  <project path="device/xiaomi/sm8450-common"
+           name="android_device_xiaomi_sm8450-common"
+           remote="reborn-mondrian"
+           revision="299b85d1910818a15748c597d3d7f2dc44afa78e"
+           upstream="refs/heads/bringup/a17-sm8450-common-native-scaffold-20261108"
+           groups="device,mondrian" />
+
+  <!-- Source qualification repositories, explicitly NOT a kernel build. -->
+  <project path="kernel/xiaomi/sm8450"
+           name="android_kernel_xiaomi_sm8450"
+           remote="reborn-mondrian"
+           revision="5ecbda42e7997befc409b6ba752b2bd1c4d40559"
+           upstream="refs/heads/audit/a17-mondrian-kernel-bsp-provenance-20261108"
+           groups="device,mondrian" />
+  <project path="kernel/xiaomi/sm8450-modules"
+           name="android_kernel_xiaomi_sm8450-modules"
+           remote="reborn-mondrian"
+           revision="4646b3118363e3515970a58ab44f124eb4d23bd3"
+           upstream="refs/heads/audit/a17-mondrian-module-kmi-contract-20261108"
+           groups="device,mondrian" />
+  <project path="kernel/xiaomi/sm8450-devicetrees"
+           name="android_kernel_xiaomi_sm8450-devicetrees"
+           remote="reborn-mondrian"
+           revision="fee9a766808bf21fcd7970d23b73ebce865fc4bf"
+           upstream="refs/heads/audit/a17-mondrian-dtbo-contract-20261108"
+           groups="device,mondrian" />
+</manifest>

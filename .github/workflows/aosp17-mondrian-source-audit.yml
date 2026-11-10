@@ -1,0 +1,80 @@
+name: AOSP17 mondrian five-repo source integration (NOT a ROM build)
+
+on:
+  push:
+    branches: [bringup/a17-mondrian-audit-profile-20261108]
+    paths:
+      - aosp17_pe_mondrian_source_audit.xml
+      - tools/check_mondrian_source_audit_profile.py
+      - .github/workflows/aosp17-mondrian-source-audit.yml
+  pull_request:
+    paths:
+      - aosp17_pe_mondrian_source_audit.xml
+      - tools/check_mondrian_source_audit_profile.py
+      - .github/workflows/aosp17-mondrian-source-audit.yml
+
+permissions:
+  contents: read
+
+jobs:
+  audited-source-sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate staged XML dependency chain and fixed revisions
+        run: python3 tools/check_mondrian_source_audit_profile.py
+      - name: Install official Android repo client
+        run: |
+          curl --fail --silent --show-error --location \
+            https://storage.googleapis.com/git-repo-downloads/repo \
+            --output "$RUNNER_TEMP/repo"
+          chmod +x "$RUNNER_TEMP/repo"
+      - name: Resolve independent PE mondrian AOSP17 manifest
+        run: |
+          mkdir -p "$RUNNER_TEMP/a17mondrian"
+          cd "$RUNNER_TEMP/a17mondrian"
+          "$RUNNER_TEMP/repo" init -q --no-clone-bundle \
+            -u https://github.com/PixelExperience-Reborn/manifest \
+            -b bringup/a17-mondrian-audit-profile-20261108 \
+            -m aosp17_pe_mondrian_source_audit.xml
+          "$RUNNER_TEMP/repo" manifest -o "$RUNNER_TEMP/mondrian-resolved.xml"
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          root = ET.parse(Path(__import__("os").environ["RUNNER_TEMP"]) / "mondrian-resolved.xml").getroot()
+          names = [p.get("path") or p.get("name") for p in root.findall("project")]
+          assert len(set(names)) == len(names), "Duplicate repo checkout path"
+          expected = {
+              "device/xiaomi/mondrian",
+              "device/xiaomi/sm8450-common",
+              "kernel/xiaomi/sm8450",
+              "kernel/xiaomi/sm8450-modules",
+              "kernel/xiaomi/sm8450-devicetrees",
+              "vendor/aosp",
+          }
+          assert expected.issubset(set(names)), "PE hardware source graph incomplete"
+          assert not {"vendor/xiaomi/mondrian", "vendor/xiaomi/sm8450-common", "hardware/xiaomi"} & set(names), "Unqualified vendor/HAL import"
+          assert "build/make" in names, "AOSP build/make absent"
+          print(f"[PASS] Google repo manifest parsed, unique paths: {len(names)}")
+          PY
+      - name: Sync only reviewed AOSP17 device, kernel audit, vendor and build/make sources
+        run: |
+          cd "$RUNNER_TEMP/a17mondrian"
+          "$RUNNER_TEMP/repo" sync -c --no-clone-bundle --fail-fast -j4 \
+            build/make \
+            vendor/aosp \
+            device/xiaomi/mondrian \
+            device/xiaomi/sm8450-common \
+            kernel/xiaomi/sm8450 \
+            kernel/xiaomi/sm8450-modules \
+            kernel/xiaomi/sm8450-devicetrees
+      - name: Check real checked-out Git SHA, PE product and AOSP17 Make inputs
+        run: |
+          python3 tools/check_mondrian_source_audit_profile.py \
+            --checkout-root "$RUNNER_TEMP/a17mondrian"
+          python3 -m unittest discover -s "$RUNNER_TEMP/a17mondrian/device/xiaomi/mondrian/tests" -v
+          python3 -m unittest discover -s "$RUNNER_TEMP/a17mondrian/device/xiaomi/sm8450-common/tests" -v
+          python3 -m unittest discover -s "$RUNNER_TEMP/a17mondrian/kernel/xiaomi/sm8450/tests" -v
+          python3 -m unittest discover -s "$RUNNER_TEMP/a17mondrian/kernel/xiaomi/sm8450-modules/tests" -v
+          python3 -m unittest discover -s "$RUNNER_TEMP/a17mondrian/kernel/xiaomi/sm8450-devicetrees/tests" -v
