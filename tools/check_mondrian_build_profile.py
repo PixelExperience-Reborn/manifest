@@ -18,6 +18,7 @@ PINNED = {
     "kernel/xiaomi/sm8450": "android_kernel_xiaomi_sm8450",
     "kernel/xiaomi/sm8450-modules": "android_kernel_xiaomi_sm8450-modules",
     "kernel/xiaomi/sm8450-devicetrees": "android_kernel_xiaomi_sm8450-devicetrees",
+    "vendor/aosp": "vendor_aosp",
 }
 
 

@@ -56,6 +56,7 @@
   <remove-project name="android_kernel_xiaomi_sm8450" />
   <remove-project name="android_kernel_xiaomi_sm8450-modules" />
   <remove-project name="android_kernel_xiaomi_sm8450-devicetrees" />
+  <remove-project name="vendor_aosp" />
 
   <!-- Device trees: scaffold plus the OS3.0.8.0 proprietary file lists. -->
   <project path="device/xiaomi/mondrian"
@@ -70,6 +71,14 @@
            revision="a6c82195a2dd8f19eb0da5032a545483be2d2e19"
            upstream="refs/heads/bringup/a17-mondrian-oem-vendor-os3-20261125"
            groups="device,mondrian" />
+
+  <!-- PE product layer: A17 vendor/aosp with the custom_generator Soong
+       plugin ported to the Android 17 API (generated_kernel_headers). -->
+  <project path="vendor/aosp"
+           name="vendor_aosp"
+           remote="reborn-mondrian"
+           revision="0409a4302760eef34015beee5359d5156c99c7d7"
+           upstream="refs/heads/bringup/a17-mondrian-full-build-20261125" />
 
   <!-- Kernel BSP verified together by the coherent kernel CI (run #139). -->
   <project path="kernel/xiaomi/sm8450"
