@@ -11,6 +11,46 @@
        one at a time, each validated by this build. Not a release. -->
   <include name="aosp17_pe_mondrian_source_audit.xml" />
 
+  <!-- Android security bulletin up to September 2026: these AOSP projects
+       take android-security-17.0.0_r3, which contains all of
+       android-17.0.0_r1 plus the fixes (fast-forward, checked commit by
+       commit). Projects where the security tag diverges from r1 need a
+       real merge in a fork and are handled separately. -->
+  <extend-project name="platform/external/aac" revision="refs/tags/android-security-17.0.0_r3" />
+  <extend-project name="platform/external/avb" revision="refs/tags/android-security-17.0.0_r3" />
+  <extend-project name="platform/external/exfatprogs" revision="refs/tags/android-security-17.0.0_r3" />
+  <extend-project name="platform/external/freetype" revision="refs/tags/android-security-17.0.0_r3" />
+  <extend-project name="platform/external/hplip" revision="refs/tags/android-security-17.0.0_r3" />
+  <extend-project name="platform/external/libcupsfilters" revision="refs/tags/android-security-17.0.0_r3" />
+  <extend-project name="platform/external/libhevc" revision="refs/tags/android-security-17.0.0_r3" />
+  <extend-project name="platform/external/libjxl" revision="refs/tags/android-security-17.0.0_r3" />
+  <extend-project name="platform/external/libpng" revision="refs/tags/android-security-17.0.0_r3" />
+  <extend-project name="platform/external/libppd" revision="refs/tags/android-security-17.0.0_r3" />
+  <extend-project name="platform/external/tremolo" revision="refs/tags/android-security-17.0.0_r3" />
+  <extend-project name="platform/hardware/nxp/nfc" revision="refs/tags/android-security-17.0.0_r3" />
+  <extend-project name="platform/hardware/nxp/secure_element" revision="refs/tags/android-security-17.0.0_r3" />
+  <extend-project name="platform/hardware/st/nfc" revision="refs/tags/android-security-17.0.0_r3" />
+  <extend-project name="platform/packages/apps/Car/Settings" revision="refs/tags/android-security-17.0.0_r3" />
+  <extend-project name="platform/packages/apps/Contacts" revision="refs/tags/android-security-17.0.0_r3" />
+  <extend-project name="platform/packages/apps/ContactsPicker" revision="refs/tags/android-security-17.0.0_r3" />
+  <extend-project name="platform/packages/apps/ManagedProvisioning" revision="refs/tags/android-security-17.0.0_r3" />
+  <extend-project name="platform/packages/apps/TV" revision="refs/tags/android-security-17.0.0_r3" />
+  <extend-project name="platform/packages/apps/TvSettings" revision="refs/tags/android-security-17.0.0_r3" />
+  <extend-project name="platform/packages/modules/IntentResolver" revision="refs/tags/android-security-17.0.0_r3" />
+  <extend-project name="platform/packages/modules/NeuralNetworks" revision="refs/tags/android-security-17.0.0_r3" />
+  <extend-project name="platform/packages/modules/Profiling" revision="refs/tags/android-security-17.0.0_r3" />
+  <extend-project name="platform/packages/modules/Telephony" revision="refs/tags/android-security-17.0.0_r3" />
+  <extend-project name="platform/packages/providers/ContactsProvider" revision="refs/tags/android-security-17.0.0_r3" />
+  <extend-project name="platform/packages/providers/DownloadProvider" revision="refs/tags/android-security-17.0.0_r3" />
+  <extend-project name="platform/packages/providers/MediaProvider" revision="refs/tags/android-security-17.0.0_r3" />
+  <extend-project name="platform/packages/services/BuiltInPrintService" revision="refs/tags/android-security-17.0.0_r3" />
+  <extend-project name="platform/packages/services/Iwlan" revision="refs/tags/android-security-17.0.0_r3" />
+  <extend-project name="platform/packages/services/Mms" revision="refs/tags/android-security-17.0.0_r3" />
+  <extend-project name="platform/system/gsid" revision="refs/tags/android-security-17.0.0_r3" />
+  <extend-project name="platform/system/libfmq" revision="refs/tags/android-security-17.0.0_r3" />
+  <extend-project name="platform/system/libufdt" revision="refs/tags/android-security-17.0.0_r3" />
+  <extend-project name="trusty/lib" revision="refs/tags/android-security-17.0.0_r3" />
+
   <remove-project name="android_device_xiaomi_mondrian" />
   <remove-project name="android_device_xiaomi_sm8450-common" />
   <remove-project name="android_kernel_xiaomi_sm8450" />

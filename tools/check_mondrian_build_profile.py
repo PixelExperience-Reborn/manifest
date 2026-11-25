@@ -33,6 +33,10 @@ def resolve(name):
                     del projects[path]
         elif element.tag == "project":
             projects[element.get("path") or element.get("name")] = element
+        elif element.tag == "extend-project":
+            for path, project in projects.items():
+                if project.get("name") == element.get("name"):
+                    project.set("revision", element.get("revision"))
     return projects
 
 
@@ -52,6 +56,15 @@ def main():
             sys.exit(f"{path}: upstream must record the bring-up branch")
         if project.get("remote") != "reborn-mondrian":
             sys.exit(f"{path}: must come from the PixelExperience-Reborn remote")
+    # Security bulletin updates may only move AOSP projects to an
+    # android-security-17 tag; they never add paths or change remotes.
+    known = {p.get("name") for p in base.values()}
+    for e in (e for e in root if e.tag == "extend-project"):
+        name, rev = e.get("name"), e.get("revision", "")
+        if name not in known:
+            sys.exit(f"extend-project {name}: not a project of the source-audit profile")
+        if set(e.attrib) != {"name", "revision"} or not re.fullmatch(r"refs/tags/android-security-17\.0\.0_r[0-9]+", rev):
+            sys.exit(f"extend-project {name}: only a revision android-security-17.0.0_rN is allowed")
     added = sorted(set(build) - set(base))
     if added:
         sys.exit(f"build profile adds unreviewed paths: {added}")
