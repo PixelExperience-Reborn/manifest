@@ -72,3 +72,29 @@ Android 17 graph.
 **Change policy:** maintain original Git histories, isolate every AOSP17 port,
 review single source owners and conflicts, keep incomplete sources outside the
 default graph, and require real build/boot tests before declaring readiness.
+
+## Real pe_mondrian build on ServerHive (opt-in)
+
+`aosp17_pe_mondrian_build.xml` extends `aosp17_pe_mondrian_source_audit.xml`
+with the current bring-up heads of the mondrian device trees and of the
+kernel, external modules and device trees that the kernel CI built and
+verified together. `.github/workflows/aosp17-mondrian-build.yml` (manual
+dispatch only) runs `tools/aosp17_mondrian_build.sh` on the project's own
+ServerHive runner: pinned `repo` launcher, persistent source tree next to the
+runner work directories, `repo sync`, `lunch pe_mondrian-<release>-<variant>`
+and then `m nothing` (stage `graph`, full Soong/Kati analysis),
+`m vendorimage` or `m`. Logs are kept as a workflow artifact.
+`tools/check_mondrian_build_profile.py` checks the profile structure.
+
+Qualcomm source HALs, `vendor/xiaomi/*` and `hardware/xiaomi` are added to
+this profile one at a time, each validated by this build.
+
+### Linux 5.10 and Android 17
+
+Checked at the official `android-17.0.0_r1` sources: the framework
+compatibility matrix for vendor FCM level 7 lists `kernel_config_t_5.10` and
+`kernel_config_t_5.15` (`hardware/interfaces/compatibility_matrices/Android.bp`),
+and `kernel/configs` carries `t/android-5.10`. A level-7 vendor with a 5.10
+kernel, which is what mondrian uses, is therefore a valid Android 17 r1
+configuration. Later quarterly releases may drop level 7; that is a future
+risk, not a blocker for 17.0.0_r1.

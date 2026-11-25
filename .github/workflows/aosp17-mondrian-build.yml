@@ -1,0 +1,63 @@
+name: AOSP17 pe_mondrian real build (ServerHive)
+
+# Manual only. Runs on the project's own ServerHive runner (runner group
+# mondrian-heavy restricts which workflow files and branches may use it).
+on:
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: 'graph = lunch + m nothing; vendor = m vendorimage; full = m'
+        required: true
+        type: choice
+        default: graph
+        options: [graph, vendor, full]
+      release:
+        description: 'TARGET_RELEASE for lunch'
+        required: true
+        default: trunk_staging
+      variant:
+        required: true
+        type: choice
+        default: userdebug
+        options: [userdebug, eng, user]
+      sync:
+        description: 'repo sync before building'
+        required: true
+        type: boolean
+        default: true
+
+concurrency:
+  group: aosp17-mondrian-build
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on:
+      group: mondrian-heavy
+      labels: pe-mondrian-heavy
+    timeout-minutes: 1200
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Check the build profile
+        run: python3 tools/check_mondrian_build_profile.py
+      - name: Sync and build pe_mondrian
+        env:
+          STAGE: ${{ inputs.stage }}
+          RELEASE: ${{ inputs.release }}
+          VARIANT: ${{ inputs.variant }}
+          DO_SYNC: ${{ inputs.sync }}
+          MANIFEST_BRANCH: ${{ github.ref_name }}
+        run: bash tools/aosp17_mondrian_build.sh
+      - name: Save build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aosp17-mondrian-${{ inputs.stage }}-logs
+          if-no-files-found: ignore
+          retention-days: 14
+          path: ${{ runner.temp }}/aosp17-logs/

@@ -650,6 +650,10 @@ def validate():
     expected_files.add("aosp17_pe_p2_qcom_audio_aidl_candidate.xml")
     expected_files.add("aosp17_pe_p2_qcom_display_aidl_candidate.xml")
     expected_files.add("aosp17_pe_p2_qcom_health_aidl_candidate.xml")
+    # Opt-in mondrian profiles: source audit, BSP trial and the real ServerHive build.
+    expected_files.add("aosp17_pe_mondrian_source_audit.xml")
+    expected_files.add("aosp17_pe_mondrian_bsp_trial.xml")
+    expected_files.add("aosp17_pe_mondrian_build.xml")
     actual_files = {p.name for p in ROOT.glob("aosp17_*.xml")}
     if actual_files != expected_files:
         raise ValueError(f"stage list drift: missing={expected_files - actual_files}, extra={actual_files - expected_files}")

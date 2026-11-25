@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+  <!-- PE-Reborn AOSP 17 / mondrian (SM8475): REAL BUILD profile.
+       Opt-in, used only by .github/workflows/aosp17-mondrian-build.yml on the
+       project's own ServerHive runner. It extends the reviewed source-audit
+       graph (official android-17.0.0_r1 plus reviewed PE forks) with the
+       current bring-up heads of the mondrian device trees and of the
+       Xiaomi/Qualcomm kernel, external modules and device trees that the
+       kernel CI built together (Image, MODPOST, DT driver coverage).
+       Qualcomm source HALs, vendor/xiaomi/* and hardware/xiaomi are added
+       one at a time, each validated by this build. Not a release. -->
+  <include name="aosp17_pe_mondrian_source_audit.xml" />
+
+  <remove-project name="android_device_xiaomi_mondrian" />
+  <remove-project name="android_device_xiaomi_sm8450-common" />
+  <remove-project name="android_kernel_xiaomi_sm8450" />
+  <remove-project name="android_kernel_xiaomi_sm8450-modules" />
+  <remove-project name="android_kernel_xiaomi_sm8450-devicetrees" />
+
+  <!-- Device trees: scaffold plus the OS3.0.8.0 proprietary file lists. -->
+  <project path="device/xiaomi/mondrian"
+           name="android_device_xiaomi_mondrian"
+           remote="reborn-mondrian"
+           revision="bce239f0eef9299b2326e841763408385ab0797d"
+           upstream="refs/heads/bringup/a17-mondrian-oem-vendor-os3-20261125"
+           groups="device,mondrian" />
+  <project path="device/xiaomi/sm8450-common"
+           name="android_device_xiaomi_sm8450-common"
+           remote="reborn-mondrian"
+           revision="de3ada787b6f9e784f7129af432bf00dfa6f0d35"
+           upstream="refs/heads/bringup/a17-mondrian-oem-vendor-os3-20261125"
+           groups="device,mondrian" />
+
+  <!-- Kernel BSP verified together by the coherent kernel CI (run #139). -->
+  <project path="kernel/xiaomi/sm8450"
+           name="android_kernel_xiaomi_sm8450"
+           remote="reborn-mondrian"
+           revision="2efda4cf1afa2a7098d5abd4806769903e181f73"
+           upstream="refs/heads/bringup/a17-mondrian-oem-display-coherent-20261115"
+           groups="device,mondrian" />
+  <project path="kernel/xiaomi/sm8450-modules"
+           name="android_kernel_xiaomi_sm8450-modules"
+           remote="reborn-mondrian"
+           revision="f87310dee6807aff2fccf579fd0d29e729427477"
+           upstream="refs/heads/bringup/a17-mondrian-oem-bsp-20261111"
+           groups="device,mondrian" />
+  <project path="kernel/xiaomi/sm8450-devicetrees"
+           name="android_kernel_xiaomi_sm8450-devicetrees"
+           remote="reborn-mondrian"
+           revision="c6f47f9b8f9b7129d98b30e36beae8445fd2faa5"
+           upstream="refs/heads/bringup/a17-mondrian-oem-bsp-20261111"
+           groups="device,mondrian" />
+</manifest>
