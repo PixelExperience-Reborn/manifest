@@ -1,8 +1,16 @@
 name: AOSP17 pe_mondrian real build (ServerHive)
 
-# Manual only. Runs on the project's own ServerHive runner (runner group
-# mondrian-heavy restricts which workflow files and branches may use it).
+# Runs on the project's own ServerHive runner (runner group mondrian-heavy
+# restricts which workflow files and branches may use it): on manual dispatch,
+# and on pushes to this bring-up branch that change the build composition.
 on:
+  push:
+    branches: ['bringup/a17-mondrian-full-build-20261125']
+    paths:
+      - aosp17_pe_mondrian_build.xml
+      - tools/aosp17_mondrian_build.sh
+      - tools/check_mondrian_build_profile.py
+      - .github/workflows/aosp17-mondrian-build.yml
   workflow_dispatch:
     inputs:
       stage:
@@ -47,17 +55,17 @@ jobs:
         run: python3 tools/check_mondrian_build_profile.py
       - name: Sync and build pe_mondrian
         env:
-          STAGE: ${{ inputs.stage }}
-          RELEASE: ${{ inputs.release }}
-          VARIANT: ${{ inputs.variant }}
-          DO_SYNC: ${{ inputs.sync }}
+          STAGE: ${{ inputs.stage || 'graph' }}
+          RELEASE: ${{ inputs.release || 'trunk_staging' }}
+          VARIANT: ${{ inputs.variant || 'userdebug' }}
+          DO_SYNC: ${{ github.event_name == 'push' || inputs.sync }}
           MANIFEST_BRANCH: ${{ github.ref_name }}
         run: bash tools/aosp17_mondrian_build.sh
       - name: Save build logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: aosp17-mondrian-${{ inputs.stage }}-logs
+          name: aosp17-mondrian-${{ inputs.stage || 'graph' }}-logs
           if-no-files-found: ignore
           retention-days: 14
           path: ${{ runner.temp }}/aosp17-logs/
