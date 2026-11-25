@@ -7,7 +7,9 @@ on:
   push:
     branches: ['bringup/a17-mondrian-full-build-20261125']
     paths:
-      - aosp17_pe_mondrian_build.xml
+      # The build profile includes the source-audit profile, which includes
+      # the whole reviewed aosp17_* chain: any of them changes the build.
+      - 'aosp17_*.xml'
       - tools/aosp17_mondrian_build.sh
       - tools/check_mondrian_build_profile.py
       - .github/workflows/aosp17-mondrian-build.yml
