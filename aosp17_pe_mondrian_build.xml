@@ -51,6 +51,15 @@
   <extend-project name="platform/system/libufdt" revision="refs/tags/android-security-17.0.0_r3" />
   <extend-project name="trusty/lib" revision="refs/tags/android-security-17.0.0_r3" />
 
+  <!-- AOSP projects that aosp17_pe_bootstrap.xml drops but other AOSP
+       projects of the tree depend on (platform_testing uses cuttlefish_base;
+       cuttlefish needs its prebuilts and VMM). PixelExperience 14 kept
+       cuttlefish and contexthub for the same reason. Unmodified AOSP 17 r1. -->
+  <project path="device/google/contexthub" name="device/google/contexthub" groups="device,pdk" />
+  <project path="device/google/cuttlefish" name="device/google/cuttlefish" groups="device,pdk" />
+  <project path="device/google/cuttlefish_prebuilts" name="device/google/cuttlefish_prebuilts" groups="device,pdk" clone-depth="1" />
+  <project path="device/google/cuttlefish_vmm" name="device/google/cuttlefish_vmm" groups="device,pdk" clone-depth="1" />
+
   <remove-project name="android_device_xiaomi_mondrian" />
   <remove-project name="android_device_xiaomi_sm8450-common" />
   <remove-project name="android_kernel_xiaomi_sm8450" />
