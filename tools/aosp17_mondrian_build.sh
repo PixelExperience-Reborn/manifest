@@ -80,12 +80,20 @@ repo manifest -r -o "$LOGS/resolved-manifest.xml"
 summary "### aosp_mondrian AOSP 17 build ($STAGE)"
 summary "- manifest: \`$MANIFEST_BRANCH\` / \`$MANIFEST_FILE\`, projects: $(grep -c '<project' "$LOGS/resolved-manifest.xml")"
 
+# No Google remote build execution (RBE) here: everything builds locally
+# on ServerHive. AOSP enables RBE when USE_RBE is not explicitly false.
+export USE_RBE=false
+
 set +u
 # shellcheck disable=SC1091
 source build/envsetup.sh > "$LOGS/envsetup.log" 2>&1
 target="aosp_mondrian-$RELEASE-$VARIANT"
 status=0
-lunch "$target" 2>&1 | tee "$LOGS/lunch.log" || status=$?
+# lunch must run in this shell, not in a pipeline subshell: it exports
+# TARGET_PRODUCT, TARGET_RELEASE and TARGET_BUILD_VARIANT for m.
+lunch "$target" > "$LOGS/lunch.log" 2>&1 || status=$?
+cat "$LOGS/lunch.log"
+echo "TARGET_PRODUCT=${TARGET_PRODUCT:-} TARGET_RELEASE=${TARGET_RELEASE:-} TARGET_BUILD_VARIANT=${TARGET_BUILD_VARIANT:-}"
 if ((status == 0)); then
     case "$STAGE" in
         graph)  m nothing 2>&1 | tee "$LOGS/build.log" || status=$? ;;
