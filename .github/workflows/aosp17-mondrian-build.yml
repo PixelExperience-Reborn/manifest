@@ -22,9 +22,9 @@ on:
         default: graph
         options: [graph, vendor, full]
       release:
-        description: 'TARGET_RELEASE for lunch'
+        description: 'TARGET_RELEASE for lunch (cp2a = stable release of android-17.0.0_r1)'
         required: true
-        default: trunk_staging
+        default: cp2a
       variant:
         required: true
         type: choice
@@ -58,7 +58,7 @@ jobs:
       - name: Sync and build pe_mondrian
         env:
           STAGE: ${{ inputs.stage || 'graph' }}
-          RELEASE: ${{ inputs.release || 'trunk_staging' }}
+          RELEASE: ${{ inputs.release || 'cp2a' }}
           VARIANT: ${{ inputs.variant || 'userdebug' }}
           DO_SYNC: ${{ github.event_name == 'push' || inputs.sync }}
           MANIFEST_BRANCH: ${{ github.ref_name }}

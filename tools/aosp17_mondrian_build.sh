@@ -12,7 +12,7 @@
 set -euo pipefail
 
 STAGE="${STAGE:-graph}"
-RELEASE="${RELEASE:-trunk_staging}"
+RELEASE="${RELEASE:-cp2a}"
 VARIANT="${VARIANT:-userdebug}"
 DO_SYNC="${DO_SYNC:-true}"
 MANIFEST_URL="https://github.com/PixelExperience-Reborn/manifest"
