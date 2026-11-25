@@ -73,7 +73,7 @@ Android 17 graph.
 review single source owners and conflicts, keep incomplete sources outside the
 default graph, and require real build/boot tests before declaring readiness.
 
-## Real pe_mondrian build on ServerHive (opt-in)
+## Real aosp_mondrian build on ServerHive (opt-in)
 
 `aosp17_pe_mondrian_build.xml` extends `aosp17_pe_mondrian_source_audit.xml`
 with the current bring-up heads of the mondrian device trees and of the
@@ -81,7 +81,7 @@ kernel, external modules and device trees that the kernel CI built and
 verified together. `.github/workflows/aosp17-mondrian-build.yml` (manual
 dispatch only) runs `tools/aosp17_mondrian_build.sh` on the project's own
 ServerHive runner: pinned `repo` launcher, persistent source tree next to the
-runner work directories, `repo sync`, `lunch pe_mondrian-<release>-<variant>`
+runner work directories, `repo sync`, `lunch aosp_mondrian-<release>-<variant>` (release `cp2a` by default)
 and then `m nothing` (stage `graph`, full Soong/Kati analysis),
 `m vendorimage` or `m`. Logs are kept as a workflow artifact.
 `tools/check_mondrian_build_profile.py` checks the profile structure.

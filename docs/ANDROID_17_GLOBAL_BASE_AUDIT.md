@@ -108,7 +108,7 @@
 ## 6. Сборочные несоответствия для mondrian
 
 1. **Компилятор ядра.** Ядро в CI собрано clang `r614150` (23.0.1), которого нет в AOSP 17 r1 (`clang-r584948`, `r584948b`, `r596125`). Внутренний `kernel.mk` `vendor_aosp` по умолчанию берёт `clang-r487747c` (нет в A17) и `prebuilts/tools-custom` (нет в профиле). Нужно либо явно задать `TARGET_KERNEL_CLANG_VERSION` из AOSP 17 и проверить ядро им, либо подавать в сборку ядро, собранное нашим CI.
-2. **Имя продукта.** Инструменты PE (`breakfast`, `CUSTOM_BUILD`, `org.pixelexperience.device`) рассчитаны на `aosp_<device>`; наш продукт называется `pe_mondrian`. Нужно привести к соглашению PE: `aosp_mondrian`.
+2. **Имя продукта.** Инструменты PE (`breakfast`, `CUSTOM_BUILD`, `org.pixelexperience.device`) рассчитаны на `aosp_<device>`; наш продукт назывался `pe_mondrian`. **Исправлено:** продукт `aosp_mondrian` (device `9bcdd23`), бутанимация 1440p под панель 1440×3200, варианты lunch `aosp_mondrian-cp2a-*`.
 3. **Qualcomm-слой.** 26 нужных mondrian форков (`hardware/qcom-caf/sm8450/*`, `qcom-caf/common`, bootctrl, `vendor/qcom/opensource/*`, sepolicy_vndr) имеют в `seventeen` код A14 (Lineage-21 CAF / `LA.VENDOR.1.0.r1-…-WAIPIO`); A17-работа есть только в `common`, `thermal` и нескольких `vendor/qcom/opensource/*`. В сборку они пока не входят. Вендор OS3 — Android 12 (API 31, VINTF target-level 6), поэтому HAL из исходников должны оставаться совместимыми с интерфейсами блобов OS3.
 4. **NFC.** У mondrian NXP SN100/SN220; в AOSP 17 есть `hardware/nxp/nfc` (AIDL) и `hardware/nxp/secure_element`, поэтому старые NXP-форки (HIDL, PN5xx, NfcNci) не нужны.
 5. **GitHub Actions в `manifest`.** С 4 ноября ни один push в этом форке не создаёт запуск (у коммита нет check-suite Actions), хотя в device-репозиториях push и ручной запуск работают. Нужно включить Actions в самом репозитории `manifest` (вкладка Actions → «I understand my workflows…» либо Settings → Actions → General → Allow all actions).
@@ -116,7 +116,7 @@
 ## 7. План (порядок работ)
 
 1. Включить Actions в `manifest` и прогнать реальную стадию `graph` на ServerHive с релизом `cp2a`.
-2. Привести продукт к `aosp_mondrian` и задать компилятор ядра из AOSP 17.
+2. ~~Привести продукт к `aosp_mondrian`~~ (сделано); задать компилятор ядра из AOSP 17.
 3. Патч безопасности: 34 проекта — ревизия на `android-security-17.0.0_r3`; 24 — merge (наши форки и новые форки); флаг уровня патча `2026-09-01` в `vendor/aosp`. Каждый следующий месяц — тот же процесс со следующим тегом.
 4. Qualcomm-слой mondrian: по одному форку переносить на A17 (неверные правила Soong, `-ndk_platform` → `-ndk`, AIDL), добавлять в профиль и проверять сборкой `m vendorimage`.
 5. Перенос в основные ветки: когда сборка проходит, `seventeen` каждого используемого форка получает A17-содержимое **merge-коммитом без force-push** (история A14 остаётся в `fourteen`); `manifest/seventeen` получает A17-манифест. Ненужные mondrian форки остаются как есть и не входят в манифест.

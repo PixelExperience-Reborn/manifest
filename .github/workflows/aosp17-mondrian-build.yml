@@ -1,4 +1,4 @@
-name: AOSP17 pe_mondrian real build (ServerHive)
+name: AOSP17 aosp_mondrian real build (ServerHive)
 
 # Runs on the project's own ServerHive runner (runner group mondrian-heavy
 # restricts which workflow files and branches may use it): on manual dispatch,
@@ -55,7 +55,7 @@ jobs:
           persist-credentials: false
       - name: Check the build profile
         run: python3 tools/check_mondrian_build_profile.py
-      - name: Sync and build pe_mondrian
+      - name: Sync and build aosp_mondrian
         env:
           STAGE: ${{ inputs.stage || 'graph' }}
           RELEASE: ${{ inputs.release || 'cp2a' }}

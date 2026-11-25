@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Real AOSP 17 build of pe_mondrian on the project's ServerHive runner.
+# Real AOSP 17 build of aosp_mondrian (PE product of mondrian) on the project's ServerHive runner.
 #
 # STAGE=graph : repo sync + lunch + `m nothing` (full Soong/Kati analysis)
 # STAGE=vendor: ... + `m vendorimage`
@@ -77,13 +77,13 @@ if [[ "$DO_SYNC" == "true" ]]; then
         --force-sync --force-remove-dirty 2>&1 | tee "$LOGS/repo-sync.log"
 fi
 repo manifest -r -o "$LOGS/resolved-manifest.xml"
-summary "### pe_mondrian AOSP 17 build ($STAGE)"
+summary "### aosp_mondrian AOSP 17 build ($STAGE)"
 summary "- manifest: \`$MANIFEST_BRANCH\` / \`$MANIFEST_FILE\`, projects: $(grep -c '<project' "$LOGS/resolved-manifest.xml")"
 
 set +u
 # shellcheck disable=SC1091
 source build/envsetup.sh > "$LOGS/envsetup.log" 2>&1
-target="pe_mondrian-$RELEASE-$VARIANT"
+target="aosp_mondrian-$RELEASE-$VARIANT"
 status=0
 lunch "$target" 2>&1 | tee "$LOGS/lunch.log" || status=$?
 if ((status == 0)); then
