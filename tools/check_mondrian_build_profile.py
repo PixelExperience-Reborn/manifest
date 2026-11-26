@@ -20,6 +20,13 @@ PINNED = {
     "kernel/xiaomi/sm8450-devicetrees": "android_kernel_xiaomi_sm8450-devicetrees",
     "vendor/aosp": "vendor_aosp",
 }
+# Projects outside the organization, each at an immutable commit of its
+# recorded branch.
+EXTERNAL = {
+    "vendor/gapps": ("vendor_gapps", "mindthegapps", "refs/heads/cinnamonbun"),
+}
+# The prebuilt kernel release lives on the default branch of its repository.
+KERNEL_RELEASE = ("device/xiaomi/mondrian-kernel", "android_device_xiaomi_mondrian-kernel")
 RESTORED_AOSP = {
     "device/google/contexthub",
     "device/google/cuttlefish",
@@ -63,6 +70,18 @@ def main():
             sys.exit(f"{path}: upstream must record the bring-up branch")
         if project.get("remote") != "reborn-mondrian":
             sys.exit(f"{path}: must come from the PixelExperience-Reborn remote")
+    path, name = KERNEL_RELEASE
+    project = build.get(path)
+    if (project is None or project.get("name") != name or project.get("remote") != "reborn-mondrian"
+            or project.get("upstream") != "refs/heads/seventeen"
+            or not re.fullmatch(r"[0-9a-f]{40}", project.get("revision", ""))):
+        sys.exit(f"{path}: expected {name} at a 40-hex commit of seventeen")
+    for path, (name, remote, upstream) in EXTERNAL.items():
+        project = build.get(path)
+        if (project is None or project.get("name") != name or project.get("remote") != remote
+                or project.get("upstream") != upstream
+                or not re.fullmatch(r"[0-9a-f]{40}", project.get("revision", ""))):
+            sys.exit(f"{path}: expected {remote}/{name} at a 40-hex commit of {upstream}")
     # Security bulletin updates may only move AOSP projects to an
     # android-security-17 tag; they never add paths or change remotes.
     known = {p.get("name") for p in base.values()}
@@ -80,7 +99,7 @@ def main():
             sys.exit(f"{path}: expected the AOSP project {path}")
         if project.get("remote") or project.get("revision"):
             sys.exit(f"{path}: must be unmodified AOSP at the default revision")
-    added = sorted(set(build) - set(base) - RESTORED_AOSP)
+    added = sorted(set(build) - set(base) - RESTORED_AOSP - set(EXTERNAL) - {KERNEL_RELEASE[0]})
     if added:
         sys.exit(f"build profile adds unreviewed paths: {added}")
     paths = [p for p in build]

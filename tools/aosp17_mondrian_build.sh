@@ -35,7 +35,7 @@ case "$VARIANT" in user|userdebug|eng) ;; *) echo "::error::unknown VARIANT $VAR
 
 # Host prerequisites (AOSP "Establishing a build environment" package set).
 missing=()
-for tool in git python3 curl zip unzip rsync flex bison gcc g++ make xsltproc xmllint fc-list; do
+for tool in git git-lfs python3 curl zip unzip rsync flex bison gcc g++ make xsltproc xmllint fc-list; do
     command -v "$tool" >/dev/null 2>&1 || missing+=("$tool")
 done
 if ((${#missing[@]})); then
@@ -75,6 +75,13 @@ if [[ "$DO_SYNC" == "true" ]]; then
     # The tree belongs to CI only: discard local edits so every build matches the manifest.
     repo sync -c -j"$jobs" --no-tags --no-clone-bundle --optimized-fetch --retry-fetches=3 \
         --force-sync --force-remove-dirty 2>&1 | tee "$LOGS/repo-sync.log"
+    # MindTheGapps keeps its APEX and APK files in Git LFS.
+    git -C vendor/gapps lfs install --local >/dev/null
+    git -C vendor/gapps lfs pull 2>&1 | tee "$LOGS/gapps-lfs.log"
+fi
+if [[ -d vendor/gapps ]] && git -C vendor/gapps lfs ls-files | grep -q ' - '; then
+    echo "::error::vendor/gapps still has Git LFS pointers instead of files; run git lfs pull there"
+    exit 1
 fi
 repo manifest -r -o "$LOGS/resolved-manifest.xml"
 summary "### aosp_mondrian AOSP 17 build ($STAGE)"
