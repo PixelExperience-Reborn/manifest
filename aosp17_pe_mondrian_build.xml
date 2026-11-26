@@ -71,7 +71,7 @@
   <project path="device/xiaomi/mondrian"
            name="android_device_xiaomi_mondrian"
            remote="reborn-mondrian"
-           revision="aef7688d27ddc09b70acf8f9f5098b60ac6f3ae0"
+           revision="519319d71b429fdd5a7d36fd1fa71290d80a78bc"
            upstream="refs/heads/bringup/a17-mondrian-oem-vendor-os3-20261125"
            groups="device,mondrian" />
   <project path="device/xiaomi/sm8450-common"
@@ -102,8 +102,8 @@
   <project path="device/xiaomi/mondrian-kernel"
            name="android_device_xiaomi_mondrian-kernel"
            remote="reborn-mondrian"
-           revision="b061433e30527a585665ed811c904ae988d0b78e"
-           upstream="refs/heads/seventeen"
+           revision="816280c735c0a348e4968a151ad2389fa4900017"
+           upstream="refs/heads/bringup/a17-mondrian-kernel-release-20261126"
            groups="device,mondrian" />
 
   <!-- Google apps for Android 17: MindTheGapps, branch cinnamonbun. Its

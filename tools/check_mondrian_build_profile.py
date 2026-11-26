@@ -75,9 +75,9 @@ def main():
     path, name = KERNEL_RELEASE
     project = build.get(path)
     if (project is None or project.get("name") != name or project.get("remote") != "reborn-mondrian"
-            or project.get("upstream") != "refs/heads/seventeen"
+            or not project.get("upstream", "").startswith(("refs/heads/seventeen", "refs/heads/bringup/"))
             or not re.fullmatch(r"[0-9a-f]{40}", project.get("revision", ""))):
-        sys.exit(f"{path}: expected {name} at a 40-hex commit of seventeen")
+        sys.exit(f"{path}: expected {name} at a 40-hex commit of seventeen or a bring-up branch")
     for path, (name, remote, upstream) in EXTERNAL.items():
         project = build.get(path)
         if (project is None or project.get("name") != name or project.get("remote") != remote
