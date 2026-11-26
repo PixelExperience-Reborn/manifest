@@ -124,7 +124,9 @@
            revision="6ac270d66620f525a4e4bff2281d2a5da1dc8aea"
            upstream="refs/heads/bringup/a17-mondrian-full-build-20261125" />
 
-  <!-- Kernel BSP verified together by the coherent kernel CI (run #139). -->
+  <!-- Kernel sources of the prebuilt release in device/xiaomi/mondrian-kernel
+       (see its provenance.json): kernel 2efda4c, external modules 0cb1349,
+       device trees 547c333, built together by the kernel release CI. -->
   <project path="kernel/xiaomi/sm8450"
            name="android_kernel_xiaomi_sm8450"
            remote="reborn-mondrian"
@@ -134,8 +136,8 @@
   <project path="kernel/xiaomi/sm8450-modules"
            name="android_kernel_xiaomi_sm8450-modules"
            remote="reborn-mondrian"
-           revision="f87310dee6807aff2fccf579fd0d29e729427477"
-           upstream="refs/heads/bringup/a17-mondrian-oem-bsp-20261111"
+           revision="0cb1349499ae301ce8addb9bbdbc9cb2bda10deb"
+           upstream="refs/heads/bringup/a17-mondrian-kernel-release-20261126"
            groups="device,mondrian" />
   <project path="kernel/xiaomi/sm8450-devicetrees"
            name="android_kernel_xiaomi_sm8450-devicetrees"
