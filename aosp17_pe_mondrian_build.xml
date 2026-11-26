@@ -71,13 +71,13 @@
   <project path="device/xiaomi/mondrian"
            name="android_device_xiaomi_mondrian"
            remote="reborn-mondrian"
-           revision="65fcaf46eecf7963d55efef6a75e5f6deda70fb3"
+           revision="e841dcd66b44d0ca48e0a586311da4fd335581b9"
            upstream="refs/heads/bringup/a17-mondrian-oem-vendor-os3-20261125"
            groups="device,mondrian" />
   <project path="device/xiaomi/sm8450-common"
            name="android_device_xiaomi_sm8450-common"
            remote="reborn-mondrian"
-           revision="fcbc6bbd887e8c71f6e9c761f142152b1243c5a4"
+           revision="9ab99c45520245c19a62966126419fc5b1d28e53"
            upstream="refs/heads/bringup/a17-mondrian-oem-vendor-os3-20261125"
            groups="device,mondrian" />
 
@@ -87,13 +87,13 @@
   <project path="vendor/xiaomi/sm8450-common"
            name="proprietary_vendor_xiaomi_sm8450-common"
            remote="reborn-mondrian"
-           revision="3df74b35b46c33368a728a547a9ecb988b819e67"
+           revision="6b966daf376bb3a08f929741413aab8cde65edfb"
            upstream="refs/heads/bringup/a17-mondrian-oem-vendor-os3-20261125"
            groups="device,mondrian" />
   <project path="vendor/xiaomi/mondrian"
            name="proprietary_vendor_xiaomi_mondrian"
            remote="reborn-mondrian"
-           revision="b259d810f4d8a2010c8e032053220dbf4bad3ed7"
+           revision="e4aee243aac5009dcebd2bcab47b06d5cc7a1f10"
            upstream="refs/heads/bringup/a17-mondrian-oem-vendor-os3-20261125"
            groups="device,mondrian" />
 
