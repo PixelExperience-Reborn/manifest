@@ -42,6 +42,14 @@ class ManifestEntryPointTests(unittest.TestCase):
             self.original_root / "aosp17_pe_p2_qcom_health_aidl_candidate.xml",
             self.root / "aosp17_pe_p2_qcom_health_aidl_candidate.xml",
         )
+        # Opt-in mondrian profiles: the validator expects them next to the
+        # stages; their own checkers (check_mondrian_*_profile.py) cover them.
+        for name in (
+            "aosp17_pe_mondrian_source_audit.xml",
+            "aosp17_pe_mondrian_bsp_trial.xml",
+            "aosp17_pe_mondrian_build.xml",
+        ):
+            shutil.copyfile(self.original_root / name, self.root / name)
         shutil.copyfile(
             self.original_root / "default.xml", self.root / "default.xml"
         )
