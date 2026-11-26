@@ -71,13 +71,13 @@
   <project path="device/xiaomi/mondrian"
            name="android_device_xiaomi_mondrian"
            remote="reborn-mondrian"
-           revision="16a0c5bfdeb411cdb4f5f419a459b151f2076316"
+           revision="2746f3cca89365686a76e0c7f1ed2b6896dc0dd9"
            upstream="refs/heads/bringup/a17-mondrian-oem-vendor-os3-20261125"
            groups="device,mondrian" />
   <project path="device/xiaomi/sm8450-common"
            name="android_device_xiaomi_sm8450-common"
            remote="reborn-mondrian"
-           revision="b8e31960a4561ab6416456bb18b0f41f6b0e09f4"
+           revision="0f5a0ee9f24e4876e66ee6c1839273acd709befa"
            upstream="refs/heads/bringup/a17-mondrian-oem-vendor-os3-20261125"
            groups="device,mondrian" />
 
@@ -121,7 +121,7 @@
   <project path="vendor/aosp"
            name="vendor_aosp"
            remote="reborn-mondrian"
-           revision="3a24483dccdb705ca9e19b7f36abaaf54cdb628a"
+           revision="33b657559142b76d820006f1f57ccb298eb119d0"
            upstream="refs/heads/bringup/a17-mondrian-full-build-20261125" />
 
   <!-- Kernel BSP verified together by the coherent kernel CI (run #139). -->
@@ -143,4 +143,43 @@
            revision="547c333c5193570dc9731035f004e8c711be0c09"
            upstream="refs/heads/bringup/a17-mondrian-stock-dt-reconcile-20261125"
            groups="device,mondrian" />
+  <!-- Android security bulletin up to September 2026 in the forks of the
+       organization (android-security-17.0.0_r3; each result equals the true
+       merge of r1 and the tag), and the PE changes the PixelExperience
+       recovery needs: libsgdisk in gptfdisk, the recovery mkshrc in mksh,
+       libsysutils for recovery in system/core. Packages that were plain
+       AOSP move to the organization's copies of them. -->
+  <extend-project name="platform/external/libopenapv" revision="refs/tags/android-security-17.0.0_r3" />
+  <remove-project name="art" />
+  <project path="art" name="art" remote="reborn-mondrian" revision="a3eee23d8f5a9031e871186782faacd444de9596" upstream="refs/heads/bringup/a17-asb-2026-09-20261126" groups="pdk" />
+  <remove-project name="bionic" />
+  <project path="bionic" name="bionic" remote="reborn-mondrian" revision="6ea1784ada98b812c1ee7b4879d1a7ca95e55b94" upstream="refs/heads/bringup/a17-asb-2026-09-20261126" groups="pdk" />
+  <remove-project name="frameworks_av" />
+  <project path="frameworks/av" name="frameworks_av" remote="reborn-mondrian" revision="a6d64b53ee9b8ef5f4ba8b741281f5f2c67042e2" upstream="refs/heads/bringup/a17-asb-2026-09-20261126" groups="pdk,sysui-studio" />
+  <remove-project name="frameworks_native" />
+  <project path="frameworks/native" name="frameworks_native" remote="reborn-mondrian" revision="d473c6642c3e21336eccf395a4c408a386b2d945" upstream="refs/heads/bringup/a17-asb-2026-09-20261126" groups="pdk,sysui-studio" />
+  <remove-project name="hardware_interfaces" />
+  <project path="hardware/interfaces" name="hardware_interfaces" remote="reborn-mondrian" revision="1a7a10958f2c6d7a3f22d260ba4769d339a531b5" upstream="refs/heads/bringup/a17-asb-2026-09-20261126" groups="pdk,sysui-studio" />
+  <remove-project name="packages_modules_adb" />
+  <project path="packages/modules/adb" name="packages_modules_adb" remote="reborn-mondrian" revision="56141d80ebf4e3c03a5eb46fbad86f102536d90c" upstream="refs/heads/bringup/a17-asb-2026-09-20261126" groups="pdk" />
+  <remove-project name="packages_modules_Wifi" />
+  <project path="packages/modules/Wifi" name="packages_modules_Wifi" remote="reborn-mondrian" revision="98889b80e24eaaa36b1279fdd5dcc7b7d64f81fa" upstream="refs/heads/bringup/a17-asb-2026-09-20261126" groups="pdk-cw-fs,pdk-fs,sysui-studio" />
+  <remove-project name="frameworks_opt_telephony" />
+  <project path="frameworks/opt/telephony" name="frameworks_opt_telephony" remote="reborn-mondrian" revision="bdcb928db7c62f35ff7046372575b0894e7db558" upstream="refs/heads/bringup/a17-asb-2026-09-20261126" groups="pdk,sysui-studio" />
+  <remove-project name="packages_modules_Bluetooth" />
+  <project path="packages/modules/Bluetooth" name="packages_modules_Bluetooth" remote="reborn-mondrian" revision="6026aa850746abe992a9d48969abf74643c32aad" upstream="refs/heads/bringup/a17-asb-2026-09-20261126" groups="pdk" />
+  <remove-project name="system_core" />
+  <project path="system/core" name="system_core" remote="reborn-mondrian" revision="3a9a2543d8f34f454424a7e3894e6615ea09753f" upstream="refs/heads/bringup/a17-asb-2026-09-20261126" groups="pdk" />
+  <remove-project name="platform/packages/apps/Settings" />
+  <project path="packages/apps/Settings" name="packages_apps_Settings" remote="reborn-mondrian" revision="945fe5ea07a93b7244b0c1e72dc2df12149e5747" upstream="refs/heads/bringup/a17-asb-2026-09-20261126" groups="pdk-fs,pdk-cw-tvc,sysui-studio" />
+  <remove-project name="platform/packages/services/Telephony" />
+  <project path="packages/services/Telephony" name="packages_services_Telephony" remote="reborn-mondrian" revision="555675f21f0e9ca1a32ad6171503e079a1f828e3" upstream="refs/heads/bringup/a17-asb-2026-09-20261126" groups="pdk-cw-fs,pdk-fs" />
+  <remove-project name="platform/packages/services/Telecomm" />
+  <project path="packages/services/Telecomm" name="packages_services_Telecomm" remote="reborn-mondrian" revision="851d7a104a2f163ffea3ca2c6ccfa22223368323" upstream="refs/heads/bringup/a17-asb-2026-09-20261126" groups="pdk-cw-fs,pdk-fs" />
+  <remove-project name="platform/external/wpa_supplicant_8" />
+  <project path="external/wpa_supplicant_8" name="external_wpa_supplicant_8" remote="reborn-mondrian" revision="59f178cb654771ce4026370d6f9af93c5f1ad2e3" upstream="refs/heads/bringup/a17-asb-2026-09-20261126" groups="pdk" />
+  <remove-project name="platform/external/gptfdisk" />
+  <project path="external/gptfdisk" name="external_gptfdisk" remote="reborn-mondrian" revision="8d15f9b95ad9f464c9c5fd60012bc657859b1e77" upstream="refs/heads/port/a17-gptfdisk-recovery-20261126" groups="pdk" />
+  <remove-project name="platform/external/mksh" />
+  <project path="external/mksh" name="external_mksh" remote="reborn-mondrian" revision="6861c578a9d8c56addf376d1eee281c104b85243" upstream="refs/heads/port/a17-mksh-recovery-20261126" groups="pdk" />
 </manifest>

@@ -5,6 +5,7 @@
 # STAGE=vendor: ... + `m vendorimage`
 # STAGE=full  : ... + `m` (all images)
 # STAGE=bacon : ... + `m bacon` (the PixelExperience release package)
+# STAGE=recovery: ... + `m recoveryimage` (the PE recovery and its modules)
 #
 # The source tree lives next to the runner work directories so that it
 # survives between jobs: the first sync downloads 100+ GB, later ones are
@@ -30,7 +31,7 @@ LOGS="$RUNNER_TEMP/aosp17-logs"
 mkdir -p "$TREE/.bin" "$LOGS"
 summary() { echo "$*" >> "${GITHUB_STEP_SUMMARY:-/dev/null}"; }
 
-case "$STAGE" in graph|vendor|full|bacon) ;; *) echo "::error::unknown STAGE $STAGE"; exit 2;; esac
+case "$STAGE" in graph|vendor|full|bacon|recovery) ;; *) echo "::error::unknown STAGE $STAGE"; exit 2;; esac
 case "$VARIANT" in user|userdebug|eng) ;; *) echo "::error::unknown VARIANT $VARIANT"; exit 2;; esac
 [[ "$RELEASE" =~ ^[a-z0-9_]+$ ]] || { echo "::error::invalid RELEASE $RELEASE"; exit 2; }
 
@@ -100,6 +101,8 @@ summary "- manifest: \`$MANIFEST_BRANCH\` / \`$MANIFEST_FILE\`, projects: $(grep
 # No Google remote build execution (RBE) here: everything builds locally
 # on ServerHive. AOSP enables RBE when USE_RBE is not explicitly false.
 export USE_RBE=false
+# Builds of the organization's build server are the official ones.
+export CUSTOM_BUILD_TYPE=OFFICIAL
 
 set +u
 # shellcheck disable=SC1091
@@ -117,12 +120,17 @@ if ((status == 0)); then
     pe_version="$(get_build_var CUSTOM_VERSION)"
     info=("Device=$(get_build_var TARGET_DEVICE) (POCO F5 Pro / Redmi K60)"
           "Version=$pe_version"
-          "Android=$(get_build_var PLATFORM_VERSION) ($(get_build_var TARGET_RELEASE))"
+          "Android=$(get_build_var PLATFORM_VERSION) (${TARGET_RELEASE:-$RELEASE})"
           "Security patch=$(get_build_var PLATFORM_SECURITY_PATCH)"
+          "Vendor patch=$(get_build_var VENDOR_SECURITY_PATCH)"
+          "Google apps=$(get_build_var CUSTOM_GAPPS)"
+          "Maintainer=$(get_build_var CUSTOM_MAINTAINER)"
+          "CPU=$(get_build_var TARGET_ARCH_VARIANT) / $(get_build_var TARGET_CPU_VARIANT)"
           "Build ID=$(get_build_var BUILD_ID)"
           "Build type=$(get_build_var TARGET_BUILD_VARIANT)"
           "Stage=$STAGE")
-    args=(); for item in "${info[@]}"; do args+=(--info "$item"); done
+    # Leave out what the product does not define (pe_banner skips empty values).
+    args=(); for item in "${info[@]}"; do if [[ -n "${item#*=}" ]]; then args+=(--info "$item"); fi; done
     banner --title "PixelExperience build started on ServerHive" "${args[@]}"
 fi
 start=$SECONDS
@@ -132,6 +140,7 @@ if ((status == 0)); then
         vendor) m vendorimage 2>&1 | tee "$LOGS/build.log" || status=$? ;;
         full)   m 2>&1 | tee "$LOGS/build.log" || status=$? ;;
         bacon)  m bacon 2>&1 | tee "$LOGS/build.log" || status=$? ;;
+        recovery) m recoveryimage 2>&1 | tee "$LOGS/build.log" || status=$? ;;
     esac
 fi
 elapsed=$((SECONDS - start))
@@ -152,7 +161,7 @@ done
 if ((${#info[@]})); then
     summary "| | |"
     summary "|---|---|"
-    for item in "${info[@]}"; do summary "| ${item%%=*} | \`${item#*=}\` |"; done
+    for item in "${info[@]}"; do if [[ -n "${item#*=}" ]]; then summary "| ${item%%=*} | \`${item#*=}\` |"; fi; done
     summary ""
 fi
 if ((status == 0)); then

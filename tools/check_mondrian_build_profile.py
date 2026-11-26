@@ -93,6 +93,17 @@ def main():
             sys.exit(f"extend-project {name}: not a project of the source-audit profile")
         if set(e.attrib) != {"name", "revision"} or not re.fullmatch(r"refs/tags/android-security-17\.0\.0_r[0-9]+", rev):
             sys.exit(f"extend-project {name}: only a revision android-security-17.0.0_rN is allowed")
+    # Organization copies replacing projects of the source-audit profile
+    # (security bulletin merges, PE changes): immutable commits of a recorded
+    # branch, from the organization.
+    for e in (e for e in root if e.tag == "project"):
+        path = e.get("path") or e.get("name")
+        if path not in base or path in PINNED:
+            continue
+        if (e.get("remote") != "reborn-mondrian"
+                or not re.fullmatch(r"[0-9a-f]{40}", e.get("revision", ""))
+                or not re.fullmatch(r"refs/heads/(bringup|port|feature)/[\w.-]+", e.get("upstream", ""))):
+            sys.exit(f"{path}: a replaced project must be an organization commit of a recorded branch")
     # Unmodified AOSP 17 projects that the bootstrap profile removes but other
     # AOSP projects depend on: they must come from AOSP at the default tag.
     for path in RESTORED_AOSP:
