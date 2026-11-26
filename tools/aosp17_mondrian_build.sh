@@ -4,6 +4,7 @@
 # STAGE=graph : repo sync + lunch + `m nothing` (full Soong/Kati analysis)
 # STAGE=vendor: ... + `m vendorimage`
 # STAGE=full  : ... + `m` (all images)
+# STAGE=bacon : ... + `m bacon` (the PixelExperience release package)
 #
 # The source tree lives next to the runner work directories so that it
 # survives between jobs: the first sync downloads 100+ GB, later ones are
@@ -29,7 +30,7 @@ LOGS="$RUNNER_TEMP/aosp17-logs"
 mkdir -p "$TREE/.bin" "$LOGS"
 summary() { echo "$*" >> "${GITHUB_STEP_SUMMARY:-/dev/null}"; }
 
-case "$STAGE" in graph|vendor|full) ;; *) echo "::error::unknown STAGE $STAGE"; exit 2;; esac
+case "$STAGE" in graph|vendor|full|bacon) ;; *) echo "::error::unknown STAGE $STAGE"; exit 2;; esac
 case "$VARIANT" in user|userdebug|eng) ;; *) echo "::error::unknown VARIANT $VARIANT"; exit 2;; esac
 [[ "$RELEASE" =~ ^[a-z0-9_]+$ ]] || { echo "::error::invalid RELEASE $RELEASE"; exit 2; }
 
@@ -89,7 +90,11 @@ if [[ -d vendor/gapps ]] && git -C vendor/gapps lfs ls-files | grep -q ' - '; th
     exit 1
 fi
 repo manifest -r -o "$LOGS/resolved-manifest.xml"
-summary "### aosp_mondrian AOSP 17 build ($STAGE)"
+summary '<img src="https://github.com/PixelExperience-Reborn.png" width="72" align="left" alt="PixelExperience-Reborn">'
+summary ""
+summary "### PixelExperience-Reborn — aosp_mondrian, Android 17 ($STAGE)"
+summary '<br clear="left">'
+summary ""
 summary "- manifest: \`$MANIFEST_BRANCH\` / \`$MANIFEST_FILE\`, projects: $(grep -c '<project' "$LOGS/resolved-manifest.xml")"
 
 # No Google remote build execution (RBE) here: everything builds locally
@@ -106,19 +111,52 @@ status=0
 lunch "$target" > "$LOGS/lunch.log" 2>&1 || status=$?
 cat "$LOGS/lunch.log"
 echo "TARGET_PRODUCT=${TARGET_PRODUCT:-} TARGET_RELEASE=${TARGET_RELEASE:-} TARGET_BUILD_VARIANT=${TARGET_BUILD_VARIANT:-}"
+banner() { python3 vendor/aosp/tools/pe_banner.py "$@" || true; }
+info=()
+if ((status == 0)); then
+    pe_version="$(get_build_var CUSTOM_VERSION)"
+    info=("Device=$(get_build_var TARGET_DEVICE) (POCO F5 Pro / Redmi K60)"
+          "Version=$pe_version"
+          "Android=$(get_build_var PLATFORM_VERSION) ($(get_build_var TARGET_RELEASE))"
+          "Security patch=$(get_build_var PLATFORM_SECURITY_PATCH)"
+          "Build ID=$(get_build_var BUILD_ID)"
+          "Build type=$(get_build_var TARGET_BUILD_VARIANT)"
+          "Stage=$STAGE")
+    args=(); for item in "${info[@]}"; do args+=(--info "$item"); done
+    banner --title "PixelExperience build started on ServerHive" "${args[@]}"
+fi
+start=$SECONDS
 if ((status == 0)); then
     case "$STAGE" in
         graph)  m nothing 2>&1 | tee "$LOGS/build.log" || status=$? ;;
         vendor) m vendorimage 2>&1 | tee "$LOGS/build.log" || status=$? ;;
         full)   m 2>&1 | tee "$LOGS/build.log" || status=$? ;;
+        bacon)  m bacon 2>&1 | tee "$LOGS/build.log" || status=$? ;;
     esac
 fi
+elapsed=$((SECONDS - start))
+duration="$(printf '%02d:%02d:%02d' $((elapsed / 3600)) $(((elapsed % 3600) / 60)) $((elapsed % 60)))"
+package=""
+if ((status == 0)) && [[ "$STAGE" == bacon ]]; then
+    package="$(get_build_var PRODUCT_OUT)/$pe_version.zip"
+    [[ -f "$package" ]] && info+=("Package=$(basename "$package")" "Size=$(du -h "$package" | cut -f1)"
+                                  "SHA-256=$(sha256sum "$package" | cut -d' ' -f1)")
+fi
+info+=("Time=$duration")
+args=(--status "$status"); for item in "${info[@]}"; do args+=(--info "$item"); done
+banner --title "PixelExperience build finished" "${args[@]}"
 set -u
 for f in error.log soong.log verbose.log.gz build.trace.gz; do
     [[ -f "out/$f" ]] && cp "out/$f" "$LOGS/" || true
 done
+if ((${#info[@]})); then
+    summary "| | |"
+    summary "|---|---|"
+    for item in "${info[@]}"; do summary "| ${item%%=*} | \`${item#*=}\` |"; done
+    summary ""
+fi
 if ((status == 0)); then
-    summary "- [PASS] \`lunch $target\` and the $STAGE stage"
+    summary "- [PASS] \`lunch $target\` and the $STAGE stage in $duration"
 else
     summary "- [FAIL] \`lunch $target\` / $STAGE stage, first errors:"
     summary '```'
