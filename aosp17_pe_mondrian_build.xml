@@ -71,13 +71,13 @@
   <project path="device/xiaomi/mondrian"
            name="android_device_xiaomi_mondrian"
            remote="reborn-mondrian"
-           revision="2746f3cca89365686a76e0c7f1ed2b6896dc0dd9"
+           revision="c5018e838ed1bfe1cb20017b6b65c3d32c88765a"
            upstream="refs/heads/bringup/a17-mondrian-oem-vendor-os3-20261125"
            groups="device,mondrian" />
   <project path="device/xiaomi/sm8450-common"
            name="android_device_xiaomi_sm8450-common"
            remote="reborn-mondrian"
-           revision="0f5a0ee9f24e4876e66ee6c1839273acd709befa"
+           revision="3b939f99ac02c23429631526b7474165639dce27"
            upstream="refs/heads/bringup/a17-mondrian-oem-vendor-os3-20261125"
            groups="device,mondrian" />
 
@@ -102,7 +102,7 @@
   <project path="device/xiaomi/mondrian-kernel"
            name="android_device_xiaomi_mondrian-kernel"
            remote="reborn-mondrian"
-           revision="816280c735c0a348e4968a151ad2389fa4900017"
+           revision="b7b00fcd5fb250c5f05f42b31020550018929018"
            upstream="refs/heads/bringup/a17-mondrian-kernel-release-20261126"
            groups="device,mondrian" />
 
@@ -121,7 +121,7 @@
   <project path="vendor/aosp"
            name="vendor_aosp"
            remote="reborn-mondrian"
-           revision="33b657559142b76d820006f1f57ccb298eb119d0"
+           revision="8048b25520748f459b789900bf614c59ad1603d3"
            upstream="refs/heads/bringup/a17-mondrian-full-build-20261125" />
 
   <!-- Kernel BSP verified together by the coherent kernel CI (run #139). -->
@@ -148,7 +148,10 @@
        merge of r1 and the tag), and the PE changes the PixelExperience
        recovery needs: libsgdisk in gptfdisk, the recovery mkshrc in mksh,
        libsysutils for recovery in system/core. Packages that were plain
-       AOSP move to the organization's copies of them. -->
+       AOSP move to the organization's copies of them (Settings, Telephony,
+       Telecomm, TelephonyProvider, Nfc, Uwb, wpa_supplicant_8, fs_mgr). With
+       these, vendor/aosp raises the security patch level of cp2a to
+       2026-09-01. -->
   <extend-project name="platform/external/libopenapv" revision="refs/tags/android-security-17.0.0_r3" />
   <remove-project name="art" />
   <project path="art" name="art" remote="reborn-mondrian" revision="a3eee23d8f5a9031e871186782faacd444de9596" upstream="refs/heads/bringup/a17-asb-2026-09-20261126" groups="pdk" />
@@ -182,4 +185,14 @@
   <project path="external/gptfdisk" name="external_gptfdisk" remote="reborn-mondrian" revision="8d15f9b95ad9f464c9c5fd60012bc657859b1e77" upstream="refs/heads/port/a17-gptfdisk-recovery-20261126" groups="pdk" />
   <remove-project name="platform/external/mksh" />
   <project path="external/mksh" name="external_mksh" remote="reborn-mondrian" revision="6861c578a9d8c56addf376d1eee281c104b85243" upstream="refs/heads/port/a17-mksh-recovery-20261126" groups="pdk" />
+  <remove-project name="frameworks_base" />
+  <project path="frameworks/base" name="frameworks_base" remote="reborn-mondrian" revision="8a3087e1b9cdc597cc3ecafa168350973d1b9be7" upstream="refs/heads/bringup/a17-asb-2026-09-20261126" groups="pdk,sysui-studio" />
+  <remove-project name="platform/packages/modules/Nfc" />
+  <project path="packages/modules/Nfc" name="packages_modules_Nfc" remote="reborn-mondrian" revision="85c2c717bb1d13b5bf033056d0f9aa1dd02051e0" upstream="refs/heads/bringup/a17-asb-2026-09-20261126" groups="pdk-cw-fs,pdk-fs" />
+  <remove-project name="platform/packages/providers/TelephonyProvider" />
+  <project path="packages/providers/TelephonyProvider" name="packages_providers_TelephonyProvider" remote="reborn-mondrian" revision="0d1f1f77a84ca4b6afb6999df2dfb3cbc22bbc39" upstream="refs/heads/bringup/a17-asb-2026-09-20261126" groups="pdk-cw-fs,pdk-fs" />
+  <remove-project name="platform/packages/modules/Uwb" />
+  <project path="packages/modules/Uwb" name="packages_modules_Uwb" remote="reborn-mondrian" revision="4cc833efd1929f99c7ba65952dd66dc5a20d5cd2" upstream="refs/heads/bringup/a17-asb-2026-09-20261126" groups="pdk-cw-fs,pdk-fs" />
+  <remove-project name="platform/system/fs/fs_mgr" />
+  <project path="system/fs/fs_mgr" name="system_fs_fs_mgr" remote="reborn-mondrian" revision="7acd74067e0c2fb9520a37d03e3eed5d7c4bd9c6" upstream="refs/heads/bringup/a17-asb-2026-09-20261126" groups="pdk" />
 </manifest>
