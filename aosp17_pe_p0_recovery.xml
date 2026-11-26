@@ -1,13 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <manifest>
   <!-- Stage P0 Recovery: official Android17 source with reviewed PE device
-       identification and an optional-safe stage parser.
+       identification, an optional-safe stage parser, Qualcomm's atomic DRM
+       output for minui (SDE panels such as the mondrian WQHD DSC panel),
+       the battery level and the PixelExperience Reborn title.
        Preserve upstream package signature, SPL and ADB-debug checks. -->
   <include name="aosp17_pe_p0_frameworks.xml" />
   <remove-project name="platform/bootable/recovery" />
   <remote name="reborn-recovery" fetch="https://github.com/PixelExperience-Reborn" />
   <project path="bootable/recovery" name="bootable_recovery" remote="reborn-recovery"
-           revision="0ed8dc4f93020555afdfc19141263ca40629ef74"
-           upstream="refs/heads/port/a17-recovery-pe-20261103"
+           revision="a12b56a21193f6ed001b465a871a697b77b34b09"
+           upstream="refs/heads/feature/a17-recovery-pe-ui-20261126"
            groups="pdk" />
 </manifest>
