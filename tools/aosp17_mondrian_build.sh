@@ -121,8 +121,8 @@ if ((status == 0)); then
     info=("Device=$(get_build_var TARGET_DEVICE) (POCO F5 Pro / Redmi K60)"
           "Version=$pe_version"
           "Android=$(get_build_var PLATFORM_VERSION) (${TARGET_RELEASE:-$RELEASE})"
-          "Security patch=$(get_build_var PLATFORM_SECURITY_PATCH)"
-          "Vendor patch=$(get_build_var VENDOR_SECURITY_PATCH)"
+          "Android security patch=$(get_build_var PLATFORM_SECURITY_PATCH)"
+          "Vendor security patch=$(get_build_var VENDOR_SECURITY_PATCH) (stock OS3.0.8.0 vendor)"
           "Google apps=$(get_build_var CUSTOM_GAPPS)"
           "Maintainer=$(get_build_var CUSTOM_MAINTAINER)"
           "CPU=$(get_build_var TARGET_ARCH_VARIANT) / $(get_build_var TARGET_CPU_VARIANT)"
@@ -144,6 +144,17 @@ if ((status == 0)); then
     esac
 fi
 elapsed=$((SECONDS - start))
+# Kati names only the installed path of a duplicate install. Keep both
+# rules of each one (their prerequisites name the Soong modules) in the logs.
+if ((status != 0)) && grep -q "overriding commands for target" "$LOGS/build.log" 2>/dev/null; then
+    grep -o "out/soong/installs-[^:]*:[0-9]*: error: overriding commands for target \`[^']*', previously defined at [^:]*:[0-9]*" "$LOGS/build.log" |
+    while read -r line; do
+        file="${line%%:*}"; first="${line#*:}"; first="${first%%:*}"; second="${line##*:}"
+        for n in "$first" "$second"; do
+            echo "== $file:$n"; sed -n "$((n > 3 ? n - 3 : 1)),$((n + 6))p" "$file"
+        done
+    done > "$LOGS/duplicate-installs.txt" 2>&1 || true
+fi
 duration="$(printf '%02d:%02d:%02d' $((elapsed / 3600)) $(((elapsed % 3600) / 60)) $((elapsed % 60)))"
 package=""
 if ((status == 0)) && [[ "$STAGE" == bacon ]]; then
