@@ -121,7 +121,7 @@
   <project path="vendor/aosp"
            name="vendor_aosp"
            remote="reborn-mondrian"
-           revision="22f77fec5d2d4cc8feb737d6488f1c988ba813dc"
+           revision="3a24483dccdb705ca9e19b7f36abaaf54cdb628a"
            upstream="refs/heads/bringup/a17-mondrian-full-build-20261125" />
 
   <!-- Kernel BSP verified together by the coherent kernel CI (run #139). -->
