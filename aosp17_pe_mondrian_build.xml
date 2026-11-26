@@ -71,13 +71,29 @@
   <project path="device/xiaomi/mondrian"
            name="android_device_xiaomi_mondrian"
            remote="reborn-mondrian"
-           revision="9d2f1eee5343275edf8e0241c80fc2d9bf63098f"
+           revision="aef7688d27ddc09b70acf8f9f5098b60ac6f3ae0"
            upstream="refs/heads/bringup/a17-mondrian-oem-vendor-os3-20261125"
            groups="device,mondrian" />
   <project path="device/xiaomi/sm8450-common"
            name="android_device_xiaomi_sm8450-common"
            remote="reborn-mondrian"
-           revision="e693cda070717ec34dd3e575a19bf3200f97b10a"
+           revision="427b0f684076bf4b77a87110a68a9b3223503210"
+           upstream="refs/heads/bringup/a17-mondrian-oem-vendor-os3-20261125"
+           groups="device,mondrian" />
+
+  <!-- Build rules of the stock OS3.0.8.0 proprietary files. The files
+       themselves are not in git: the build script reproduces them from the
+       official OTA (hash-checked) with tools/extract_proprietary.py. -->
+  <project path="vendor/xiaomi/sm8450-common"
+           name="proprietary_vendor_xiaomi_sm8450-common"
+           remote="reborn-mondrian"
+           revision="652328b2306931b5be43cd67572e384984e17538"
+           upstream="refs/heads/bringup/a17-mondrian-oem-vendor-os3-20261125"
+           groups="device,mondrian" />
+  <project path="vendor/xiaomi/mondrian"
+           name="proprietary_vendor_xiaomi_mondrian"
+           remote="reborn-mondrian"
+           revision="253bd43c94e7b77d70a1380c5122981d57348b51"
            upstream="refs/heads/bringup/a17-mondrian-oem-vendor-os3-20261125"
            groups="device,mondrian" />
 

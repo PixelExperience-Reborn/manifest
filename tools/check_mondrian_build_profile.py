@@ -19,6 +19,8 @@ PINNED = {
     "kernel/xiaomi/sm8450-modules": "android_kernel_xiaomi_sm8450-modules",
     "kernel/xiaomi/sm8450-devicetrees": "android_kernel_xiaomi_sm8450-devicetrees",
     "vendor/aosp": "vendor_aosp",
+    "vendor/xiaomi/sm8450-common": "proprietary_vendor_xiaomi_sm8450-common",
+    "vendor/xiaomi/mondrian": "proprietary_vendor_xiaomi_mondrian",
 }
 # Projects outside the organization, each at an immutable commit of its
 # recorded branch.
@@ -99,7 +101,7 @@ def main():
             sys.exit(f"{path}: expected the AOSP project {path}")
         if project.get("remote") or project.get("revision"):
             sys.exit(f"{path}: must be unmodified AOSP at the default revision")
-    added = sorted(set(build) - set(base) - RESTORED_AOSP - set(EXTERNAL) - {KERNEL_RELEASE[0]})
+    added = sorted(set(build) - set(base) - RESTORED_AOSP - set(EXTERNAL) - {KERNEL_RELEASE[0]} - set(PINNED))
     if added:
         sys.exit(f"build profile adds unreviewed paths: {added}")
     paths = [p for p in build]

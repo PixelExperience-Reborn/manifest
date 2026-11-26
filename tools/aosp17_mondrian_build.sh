@@ -79,6 +79,11 @@ if [[ "$DO_SYNC" == "true" ]]; then
     git -C vendor/gapps lfs install --local >/dev/null
     git -C vendor/gapps lfs pull 2>&1 | tee "$LOGS/gapps-lfs.log"
 fi
+# Stock OS3.0.8.0 proprietary files: reproduced from the official OTA
+# (only the vendor and odm partitions are downloaded) and hash-checked.
+mkdir -p "$TREE/.cache"
+python3 device/xiaomi/sm8450-common/tools/extract_proprietary.py \
+    --work "$TREE/.cache" 2>&1 | tee "$LOGS/proprietary.log"
 if [[ -d vendor/gapps ]] && git -C vendor/gapps lfs ls-files | grep -q ' - '; then
     echo "::error::vendor/gapps still has Git LFS pointers instead of files; run git lfs pull there"
     exit 1
