@@ -71,13 +71,13 @@
   <project path="device/xiaomi/mondrian"
            name="android_device_xiaomi_mondrian"
            remote="reborn-mondrian"
-           revision="c9af0588e6be1ef81fdcc068ca685fb6502db662"
+           revision="19a4ba588e36bfd4353ff1844bcdda902e658151"
            upstream="refs/heads/bringup/a17-mondrian-oem-vendor-os3-20261125"
            groups="device,mondrian" />
   <project path="device/xiaomi/sm8450-common"
            name="android_device_xiaomi_sm8450-common"
            remote="reborn-mondrian"
-           revision="1771890131afa0446ed9dee326a1fb5c81bec8fa"
+           revision="23ad53d65555deac09d3091067154ebecf7b2d1d"
            upstream="refs/heads/bringup/a17-mondrian-oem-vendor-os3-20261125"
            groups="device,mondrian" />
 
@@ -93,7 +93,7 @@
   <project path="vendor/xiaomi/mondrian"
            name="proprietary_vendor_xiaomi_mondrian"
            remote="reborn-mondrian"
-           revision="253bd43c94e7b77d70a1380c5122981d57348b51"
+           revision="48201e604303b6df2938854ac16fcd86ebaf19f0"
            upstream="refs/heads/bringup/a17-mondrian-oem-vendor-os3-20261125"
            groups="device,mondrian" />
 
