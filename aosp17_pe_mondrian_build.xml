@@ -124,7 +124,7 @@
   <project path="vendor/aosp"
            name="vendor_aosp"
            remote="reborn-mondrian"
-           revision="40f356d0320e14fb895dcb094592278748661845"
+           revision="961dffd8dfc9b74631c9fca3b4d0c3929cc1f941"
            upstream="refs/heads/bringup/a17-mondrian-full-build-20261125" />
 
   <!-- Kernel sources of the prebuilt release in device/xiaomi/mondrian-kernel
