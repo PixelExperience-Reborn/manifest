@@ -26,6 +26,7 @@ ERROR = re.compile(r"\berror\b[:\s]|^e: |\bfatal\b|undefined (symbol|reference)|
                    r"^\S+:\d+(:\d+)?: (error|fatal)", re.I)
 NOISE = re.compile(r"^\d+ errors? generated\.|^\s*\d+ \||^\s*\|")
 WIDTH = 300
+ANSI = re.compile(r"\x1b\[[0-9;]*m")  # colors of clang and soong_ui
 
 
 def actions(text):
@@ -71,7 +72,7 @@ def first_errors(output, limit):
 def main():
     log = Path(sys.argv[1])
     limit = int(sys.argv[2]) if len(sys.argv) > 2 else 6
-    found = actions(log.read_text(errors="ignore"))
+    found = actions(ANSI.sub("", log.read_text(errors="ignore")))
     print(f"== {len(found)} failed actions ({log})")
     for number, (description, outputs, error, output) in enumerate(found, 1):
         print(f"\n[{number}] {description}")

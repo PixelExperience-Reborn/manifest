@@ -56,6 +56,12 @@ class SummarizeBuildErrorsTest(unittest.TestCase):
         self.assertNotIn("1 error generated", out)
         self.assertTrue(all(len(line) <= 320 for line in out.splitlines()))
 
+    def test_colors_are_removed(self):
+        out = self.run_summary("FAILED: //a:b clang++ x.cc\nError: exited with code: 1\nOutput:\n"
+                               "\x1b[1mx.cc:1:2: \x1b[0m\x1b[0;1;31merror: \x1b[0m\x1b[1mbad\x1b[0m\n")
+        self.assertIn("| x.cc:1:2: error: bad", out)
+        self.assertNotIn("\x1b", out)
+
     def test_output_without_error_lines_shows_its_end(self):
         out = self.run_summary("FAILED: //a:b genrule\nError: exited with code: 2\nOutput:\nfirst\nlast words\n")
         self.assertIn("| last words", out)
