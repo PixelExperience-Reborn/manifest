@@ -9,7 +9,7 @@
   <remove-project name="platform/bootable/recovery" />
   <remote name="reborn-recovery" fetch="https://github.com/PixelExperience-Reborn" />
   <project path="bootable/recovery" name="bootable_recovery" remote="reborn-recovery"
-           revision="6299d92bd024731a56bfc11dd0501b0c4e1ead89"
+           revision="841b765437f9f955d5811b41d3dfebe0cda1b793"
            upstream="refs/heads/feature/a17-recovery-pe-full-20261126"
            groups="pdk" />
 </manifest>
