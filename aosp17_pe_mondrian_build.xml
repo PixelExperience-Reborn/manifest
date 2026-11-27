@@ -106,8 +106,11 @@
            upstream="refs/heads/bringup/a17-mondrian-kernel-release-20261126"
            groups="device,mondrian" />
 
-  <!-- Google apps for Android 17: MindTheGapps, branch cinnamonbun. Its
-       APEX/APK files are Git LFS objects (the build script pulls them). -->
+  <!-- Google apps of the GApps edition: MindTheGapps for Android 17, branch
+       cinnamonbun. vendor/aosp builds them only for a product with
+       WITH_GMS := true (aosp_mondrian sets it); without it the edition is
+       Vanilla and this project is unused. The APEX/APK files are Git LFS
+       objects (the build script pulls them). -->
   <remote name="mindthegapps" fetch="https://gitlab.com/MindTheGapps" />
   <project path="vendor/gapps"
            name="vendor_gapps"

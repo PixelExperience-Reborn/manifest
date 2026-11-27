@@ -98,9 +98,17 @@ summary '<br clear="left">'
 summary ""
 summary "- manifest: \`$MANIFEST_BRANCH\` / \`$MANIFEST_FILE\`, projects: $(grep -c '<project' "$LOGS/resolved-manifest.xml")"
 
-# No Google remote build execution (RBE) here: everything builds locally
-# on ServerHive. AOSP enables RBE when USE_RBE is not explicitly false.
+# Everything builds locally on ServerHive: no Google remote build execution
+# (RBE, it needs Google credentials) and the classic ninja executor (AOSP 17
+# defaults to Siso). The runner's environment must not change that: show
+# what it sets, and drop BASH_ENV/ENV, which every child bash (soong_ui.bash
+# among them) would source again, overriding the exports below.
+for var in USE_RBE SOONG_NINJA ANDROID_BUILD_ENVIRONMENT_CONFIG BASH_ENV ENV; do
+    echo "runner environment: $var=${!var-<unset>}"
+done
+unset BASH_ENV ENV ANDROID_BUILD_ENVIRONMENT_CONFIG
 export USE_RBE=false
+export SOONG_NINJA=ninja
 # Builds of the organization's build server are the official ones.
 export CUSTOM_BUILD_TYPE=OFFICIAL
 
@@ -112,18 +120,28 @@ status=0
 # lunch must run in this shell, not in a pipeline subshell: it exports
 # TARGET_PRODUCT, TARGET_RELEASE and TARGET_BUILD_VARIANT for m.
 lunch "$target" > "$LOGS/lunch.log" 2>&1 || status=$?
-cat "$LOGS/lunch.log"
-echo "TARGET_PRODUCT=${TARGET_PRODUCT:-} TARGET_RELEASE=${TARGET_RELEASE:-} TARGET_BUILD_VARIANT=${TARGET_BUILD_VARIANT:-}"
+# The product configuration is printed once, by the build itself; lunch's
+# copy stays in lunch.log unless lunch fails.
+if ((status != 0)); then
+    cat "$LOGS/lunch.log"
+elif grep -q '^USE_RBE=true' "$LOGS/lunch.log"; then
+    echo "::error::RBE is still enabled (USE_RBE=true) although this script disables it; see the runner environment above"
+    status=1
+else
+    echo "lunch $target: TARGET_PRODUCT=$TARGET_PRODUCT TARGET_RELEASE=$TARGET_RELEASE TARGET_BUILD_VARIANT=$TARGET_BUILD_VARIANT"
+fi
 banner() { python3 vendor/aosp/tools/pe_banner.py "$@" || true; }
+# GApps build (WITH_GMS := true, CUSTOM_GAPPS names the package) or Vanilla.
+edition() { if [[ -n "$1" ]]; then echo "GApps ($1)"; else echo "Vanilla (no Google apps)"; fi; }
 info=()
 if ((status == 0)); then
     pe_version="$(get_build_var CUSTOM_VERSION)"
     info=("Device=$(get_build_var TARGET_DEVICE) (POCO F5 Pro / Redmi K60)"
           "Version=$pe_version"
+          "Edition=$(edition "$(get_build_var CUSTOM_GAPPS)")"
           "Android=$(get_build_var PLATFORM_VERSION) (${TARGET_RELEASE:-$RELEASE})"
           "Android security patch=$(get_build_var PLATFORM_SECURITY_PATCH)"
           "Vendor security patch=$(get_build_var VENDOR_SECURITY_PATCH) (stock OS3.0.8.0 vendor)"
-          "Google apps=$(get_build_var CUSTOM_GAPPS)"
           "Maintainer=$(get_build_var CUSTOM_MAINTAINER)"
           "CPU=$(get_build_var TARGET_ARCH_VARIANT) / $(get_build_var TARGET_CPU_VARIANT)"
           "Build ID=$(get_build_var BUILD_ID)"
