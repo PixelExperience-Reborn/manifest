@@ -12,6 +12,7 @@
 # incremental. The ServerHive job sandbox mounts / read-only, so host
 # packages must be installed on the server beforehand (see the error text).
 set -euo pipefail
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 STAGE="${STAGE:-graph}"
 RELEASE="${RELEASE:-cp2a}"
@@ -156,16 +157,14 @@ if ((status == 0)); then
     esac
 fi
 elapsed=$((SECONDS - start))
-# Kati names only the installed path of a duplicate install. Keep both
-# rules of each one (their prerequisites name the Soong modules) in the logs.
+# Kati stops at the first duplicate install and names only its path. List
+# every installed path with two rules, the module of each rule and, for a
+# module built from source, which modules pull it in (in the job log).
 if ((status != 0)) && grep -q "overriding commands for target" "$LOGS/build.log" 2>/dev/null; then
-    grep -o "out/soong/installs-[^:]*:[0-9]*: error: overriding commands for target \`[^']*', previously defined at [^:]*:[0-9]*" "$LOGS/build.log" |
-    while read -r line; do
-        file="${line%%:*}"; first="${line#*:}"; first="${first%%:*}"; second="${line##*:}"
-        for n in "$first" "$second"; do
-            echo "== $file:$n"; sed -n "$((n > 3 ? n - 3 : 1)),$((n + 6))p" "$file"
-        done
-    done > "$LOGS/duplicate-installs.txt" 2>&1 || true
+    echo "::group::Duplicate installs: both rules and why each module is installed"
+    python3 "$SCRIPT_DIR/diagnose_duplicate_installs.py" out "$TARGET_PRODUCT" 2>&1 \
+        | tee "$LOGS/duplicate-installs.txt" | head -300 || true
+    echo "::endgroup::"
 fi
 duration="$(printf '%02d:%02d:%02d' $((elapsed / 3600)) $(((elapsed % 3600) / 60)) $((elapsed % 60)))"
 package=""
