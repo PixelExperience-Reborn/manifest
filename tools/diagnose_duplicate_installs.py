@@ -9,7 +9,10 @@ produce, the file each rule copies (which names the module and its variant),
 and, for a module built from source, the modules whose build statements in
 out/soong/build.<product>*.ninja use that variant: the reason it is installed.
 
-    diagnose_duplicate_installs.py OUT_DIR PRODUCT
+    diagnose_duplicate_installs.py OUT_DIR PRODUCT [COPY_FILES_LIST PRODUCT_OUT]
+
+With the PRODUCT_COPY_FILES of the product (one src:dest pair per word) it
+also lists the copied files a Soong module installs at the same path.
 """
 import re
 import subprocess
@@ -68,6 +71,23 @@ def chain(ninja_files, variant_dir, depth, seen, max_depth=3, budget=None):
             chain(ninja_files, user, depth + 1, seen, max_depth, budget)
 
 
+def copy_conflicts(installs, copy_files, product_out):
+    """PRODUCT_COPY_FILES destinations that a Soong module installs too."""
+    targets = set()
+    for line in installs.read_text(errors="ignore").splitlines():
+        match = RULE.match(line)
+        if match:
+            targets.add(match[1])
+    found = []
+    for pair in copy_files.read_text().split():
+        parts = pair.split(":")
+        if len(parts) >= 2:
+            dest = f"{product_out}/{parts[1]}"
+            if dest in targets:
+                found.append((dest, parts[0]))
+    return found
+
+
 def main():
     out_dir, product = Path(sys.argv[1]), sys.argv[2]
     installs = out_dir / f"soong/installs-{product}.mk"
@@ -84,6 +104,12 @@ def main():
             variant = INTERMEDIATE.search(source)
             if variant and "/vendor/xiaomi/" not in source:
                 chain(ninja_files, variant[1], depth=1, seen=set())
+    if len(sys.argv) > 4:
+        copy_files, product_out = Path(sys.argv[3]), sys.argv[4]
+        conflicts = copy_conflicts(installs, copy_files, product_out)
+        print(f"\n== {len(conflicts)} PRODUCT_COPY_FILES destinations a Soong module installs too")
+        for dest, source in conflicts:
+            print(f"{dest}\n  copied from {source}")
     return 0
 
 

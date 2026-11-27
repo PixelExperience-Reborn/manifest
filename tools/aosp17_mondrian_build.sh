@@ -162,7 +162,9 @@ elapsed=$((SECONDS - start))
 # module built from source, which modules pull it in (in the job log).
 if ((status != 0)) && grep -q "overriding commands for target" "$LOGS/build.log" 2>/dev/null; then
     echo "::group::Duplicate installs: both rules and why each module is installed"
-    python3 "$SCRIPT_DIR/diagnose_duplicate_installs.py" out "$TARGET_PRODUCT" 2>&1 \
+    get_build_var PRODUCT_COPY_FILES > "$LOGS/product-copy-files.txt" 2>/dev/null || true
+    python3 "$SCRIPT_DIR/diagnose_duplicate_installs.py" out "$TARGET_PRODUCT" \
+        "$LOGS/product-copy-files.txt" "$(get_build_var PRODUCT_OUT)" 2>&1 \
         | tee "$LOGS/duplicate-installs.txt" | head -300 || true
     echo "::endgroup::"
 fi
