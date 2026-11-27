@@ -93,5 +93,18 @@ class BuildScriptTest(unittest.TestCase):
         self.assertEqual(p.returncode, 0, p.stderr)
 
 
+class CameraAppPinTest(unittest.TestCase):
+    """Aperture (LineageOS lineage-24.0) comes from the organization fork."""
+
+    def test_aperture_is_an_organization_commit_of_a_port_branch(self):
+        import xml.etree.ElementTree as ET
+        root = ET.parse(TOOLS.parent / "aosp17_pe_mondrian_build.xml").getroot()
+        project = next(e for e in root.iter("project") if e.get("path") == "packages/apps/Aperture")
+        self.assertEqual(project.get("name"), "packages_apps_Aperture")
+        self.assertEqual(project.get("remote"), "reborn-mondrian")
+        self.assertRegex(project.get("revision"), r"^[0-9a-f]{40}$")
+        self.assertRegex(project.get("upstream"), r"^refs/heads/port/a17-aperture-lineage-24\.0-")
+
+
 if __name__ == "__main__":
     unittest.main()
