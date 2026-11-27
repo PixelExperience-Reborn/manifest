@@ -98,17 +98,14 @@ summary '<br clear="left">'
 summary ""
 summary "- manifest: \`$MANIFEST_BRANCH\` / \`$MANIFEST_FILE\`, projects: $(grep -c '<project' "$LOGS/resolved-manifest.xml")"
 
-# Everything builds locally on ServerHive: no Google remote build execution
-# (RBE, it needs Google credentials) and the classic ninja executor (AOSP 17
-# defaults to Siso). The runner's environment must not change that: show
-# what it sets, and drop BASH_ENV/ENV, which every child bash (soong_ui.bash
-# among them) would source again, overriding the exports below.
-for var in USE_RBE SOONG_NINJA ANDROID_BUILD_ENVIRONMENT_CONFIG BASH_ENV ENV; do
-    echo "runner environment: $var=${!var-<unset>}"
+# The build environment of ServerHive comes from the server itself:
+# BASH_ENV=/etc/sra_env.sh, which every bash of the build sources, sets the
+# server's remote execution (USE_RBE), its ninja (SOONG_NINJA) and the
+# variables its supervisor requires (CUSTOM_NINJA_BIN and others); a build
+# without them is terminated by the server. Keep it as it is, only show it.
+for var in USE_RBE SOONG_NINJA CUSTOM_NINJA_BIN BASH_ENV; do
+    echo "server environment: $var=${!var-<unset>}"
 done
-unset BASH_ENV ENV ANDROID_BUILD_ENVIRONMENT_CONFIG
-export USE_RBE=false
-export SOONG_NINJA=ninja
 # Builds of the organization's build server are the official ones.
 export CUSTOM_BUILD_TYPE=OFFICIAL
 
@@ -124,9 +121,6 @@ lunch "$target" > "$LOGS/lunch.log" 2>&1 || status=$?
 # copy stays in lunch.log unless lunch fails.
 if ((status != 0)); then
     cat "$LOGS/lunch.log"
-elif grep -q '^USE_RBE=true' "$LOGS/lunch.log"; then
-    echo "::error::RBE is still enabled (USE_RBE=true) although this script disables it; see the runner environment above"
-    status=1
 else
     echo "lunch $target: TARGET_PRODUCT=$TARGET_PRODUCT TARGET_RELEASE=$TARGET_RELEASE TARGET_BUILD_VARIANT=$TARGET_BUILD_VARIANT"
 fi
