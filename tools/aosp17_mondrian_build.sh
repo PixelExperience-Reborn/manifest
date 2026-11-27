@@ -184,9 +184,19 @@ fi
 duration="$(printf '%02d:%02d:%02d' $((elapsed / 3600)) $(((elapsed % 3600) / 60)) $((elapsed % 60)))"
 package=""
 if ((status == 0)) && [[ "$STAGE" == bacon ]]; then
-    package="$(get_build_var PRODUCT_OUT)/$pe_version.zip"
-    [[ -f "$package" ]] && info+=("Package=$(basename "$package")" "Size=$(du -h "$package" | cut -f1)"
-                                  "SHA-256=$(sha256sum "$package" | cut -d' ' -f1)")
+    # CUSTOM_VERSION carries the time of each make run, so the package is
+    # named after the build, not after lunch: take the name the build printed.
+    package="$(sed -n 's/^PE package: //p' "$LOGS/build.log" | tail -1 | tr -d '\r')"
+    if [[ -n "$package" && -f "$package" ]]; then
+        for i in "${!info[@]}"; do
+            [[ "${info[$i]}" == Version=* ]] && info[$i]="Version=$(basename "$package" .zip)"
+        done
+        info+=("Package=$(basename "$package")" "Path=$(realpath "$package")"
+               "Size=$(du -h "$package" | cut -f1)" "SHA-256=$(sha256sum "$package" | cut -d' ' -f1)")
+    else
+        echo "bacon finished but the PE package is missing (no 'PE package:' line or no file)"
+        status=1
+    fi
 fi
 info+=("Time=$duration")
 args=(--status "$status"); for item in "${info[@]}"; do args+=(--info "$item"); done

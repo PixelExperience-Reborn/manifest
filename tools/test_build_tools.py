@@ -77,6 +77,13 @@ class BuildScriptTest(unittest.TestCase):
         # The analysis stage has nothing to keep going for.
         self.assertIn("graph)  m nothing 2>&1", script)
 
+    def test_package_is_the_one_the_build_printed(self):
+        script = SCRIPT.read_text()
+        self.assertIn("sed -n 's/^PE package: //p' \"$LOGS/build.log\"", script)
+        self.assertNotIn('$(get_build_var PRODUCT_OUT)/$pe_version.zip', script)
+        for item in ("Package=", "Path=", "Size=", "SHA-256="):
+            self.assertIn(f'"{item}', script)
+
     def test_failed_actions_are_summarized(self):
         script = SCRIPT.read_text()
         self.assertIn('python3 "$SCRIPT_DIR/summarize_build_errors.py" out/error.log', script)
