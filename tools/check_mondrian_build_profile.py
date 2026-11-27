@@ -33,6 +33,9 @@ ADDED = {
     # Camera app: LineageOS Aperture of lineage-24.0 (Android 17); it
     # overrides AOSP Camera2 when the device sets PE_A17_PORT_APERTURE.
     "packages/apps/Aperture": "packages_apps_Aperture",
+    # Qualcomm AIDL boot control of LineageOS lineage-24.0-caf, for vendor
+    # and recovery (sideload, fastbootd set_active).
+    "hardware/qcom-caf/bootctrl": "hardware_qcom-caf_bootctrl",
 }
 # The prebuilt kernel release lives on the default branch of its repository.
 KERNEL_RELEASE = ("device/xiaomi/mondrian-kernel", "android_device_xiaomi_mondrian-kernel")

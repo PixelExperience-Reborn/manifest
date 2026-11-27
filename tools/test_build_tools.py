@@ -112,6 +112,15 @@ class CameraAppPinTest(unittest.TestCase):
         self.assertRegex(project.get("revision"), r"^[0-9a-f]{40}$")
         self.assertRegex(project.get("upstream"), r"^refs/heads/port/a17-aperture-lineage-24\.0-")
 
+    def test_boot_control_is_an_organization_commit_of_a_port_branch(self):
+        import xml.etree.ElementTree as ET
+        root = ET.parse(TOOLS.parent / "aosp17_pe_mondrian_build.xml").getroot()
+        project = next(e for e in root.iter("project") if e.get("path") == "hardware/qcom-caf/bootctrl")
+        self.assertEqual(project.get("name"), "hardware_qcom-caf_bootctrl")
+        self.assertEqual(project.get("remote"), "reborn-mondrian")
+        self.assertRegex(project.get("revision"), r"^[0-9a-f]{40}$")
+        self.assertRegex(project.get("upstream"), r"^refs/heads/port/a17-bootctrl-lineage-24\.0-caf-")
+
 
 if __name__ == "__main__":
     unittest.main()

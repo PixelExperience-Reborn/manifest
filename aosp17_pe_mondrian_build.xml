@@ -77,7 +77,7 @@
   <project path="device/xiaomi/sm8450-common"
            name="android_device_xiaomi_sm8450-common"
            remote="reborn-mondrian"
-           revision="3a69f71927cb1bda02eae8b957f6ba9c73d65093"
+           revision="b8696fc3a4ae7a5323d255e6adc041169b72dbf3"
            upstream="refs/heads/bringup/a17-mondrian-oem-vendor-os3-20261125"
            groups="device,mondrian" />
 
@@ -87,7 +87,7 @@
   <project path="vendor/xiaomi/sm8450-common"
            name="proprietary_vendor_xiaomi_sm8450-common"
            remote="reborn-mondrian"
-           revision="ec02b40408ac2ed1b1b7dbe0442fee352ae4d4e5"
+           revision="aeb281af8138554818d57572b078765b4cd8f5f2"
            upstream="refs/heads/bringup/a17-mondrian-oem-vendor-os3-20261125"
            groups="device,mondrian" />
   <project path="vendor/xiaomi/mondrian"
@@ -194,6 +194,10 @@
        imported into the PE fork. device/xiaomi/mondrian sets
        PE_A17_PORT_APERTURE, and Aperture overrides AOSP Camera2. -->
   <project path="packages/apps/Aperture" name="packages_apps_Aperture" remote="reborn-mondrian" revision="ab610566fea78f7d35f7df4f74c26f223cfdd388" upstream="refs/heads/port/a17-aperture-lineage-24.0-20261127" groups="pdk" />
+  <!-- Qualcomm AIDL boot control of LineageOS lineage-24.0-caf (2509267)
+       imported into the PE fork, gpt-utils built with the bionic UAPI
+       headers: android.hardware.boot-service.qti(.recovery). -->
+  <project path="hardware/qcom-caf/bootctrl" name="hardware_qcom-caf_bootctrl" remote="reborn-mondrian" revision="bf4d430629a882506dc70b619c5184c1e43dc00a" upstream="refs/heads/port/a17-bootctrl-lineage-24.0-caf-20261127" groups="pdk" />
   <remove-project name="frameworks_base" />
   <project path="frameworks/base" name="frameworks_base" remote="reborn-mondrian" revision="8a3087e1b9cdc597cc3ecafa168350973d1b9be7" upstream="refs/heads/bringup/a17-asb-2026-09-20261126" groups="pdk,sysui-studio" />
   <remove-project name="platform/packages/modules/Nfc" />
