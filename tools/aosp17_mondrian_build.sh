@@ -18,6 +18,10 @@ STAGE="${STAGE:-graph}"
 RELEASE="${RELEASE:-cp2a}"
 VARIANT="${VARIANT:-userdebug}"
 DO_SYNC="${DO_SYNC:-true}"
+# KEEP_GOING=true: ninja goes on after a failed action (soong_ui -k), so one
+# job shows every compile error and the finished work stays in out/ for the
+# next job. Analysis errors (Soong, Kati) still stop the build at once.
+KEEP_GOING="${KEEP_GOING:-true}"
 MANIFEST_URL="https://github.com/PixelExperience-Reborn/manifest"
 MANIFEST_BRANCH="${MANIFEST_BRANCH:?branch of this manifest repository}"
 MANIFEST_FILE="aosp17_pe_mondrian_build.xml"
@@ -147,16 +151,25 @@ if ((status == 0)); then
     banner --title "PixelExperience build started on ServerHive" "${args[@]}"
 fi
 start=$SECONDS
+make_args=()
+if [[ "$KEEP_GOING" == true ]]; then make_args=(-k); fi
 if ((status == 0)); then
     case "$STAGE" in
         graph)  m nothing 2>&1 | tee "$LOGS/build.log" || status=$? ;;
-        vendor) m vendorimage 2>&1 | tee "$LOGS/build.log" || status=$? ;;
-        full)   m 2>&1 | tee "$LOGS/build.log" || status=$? ;;
-        bacon)  m bacon 2>&1 | tee "$LOGS/build.log" || status=$? ;;
-        recovery) m recoveryimage 2>&1 | tee "$LOGS/build.log" || status=$? ;;
+        vendor) m "${make_args[@]}" vendorimage 2>&1 | tee "$LOGS/build.log" || status=$? ;;
+        full)   m "${make_args[@]}" 2>&1 | tee "$LOGS/build.log" || status=$? ;;
+        bacon)  m "${make_args[@]}" bacon 2>&1 | tee "$LOGS/build.log" || status=$? ;;
+        recovery) m "${make_args[@]}" recoveryimage 2>&1 | tee "$LOGS/build.log" || status=$? ;;
     esac
 fi
 elapsed=$((SECONDS - start))
+# With keep-going a failed job may hold many failed actions: list each one
+# with its first compiler errors (soong_ui keeps their output in out/error.log).
+if ((status != 0)) && [[ -s out/error.log ]] && grep -q "^FAILED: " out/error.log; then
+    echo "::group::Failed build actions: $(grep -c '^FAILED: ' out/error.log)"
+    python3 "$SCRIPT_DIR/summarize_build_errors.py" out/error.log 2>&1 | tee "$LOGS/failed-actions.txt" | head -400 || true
+    echo "::endgroup::"
+fi
 # Kati stops at the first duplicate install and names only its path. List
 # every installed path with two rules, the module of each rule and, for a
 # module built from source, which modules pull it in (in the job log).

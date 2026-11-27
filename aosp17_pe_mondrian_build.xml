@@ -187,7 +187,7 @@
   <remove-project name="platform/external/wpa_supplicant_8" />
   <project path="external/wpa_supplicant_8" name="external_wpa_supplicant_8" remote="reborn-mondrian" revision="59f178cb654771ce4026370d6f9af93c5f1ad2e3" upstream="refs/heads/bringup/a17-asb-2026-09-20261126" groups="pdk" />
   <remove-project name="platform/external/gptfdisk" />
-  <project path="external/gptfdisk" name="external_gptfdisk" remote="reborn-mondrian" revision="8d15f9b95ad9f464c9c5fd60012bc657859b1e77" upstream="refs/heads/port/a17-gptfdisk-recovery-20261126" groups="pdk" />
+  <project path="external/gptfdisk" name="external_gptfdisk" remote="reborn-mondrian" revision="3129a343e84115415d8647dbed2aecf82fca0c05" upstream="refs/heads/port/a17-gptfdisk-recovery-20261126" groups="pdk" />
   <remove-project name="platform/external/mksh" />
   <project path="external/mksh" name="external_mksh" remote="reborn-mondrian" revision="6861c578a9d8c56addf376d1eee281c104b85243" upstream="refs/heads/port/a17-mksh-recovery-20261126" groups="pdk" />
   <remove-project name="frameworks_base" />
