@@ -33,7 +33,7 @@ STAGES = [
         "frameworks/native": ("frameworks_native", "ae266dcb706d083868578cfedce381ef44488a07"),
     }),
     ("aosp17_pe_p0_recovery.xml", {
-        "bootable/recovery": ("bootable_recovery", "8b99eb8bf05c9cc9308680f76503e68e35626a25"),
+        "bootable/recovery": ("bootable_recovery", "6299d92bd024731a56bfc11dd0501b0c4e1ead89"),
     }),
     ("aosp17_pe_p0_av.xml", {
         "frameworks/av": ("frameworks_av", "5db9a6151f33cacb810a8fe7615be8c23d3fa858"),
