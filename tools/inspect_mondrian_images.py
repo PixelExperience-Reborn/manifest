@@ -10,7 +10,15 @@ It prints what the bootloader and first stage init will meet:
   hashtrees of the logical partitions, recomputed from the images;
 - the headers of boot.img and vendor_boot.img, their bootconfig and command
   line, and the files of their ramdisks (first stage init, fstab, module
-  lists, AVB keys).
+  lists, AVB keys);
+- the EROFS on-disk format of the logical partitions (feature_incompat 0x1
+  like the stock images, which the GKI 5.10 mounts without its EXPERIMENTAL
+  big pcluster backport) and the fstab mount points of the vendor image;
+- the mount context types of the fstab in the vendor policy;
+- hwservicemanager on system_ext with android.hidl.manager in the system_ext
+  manifest: Android 17 installs it only for shipping API levels up to 34, and
+  without the manifest entry it never sets hwservicemanager.ready, which
+  init.target.rc waits for in late-fs before mounting /data.
 
     inspect_mondrian_images.py <android tree>
 """
@@ -155,6 +163,127 @@ def vendor_boot_header(path):
                      data[r_off + offset:r_off + offset + size])
 
 
+EROFS_MAGIC = 0xE0F5E1E2
+SPARSE_MAGIC = 0xED26FF3A
+STOCK_EROFS_INCOMPAT = 0x1
+VENDOR_MOUNT_POINTS = ("firmware_mnt", "dsp", "bt_firmware")
+MOUNT_CONTEXT_TYPES = ("firmware_file", "bt_firmware_file", "vendor_qmcs_file")
+
+
+def raw_image(path):
+    """A path to the raw image: sparse images are expanded with simg2img."""
+    with open(path, "rb") as f:
+        magic, = struct.unpack("<I", f.read(4))
+    if magic != SPARSE_MAGIC:
+        return path
+    raw = Path("/tmp") / f"pe-inspect-{path.name}"
+    run([HOST / "simg2img", path, raw])
+    return raw
+
+
+def erofs_root(path):
+    """(feature_incompat, names in the root directory) of an EROFS image."""
+    with open(path, "rb") as f:
+        sb = f.read(2048)[1024:1152]
+        if struct.unpack_from("<I", sb, 0)[0] != EROFS_MAGIC:
+            return None, None
+        bs = 1 << sb[12]
+        root_nid, = struct.unpack_from("<H", sb, 14)
+        meta_blkaddr, = struct.unpack_from("<I", sb, 40)
+        incompat, = struct.unpack_from("<I", sb, 80)
+        f.seek(meta_blkaddr * bs + root_nid * 32)
+        raw = f.read(64)
+        fmt, xcount = struct.unpack_from("<HH", raw, 0)
+        layout = (fmt >> 1) & 7
+        size = struct.unpack_from("<Q" if fmt & 1 else "<I", raw, 8)[0]
+        blkaddr, = struct.unpack_from("<I", raw, 16)
+        inline = meta_blkaddr * bs + root_nid * 32 + (64 if fmt & 1 else 32) + (12 + (xcount - 1) * 4 if xcount else 0)
+        if layout not in (0, 2):  # flat plain / flat inline directories only
+            return incompat, None
+        nblocks = size // bs if layout == 2 else (size + bs - 1) // bs
+        f.seek(blkaddr * bs)
+        data = f.read(nblocks * bs) if nblocks else b""
+        if layout == 2 and size % bs:
+            f.seek(inline)
+            data += f.read(size % bs)
+    names = []
+    for blk in range(0, len(data), bs):
+        chunk = data[blk:blk + bs]
+        count = struct.unpack_from("<H", chunk, 8)[0] // 12
+        for i in range(count):
+            nameoff, = struct.unpack_from("<H", chunk, i * 12 + 8)
+            end = struct.unpack_from("<H", chunk, (i + 1) * 12 + 8)[0] if i + 1 < count else len(chunk)
+            names.append(chunk[nameoff:end].split(b"\0")[0].decode(errors="replace"))
+    return incompat, [n for n in names if n not in (".", "..")]
+
+
+def check_erofs():
+    for name in ("system", "system_ext", "product", "vendor", "vendor_dlkm", "odm"):
+        path = OUT / f"{name}.img"
+        if not path.exists():
+            problems.append(f"{name}.img absent")
+            continue
+        incompat, names = erofs_root(raw_image(path))
+        print(f"{name}.img: erofs feature_incompat {incompat if incompat is None else hex(incompat)}, "
+              f"root: {' '.join(names or [])}")
+        if incompat != STOCK_EROFS_INCOMPAT:
+            problems.append(f"{name}.img: EROFS feature_incompat {incompat}, stock images use 0x1")
+        if name == "vendor":
+            for d in VENDOR_MOUNT_POINTS:
+                if d not in (names or []):
+                    problems.append(f"vendor.img: no /vendor/{d} mount point")
+
+
+def check_vendor_policy():
+    for cil in (OUT.parent / "VENDOR/etc/selinux/vendor_sepolicy.cil",
+                PRODUCT_OUT / "vendor/etc/selinux/vendor_sepolicy.cil"):
+        if cil.exists():
+            text = cil.read_text(errors="replace")
+            for t in MOUNT_CONTEXT_TYPES:
+                ok = f"(type {t})" in text
+                print(f"vendor policy {cil}: {t} {'declared' if ok else 'MISSING'}")
+                if not ok:
+                    problems.append(f"vendor policy: {t} not declared (fstab context= fails with EINVAL)")
+            return
+    problems.append("vendor_sepolicy.cil not found")
+
+
+def check_hwservicemanager():
+    for root in (OUT.parent / "SYSTEM_EXT", PRODUCT_OUT / "system_ext"):
+        manifest = root / "etc/vintf/manifest.xml"
+        if root.is_dir():
+            binary = (root / "bin/hwservicemanager").exists()
+            declared = manifest.exists() and "android.hidl.manager" in manifest.read_text(errors="replace")
+            print(f"{root}: bin/hwservicemanager {'present' if binary else 'MISSING'}, "
+                  f"android.hidl.manager {'declared' if declared else 'MISSING'}")
+            if not binary or not declared:
+                problems.append("hwservicemanager or its android.hidl.manager entry missing on system_ext "
+                                "(late-fs waits for hwservicemanager.ready)")
+            return
+    problems.append("system_ext tree not found")
+
+
+BOOT_FILES = {
+    # init.qti.kernel.rc: on early-init start vendor.modprobe, on init wait_for_prop
+    # vendor.all.modules.ready 1, which only vendor_modprobe.sh sets.
+    "VENDOR": ("bin/sh", "bin/modprobe", "bin/toybox_vendor", "bin/vendor_modprobe.sh",
+               "etc/init/hw/init.qti.kernel.rc"),
+    "VENDOR_DLKM": ("lib/modules/modules.load", "lib/modules/modules.dep"),
+}
+
+
+def check_boot_files():
+    for part, files in BOOT_FILES.items():
+        root = OUT.parent / part
+        if not root.is_dir():
+            root = PRODUCT_OUT / part.lower()
+        for f in files:
+            ok = (root / f).exists() or (root / f).is_symlink()
+            print(f"{part.lower()}/{f}: {'present' if ok else 'MISSING'}")
+            if not ok:
+                problems.append(f"{part.lower()}/{f} missing")
+
+
 def main():
     print(f"images in {OUT}")
     for name in ("boot", "vendor_boot", "dtbo", "recovery", "vbmeta", "vbmeta_system", "system", "system_ext",
@@ -163,6 +292,10 @@ def main():
         print(f"  {name}.img: {p.stat().st_size if p.exists() else 'absent'}")
     boot_header(OUT / "boot.img")
     vendor_boot_header(OUT / "vendor_boot.img")
+    check_erofs()
+    check_vendor_policy()
+    check_hwservicemanager()
+    check_boot_files()
     avbtool = HOST / "avbtool"
     for name in ("vbmeta", "vbmeta_system", "boot", "vendor_boot", "recovery", "system"):
         run([avbtool, "info_image", "--image", OUT / f"{name}.img"])
