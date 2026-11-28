@@ -151,7 +151,8 @@ if ((status == 0)); then
           "Android security patch=$(get_build_var PLATFORM_SECURITY_PATCH)"
           "Vendor security patch=$(get_build_var VENDOR_SECURITY_PATCH) (stock OS3.0.8.0 vendor)"
           "Maintainer=$(get_build_var CUSTOM_MAINTAINER)"
-          "CPU=$(get_build_var TARGET_ARCH_VARIANT) / $(get_build_var TARGET_CPU_VARIANT)"
+          "CPU 64-bit=$(get_build_var TARGET_ARCH_VARIANT) / $(get_build_var TARGET_CPU_VARIANT) (runtime $(get_build_var TARGET_CPU_VARIANT_RUNTIME))"
+          "CPU 32-bit=$(get_build_var TARGET_2ND_ARCH_VARIANT) / $(get_build_var TARGET_2ND_CPU_VARIANT) (runtime $(get_build_var TARGET_2ND_CPU_VARIANT_RUNTIME))"
           "Build ID=$(get_build_var BUILD_ID)"
           "Build type=$(get_build_var TARGET_BUILD_VARIANT)"
           "Stage=$STAGE")
