@@ -131,10 +131,18 @@ status=0
 # lunch must run in this shell, not in a pipeline subshell: it exports
 # TARGET_PRODUCT, TARGET_RELEASE and TARGET_BUILD_VARIANT for m.
 lunch "$target" > "$LOGS/lunch.log" 2>&1 || status=$?
+# lunch can return 0 and still leave the target unset; that is a failure too.
+if ((status == 0)) && [[ "$TARGET_PRODUCT" != aosp_mondrian || "$TARGET_RELEASE" != "$RELEASE" ]]; then
+    echo "lunch $target returned 0 but set TARGET_PRODUCT='$TARGET_PRODUCT' TARGET_RELEASE='$TARGET_RELEASE'"
+    status=1
+fi
 # The product configuration is printed once, by the build itself; lunch's
 # copy stays in lunch.log unless lunch fails.
 if ((status != 0)); then
-    cat "$LOGS/lunch.log"
+    echo "---- lunch.log"; cat "$LOGS/lunch.log"
+    echo "---- envsetup.log (last 40 lines)"; tail -n 40 "$LOGS/envsetup.log"
+    echo "---- out/ state"; ls -la out/ 2>&1 | head -40
+    ls -la out/soong/release-config 2>&1 | head -20
 else
     echo "lunch $target: TARGET_PRODUCT=$TARGET_PRODUCT TARGET_RELEASE=$TARGET_RELEASE TARGET_BUILD_VARIANT=$TARGET_BUILD_VARIANT"
 fi
