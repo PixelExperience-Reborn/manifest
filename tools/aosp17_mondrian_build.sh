@@ -6,6 +6,8 @@
 # STAGE=full  : ... + `m` (all images)
 # STAGE=bacon : ... + `m bacon` (the PixelExperience release package)
 # STAGE=recovery: ... + `m recoveryimage` (the PE recovery and its modules)
+# STAGE=verify: no sync, no build: check the images of the last build in out/
+#               (AVB chain and hashtrees, boot and vendor_boot ramdisks)
 #
 # The source tree lives next to the runner work directories so that it
 # survives between jobs: the first sync downloads 100+ GB, later ones are
@@ -36,7 +38,7 @@ LOGS="$RUNNER_TEMP/aosp17-logs"
 mkdir -p "$TREE/.bin" "$LOGS"
 summary() { echo "$*" >> "${GITHUB_STEP_SUMMARY:-/dev/null}"; }
 
-case "$STAGE" in graph|vendor|full|bacon|recovery) ;; *) echo "::error::unknown STAGE $STAGE"; exit 2;; esac
+case "$STAGE" in graph|vendor|full|bacon|recovery|verify) ;; *) echo "::error::unknown STAGE $STAGE"; exit 2;; esac
 case "$VARIANT" in user|userdebug|eng) ;; *) echo "::error::unknown VARIANT $VARIANT"; exit 2;; esac
 [[ "$RELEASE" =~ ^[a-z0-9_]+$ ]] || { echo "::error::invalid RELEASE $RELEASE"; exit 2; }
 
@@ -73,6 +75,11 @@ git config --global user.email >/dev/null || git config --global user.email "ci@
 git config --global color.ui false
 
 cd "$TREE"
+if [[ "$STAGE" == "verify" ]]; then
+    [[ -f out/target/product/mondrian/vbmeta.img ]] || { echo "::error::no images in out/ to verify"; exit 1; }
+    python3 "$SCRIPT_DIR/inspect_mondrian_images.py" "$TREE" 2>&1 | tee "$LOGS/verify.log"
+    exit 0
+fi
 jobs=$(( $(nproc) > 32 ? 32 : $(nproc) ))
 if [[ "$DO_SYNC" == "true" ]]; then
     lfs=()
