@@ -22,7 +22,20 @@ import sys
 from pathlib import Path
 
 TREE = Path(sys.argv[1]).resolve()
-OUT = TREE / "out/target/product/mondrian"
+PRODUCT_OUT = TREE / "out/target/product/mondrian"
+
+
+def images_dir():
+    """The complete image set of the last build: target-files IMAGES of `m bacon`
+    (product out holds only some images there), or product out itself."""
+    found = sorted(PRODUCT_OUT.glob("obj/PACKAGING/target_files_intermediates/*/IMAGES/vbmeta.img"),
+                   key=lambda p: p.stat().st_mtime)
+    if found:
+        return found[-1].parent
+    return PRODUCT_OUT
+
+
+OUT = images_dir()
 HOST = TREE / "out/host/linux-x86/bin"
 problems = []
 

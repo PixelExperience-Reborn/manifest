@@ -76,7 +76,8 @@ git config --global color.ui false
 
 cd "$TREE"
 if [[ "$STAGE" == "verify" ]]; then
-    [[ -f out/target/product/mondrian/vbmeta.img ]] || { echo "::error::no images in out/ to verify"; exit 1; }
+    compgen -G "out/target/product/mondrian/obj/PACKAGING/target_files_intermediates/*/IMAGES/vbmeta.img" >/dev/null \
+        || [[ -f out/target/product/mondrian/vbmeta.img ]] || { echo "::error::no images in out/ to verify"; exit 1; }
     python3 "$SCRIPT_DIR/inspect_mondrian_images.py" "$TREE" 2>&1 | tee "$LOGS/verify.log"
     exit 0
 fi
