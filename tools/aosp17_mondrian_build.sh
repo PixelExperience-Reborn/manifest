@@ -98,7 +98,7 @@ fi
 # Qualcomm IMS apps too) and hash-checked.
 mkdir -p "$TREE/.cache"
 python3 device/xiaomi/sm8450-common/tools/extract_proprietary.py \
-    --work "$TREE/.cache" 2>&1 | tee "$LOGS/proprietary.log"
+    --work "$TREE/.cache" --cache "$TREE/.cache/ota-images" 2>&1 | tee "$LOGS/proprietary.log"
 if [[ -d vendor/gapps ]] && git -C vendor/gapps lfs ls-files | grep -q ' - '; then
     echo "::error::vendor/gapps still has Git LFS pointers instead of files; run git lfs pull there"
     exit 1

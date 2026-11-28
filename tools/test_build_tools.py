@@ -131,6 +131,15 @@ class CameraAppPinTest(unittest.TestCase):
         self.assertEqual(project.get("revision"), "58543d6299a7c99eac59eda56774372bd3c4e618")
         self.assertRegex(project.get("upstream"), r"^refs/heads/port/a17-qti-telephony-qssi17-")
 
+    def test_hardware_xiaomi_is_the_telephony_stub_branch(self):
+        import xml.etree.ElementTree as ET
+        root = ET.parse(TOOLS.parent / "aosp17_pe_mondrian_build.xml").getroot()
+        project = next(e for e in root.iter("project") if e.get("path") == "hardware/xiaomi")
+        self.assertEqual(project.get("name"), "android_hardware_xiaomi")
+        self.assertEqual(project.get("remote"), "reborn-mondrian")
+        self.assertRegex(project.get("revision"), r"^[0-9a-f]{40}$")
+        self.assertRegex(project.get("upstream"), r"^refs/heads/port/a17-xiaomi-telephony-stub-")
+
 
 if __name__ == "__main__":
     unittest.main()

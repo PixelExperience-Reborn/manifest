@@ -39,6 +39,8 @@ ADDED = {
     # Qualcomm telephony Java libraries (LA.QSSI.17.0) the stock IMS apps of
     # sm8450-common use; the base stages keep rejecting this project.
     "vendor/codeaurora/telephony": "vendor_codeaurora_telephony",
+    # xiaomi-telephony-stub, a boot jar of sm8450-common (root Soong namespace).
+    "hardware/xiaomi": "android_hardware_xiaomi",
 }
 # The prebuilt kernel release lives on the default branch of its repository.
 KERNEL_RELEASE = ("device/xiaomi/mondrian-kernel", "android_device_xiaomi_mondrian-kernel")

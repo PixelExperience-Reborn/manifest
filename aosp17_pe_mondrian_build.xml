@@ -77,7 +77,7 @@
   <project path="device/xiaomi/sm8450-common"
            name="android_device_xiaomi_sm8450-common"
            remote="reborn-mondrian"
-           revision="70c51004b1af1dad2e46830cdbbfad395ce42aa6"
+           revision="6ab21ea6d1086ff54fde0b55e31060ec3a1a4d90"
            upstream="refs/heads/bringup/a17-mondrian-oem-vendor-os3-20261125"
            groups="device,mondrian" />
 
@@ -203,6 +203,10 @@
        qti-telephony-utils, qti-telephony-hidl-wrapper and extphonelib, the
        shared libraries of the stock IMS apps of sm8450-common (docs/IMS.md). -->
   <project path="vendor/codeaurora/telephony" name="vendor_codeaurora_telephony" remote="reborn-mondrian" revision="58543d6299a7c99eac59eda56774372bd3c4e618" upstream="refs/heads/port/a17-qti-telephony-qssi17-20261127" groups="pdk" />
+  <!-- hardware/xiaomi: xiaomi-telephony-stub (TelephonyBaseUtilsStub of
+       HyperOS, called by the stock IMS apps), as in LineageOS
+       hardware/xiaomi; on the boot classpath, so outside any Soong namespace. -->
+  <project path="hardware/xiaomi" name="android_hardware_xiaomi" remote="reborn-mondrian" revision="120e474a0a71866488501bd06b77ff4b119e9ed4" upstream="refs/heads/port/a17-xiaomi-telephony-stub-20261128" groups="pdk" />
   <remove-project name="frameworks_base" />
   <project path="frameworks/base" name="frameworks_base" remote="reborn-mondrian" revision="8a3087e1b9cdc597cc3ecafa168350973d1b9be7" upstream="refs/heads/bringup/a17-asb-2026-09-20261126" groups="pdk,sysui-studio" />
   <remove-project name="platform/packages/modules/Nfc" />
