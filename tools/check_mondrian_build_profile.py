@@ -36,6 +36,9 @@ ADDED = {
     # Qualcomm AIDL boot control of LineageOS lineage-24.0-caf, for vendor
     # and recovery (sideload, fastbootd set_active).
     "hardware/qcom-caf/bootctrl": "hardware_qcom-caf_bootctrl",
+    # Qualcomm telephony Java libraries (LA.QSSI.17.0) the stock IMS apps of
+    # sm8450-common use; the base stages keep rejecting this project.
+    "vendor/codeaurora/telephony": "vendor_codeaurora_telephony",
 }
 # The prebuilt kernel release lives on the default branch of its repository.
 KERNEL_RELEASE = ("device/xiaomi/mondrian-kernel", "android_device_xiaomi_mondrian-kernel")

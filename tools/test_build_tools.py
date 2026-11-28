@@ -121,6 +121,16 @@ class CameraAppPinTest(unittest.TestCase):
         self.assertRegex(project.get("revision"), r"^[0-9a-f]{40}$")
         self.assertRegex(project.get("upstream"), r"^refs/heads/port/a17-bootctrl-lineage-24\.0-caf-")
 
+    def test_qualcomm_telephony_is_the_unchanged_qssi17_import(self):
+        import xml.etree.ElementTree as ET
+        root = ET.parse(TOOLS.parent / "aosp17_pe_mondrian_build.xml").getroot()
+        project = next(e for e in root.iter("project") if e.get("path") == "vendor/codeaurora/telephony")
+        self.assertEqual(project.get("name"), "vendor_codeaurora_telephony")
+        self.assertEqual(project.get("remote"), "reborn-mondrian")
+        # The two-parent import whose tree is exactly Qualcomm's LA.QSSI.17.0.r1-12400-qssi.0.
+        self.assertEqual(project.get("revision"), "58543d6299a7c99eac59eda56774372bd3c4e618")
+        self.assertRegex(project.get("upstream"), r"^refs/heads/port/a17-qti-telephony-qssi17-")
+
 
 if __name__ == "__main__":
     unittest.main()
