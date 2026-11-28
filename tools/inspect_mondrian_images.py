@@ -95,7 +95,11 @@ def show_ramdisk(label, raw):
             mode, content = by_name[key]
             extra = ""
             if key.endswith((".load", ".recovery")):
-                extra = f", {len(content.split())} modules"
+                listed = [m.split("/")[-1] for m in content.decode(errors="replace").split()]
+                extra = f", {len(listed)} modules"
+                # sda15 log store (mondrian BoardConfig.mk, userdebug/eng only)
+                store = [m for m in ("block2mtd.ko", "mtdoops.ko") if m in listed]
+                extra += f", sda15 log store: {' '.join(store) or 'not loaded'}"
             print(f"  {key}: mode {oct(mode)}, {len(content)} bytes{extra}")
         else:
             print(f"  {key}: absent")
